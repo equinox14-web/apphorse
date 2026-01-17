@@ -113,6 +113,58 @@ function NutritionCalculator() {
         }, 500);
     };
 
+    const handleSaveRation = () => {
+        try {
+            const storedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+            const updatedHorses = storedHorses.map(h => {
+                if (h.id === id) {
+
+                    // Préparer le format texte pour Nutrition.jsx
+                    const concentrateName = selectedConcentrate.name;
+                    const totalKg = parseFloat(ration.concentrate.amount);
+                    const forageName = selectedForage.name;
+                    const forageKg = parseFloat(forageAmount);
+
+                    // Division en 3 repas par défaut
+                    const perMealKg = (totalKg / 3).toFixed(2);
+                    const mealText = `${perMealKg} kg ${concentrateName}`;
+                    const hayText = `${forageKg} kg ${forageName}`;
+
+                    return {
+                        ...h,
+                        activityLevel: activityLevel,
+                        weight: weight,
+                        // Sauvegarde technique (pour le calculateur futur)
+                        currentRation: {
+                            forage1: { type: forageName, quantity: forageKg },
+                            forage2: null,
+                            feed1: { type: concentrateName, quantity: totalKg },
+                            date: new Date().toISOString(),
+                            calculatedNeeds: ration.needs,
+                            isBalanced: ration.minerals.isBalanced
+                        },
+                        // Sauvegarde Affichage (pour l'onglet Nutrition)
+                        ration: {
+                            morning: [mealText],
+                            noon: [mealText],
+                            evening: [mealText],
+                            hay: [hayText],
+                            supplements: []
+                        }
+                    };
+                }
+                return h;
+            });
+
+            localStorage.setItem('my_horses_v4', JSON.stringify(updatedHorses));
+            alert('✅ Ration validée et appliquée ! Vous pouvez la retrouver dans l\'onglet Nutrition.');
+            navigate(`/horses/${id}?tab=nutrition`);
+        } catch (error) {
+            console.error("Erreur sauvegarde :", error);
+            alert("Erreur lors de la sauvegarde.");
+        }
+    };
+
     if (!horse) {
         return (
             <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -378,38 +430,44 @@ function NutritionCalculator() {
                             </Card>
 
                             {/* Avertissements */}
-                            {ration.warnings.length > 0 && (
-                                <Card>
-                                    <h2 style={{ marginTop: 0 }}>⚠️ Recommandations</h2>
-                                    {ration.warnings.map((warning, index) => (
-                                        <div
-                                            key={index}
-                                            style={{
-                                                display: 'flex',
-                                                gap: '0.75rem',
-                                                padding: '1rem',
-                                                background: warning.severity === 'warning' ? '#fef3c7' : '#dbeafe',
-                                                borderRadius: '8px',
-                                                marginBottom: '0.75rem',
-                                            }}
-                                        >
-                                            {warning.severity === 'warning' ? (
-                                                <AlertCircle size={20} color="#92400e" style={{ flexShrink: 0 }} />
-                                            ) : (
-                                                <Info size={20} color="#1e40af" style={{ flexShrink: 0 }} />
-                                            )}
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontWeight: '500', marginBottom: '0.25rem' }}>
-                                                    {warning.message}
-                                                </div>
-                                                <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>
-                                                    💡 {warning.recommendation}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
+                            {ration.warnings.length > 0 ? (
+                                <Card style={{ backgroundColor: '#fef2f2', borderColor: '#fee2e2' }}>
+                                    <h3 style={{ marginTop: 0, color: '#ef4444', display: 'flex', alignItems: 'center' }}>
+                                        <AlertCircle size={20} style={{ marginRight: '0.5rem' }} />
+                                        Attention
+                                    </h3>
+                                    <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#b91c1c' }}>
+                                        {ration.warnings.map((w, i) => (
+                                            <li key={i}>{w}</li>
+                                        ))}
+                                    </ul>
+                                </Card>
+                            ) : (
+                                <Card style={{ backgroundColor: '#f0fdf4', borderColor: '#dcfce7' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', color: '#15803d' }}>
+                                        <CheckCircle size={20} style={{ marginRight: '0.5rem' }} />
+                                        <strong>Ration équilibrée !</strong>
+                                    </div>
                                 </Card>
                             )}
+
+                            {/* Bouton de sauvegarde */}
+                            <Button
+                                onClick={handleSaveRation}
+                                style={{
+                                    width: '100%',
+                                    marginTop: '1.5rem',
+                                    backgroundColor: '#10b981',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    padding: '1rem',
+                                    fontSize: '1.1rem'
+                                }}
+                            >
+                                <CheckCircle size={20} style={{ marginRight: '0.5rem' }} />
+                                Valider et Appliquer cette Ration
+                            </Button>
                         </>
                     ) : (
                         <Card style={{ textAlign: 'center', padding: '3rem' }}>
@@ -423,13 +481,15 @@ function NutritionCalculator() {
             </div>
 
             {/* Label Scanner Modal */}
-            {showScanner && (
-                <LabelScanner
-                    onFeedScanned={handleFeedScanned}
-                    onClose={() => setShowScanner(false)}
-                />
-            )}
-        </div>
+            {
+                showScanner && (
+                    <LabelScanner
+                        onFeedScanned={handleFeedScanned}
+                        onClose={() => setShowScanner(false)}
+                    />
+                )
+            }
+        </div >
     );
 }
 
