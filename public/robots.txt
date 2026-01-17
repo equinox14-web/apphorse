@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://horse-equinox.com/sitemap.xml

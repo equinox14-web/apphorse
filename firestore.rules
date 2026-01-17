@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Mode strict par défaut : on refuse tout
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Règles pour les utilisateurs
+    match /users/{userId} {
+      // Un utilisateur peut lire et écrire son propre profil
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Règles pour les produits (Extension Stripe)
+    match /products/{id} {
+      allow read: if true; // Public car ce sont des offres commerciales
+      match /prices/{priceId} {
+         allow read: if true;
+      }
+      match /tax_rates/{taxId} {
+         allow read: if true;
+      }
+    }
+
+    // Règles pour les abonnements utilisateurs (Extension Stripe)
+    match /customers/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      
+      match /checkout_sessions/{id} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+      match /subscriptions/{id} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+      }
+      match /payments/{id} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // Règles pour la messagerie
+    match /channels/{channelId} {
+      allow read: if request.auth != null && (resource == null || request.auth.uid in resource.data.members);
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid in resource.data.members;
+      
+      match /messages/{messageId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+    //   allow read, write: if request.auth != null;
+    // }
+    // Règles pour les sponsors (Publicités)
+    match /app_sponsors/{sponsorId} {
+      allow read: if request.auth != null;
+    }
+
+    // Règles pour Gemini AI (Extension)
+    match /generate/{docId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+}

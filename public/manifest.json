@@ -1,0 +1,29 @@
+{
+    "name": "Equinox - Gestion Écurie & Élevage",
+    "short_name": "Equinox",
+    "description": "L'application complète pour la gestion de vos écuries, chevaux, et élevages. Suivi sanitaire, reproduction, et plus encore.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#7c3aed",
+    "orientation": "portrait-primary",
+    "categories": [
+        "productivity",
+        "finance",
+        "business"
+    ],
+    "icons": [
+        {
+            "src": "/pwa-icon.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/pwa-icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

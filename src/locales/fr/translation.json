@@ -1,0 +1,1332 @@
+{
+    "welcome": "Bienvenue",
+    "settings": "Paramètres",
+    "page_titles": {
+        "dashboard": "Tableau de bord",
+        "horses": "Mon Écurie",
+        "settings": "Paramètres"
+    },
+    "settings_page": {
+        "subscription": {
+            "title": "Mon Abonnement",
+            "current_offer": "Offre actuelle :",
+            "invoices_pdf": "Factures (PDF)",
+            "change_offer": "Changer d'offre",
+            "cancel_sub": "Résilier l'abonnement",
+            "plans_title": "Nos Formules d'Abonnement",
+            "monthly": "Mensuel",
+            "yearly": "Annuel",
+            "discount": "-20%",
+            "per_month": "/ mois",
+            "per_year": "/ an",
+            "current_badge": "Offre Actuelle",
+            "change_sub": "Choisir cette offre"
+        },
+        "plan_features": {
+            "special_breeder": [
+                "1 Cheval + 5 Poulinières",
+                "Carnet de Santé & Suivi Repro",
+                "Gestion Budget & Stocks",
+                "Support Prioritaire"
+            ],
+            "start": [
+                "Jusqu'à 10 Chevaux",
+                "Gestion Propriétaires",
+                "Facturation Simple",
+                "Soins & Rappels"
+            ],
+            "pro": [
+                "Jusqu'à 30 Chevaux",
+                "Facturation Récurrente",
+                "Planning Équipe",
+                "Comptabilité Export"
+            ],
+            "discovery": [
+                "1 Cheval Gratuit",
+                "Carnet de Santé",
+                "Calendrier Simple",
+                "Suivi de base"
+            ],
+            "passion": [
+                "Chevaux Illimités",
+                "Gestion Budget & Compétitions",
+                "Demi-pensions & Partage",
+                "Stockage Photos/Vidéos"
+            ],
+            "passion_breeding": [
+                "5 Juments Poulinières",
+                "1 Cheval de Sport",
+                "Suivi Reproduction Complet",
+                "Alertes Poulinage"
+            ],
+            "elite": [
+                "Tout Illimité",
+                "Module Élevage Complet",
+                "Gestion Stocks Avancée",
+                "Support VIP 24/7"
+            ]
+        },
+        "stripe_connect": {
+            "title": "Encaisser mes clients (Stripe)",
+            "desc": "Connectez votre compte bancaire pour permettre à vos clients de payer leurs factures en ligne par carte bancaire.",
+            "consent_label": "J'accepte les conditions d'utilisation du service de paiement :",
+            "conditions": [
+                "J'autorise Equinox à émettre des factures en mon nom et pour mon compte (Mandat de facturation).",
+                "J'accepte les frais de service de 1% par transaction prélevés par Equinox.",
+                "J'accepte les frais bancaires de Stripe (env. 1.4% + 0.25€) déduits de chaque paiement."
+            ],
+            "connect_button": "Connecter mon compte bancaire"
+        },
+        "account": {
+            "title": "Mon Compte",
+            "email_label": "ADRESSE EMAIL",
+            "edit_button": "Modifier",
+            "password_label": "MOT DE PASSE",
+            "placeholder_pass": "••••••••",
+            "change_button": "Changer",
+            "logout": "Déconnexion",
+            "name_label": "Nom d'affichage",
+            "change_pass_title": "Changer le mot de passe",
+            "new_pass_label": "Nouveau mot de passe",
+            "confirm_pass_label": "Confirmer le mot de passe",
+            "pass_placeholder": "Minimum 6 caractères"
+        },
+        "company": {
+            "title": "Mentions Légales (Facturation)",
+            "name_label": "NOM DE LA STRUCTURE / RAISON SOCIALE",
+            "name_placeholder": "Non renseigné",
+            "address_label": "ADRESSE DU SIÈGE SOCIAL",
+            "siret_label": "SIRET",
+            "tva_label": "NUMÉRO DE TVA INTRACOMMUNAUTAIRE",
+            "save_button": "Enregistrer les modifications"
+        },
+        "notifications": {
+            "title": "Notifications",
+            "care": "Rappels de soins",
+            "care_desc": "Recevoir des alertes pour les vaccins et vermifuges.",
+            "support": "Messages du support",
+            "support_desc": "Recevoir les actualités et messages importants."
+        },
+        "backup": {
+            "title": "Mes Données",
+            "backup_desc": "Téléchargez une copie de vos données ou restaurez une sauvegarde.",
+            "backup_button": "Sauvegarder mes données",
+            "restore_button": "Restaurer une sauvegarde",
+            "danger_zone": "Zone de Danger",
+            "delete_account": "Supprimer mon compte"
+        },
+        "appearance": {
+            "title": "Apparence",
+            "dark_mode": "Mode Sombre",
+            "toggle_desc": "Basculer entre le thème clair et sombre.",
+            "theme_color": "COULEUR DU THÈME",
+            "themes": {
+                "saddle": "Saddle (Orange)",
+                "forest": "Forest (Vert)",
+                "ocean": "Ocean (Bleu)",
+                "berry": "Berry (Rose)",
+                "minimalist": "Minimaliste"
+            }
+        },
+        "legal": {
+            "modal_title": "Informations & Contrats",
+            "link_text": "Consulter les CGU / CGV et Mentions Légales"
+        },
+        "alerts": {
+            "cancel_confirm_msg": "Êtes-vous sûr de vouloir résilier votre abonnement ?\n\nVous perdrez l'accès aux fonctionnalités Premium à la fin de la période en cours.",
+            "redirect_confirm": "Vous allez être redirigé vers le paiement sécurisé pour valider votre nouvelle offre :"
+        },
+        "delete_modal": {
+            "confirm_question": "Supprimer définitivement votre compte ?",
+            "irreversible": "Cette action est irréversible. Toutes vos données (chevaux, factures, clients...) seront définitivement effacées.",
+            "support_alert": "Pour des raisons de sécurité, veuillez contacter le support pour finaliser la suppression définitive de votre compte.",
+            "confirm": "Confirmer la suppression"
+        }
+    },
+    "settings_subtitle": "Gérez votre abonnement, votre compte et vos préférences.",
+    "logout": "Déconnexion",
+    "dashboard": "Tableau de bord",
+    "horses": "Chevaux",
+    "breeding": "Élevage",
+    "health": "Santé",
+    "finances": "Finances",
+    "competition": "Compétition",
+    "calendar": "Calendrier",
+    "profile": "Profil",
+    "language": "Langue",
+    "common": {
+        "close": "Fermer",
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "ok": "OK",
+        "add": "Ajouter",
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "confirm": "Confirmer"
+    },
+    "select_language": "Choisir la langue",
+    "appearance": "Apparence",
+    "dark_mode": "Mode Sombre",
+    "theme_color": "Couleur d'accentuation",
+    "home": "Accueil",
+    "my_stable": "Mon Écurie",
+    "my_breeding": "Mon Élevage",
+    "legal_register": "Registre Légal",
+    "planning": "Planning",
+    "my_team": "Mon Équipe",
+    "half_leases": "Demi-Pensions",
+    "budget": "Budget",
+    "billing": "Facturation",
+    "clients": "Clients",
+    "stocks": "Stocks",
+    "nutrition": "Nutrition",
+    "gynecology": "Gynéco",
+    "breeding_menu": "Élevage",
+    "messaging": "Messagerie",
+    "support": "Support",
+    "partner_mode": "Mode Partenaire",
+    "welcome_user": "Bonjour, {{name}}",
+    "weather": "Météo",
+    "care": "Soins",
+    "team_and_partners": "Mon Équipe & Partenaires",
+    "manage_half_leases": "Gestion Demi-Pensions",
+    "manage_breeding": "Gestion Élevage",
+    "manage_clients": "Gestion Clients",
+    "manage_stocks": "Gestion des Stocks",
+    "competition_season": "Saison Compétition",
+    "training_details": "Détails Entraînement",
+    "accounts": "Comptes",
+    "simulation": {
+        "view_for": "Vue simulée pour :",
+        "exit": "Quitter"
+    },
+    "demo": {
+        "expired": "La période de démo est terminée ! Merci d'avoir essayé Equinox.",
+        "bar_text": "Mode Démo : {{days}}j {{hours}}h {{minutes}}min"
+    },
+    "trial": {
+        "text": "Essai Pro Élite : {{days}} jours restants",
+        "subscribe": "S'abonner"
+    },
+    "landing": {
+        "coming_soon": {
+            "title": "Bientôt disponible !",
+            "desc": "Nous finalisons actuellement l'intégration sécurisée des paiements. L'ouverture des inscriptions est prévue très prochainement.",
+            "stay_connected": "Restez connecté : Nous avons hâte de vous accueillir pour profiter de votre mois d'essai gratuit !",
+            "button": "J'ai compris, à très vite !"
+        },
+        "seo": {
+            "title": "Logiciel de gestion d'écurie et facturation",
+            "description": "La gestion de votre écurie, enfin simple et automatisée. Facturation auto, suivi des chevaux, communication propriétaires. Créez votre écurie gratuitement.",
+            "keywords": "logiciel écurie, gestion équestre, facturation écurie, carnet de santé cheval, logiciel centre équestre, application cavalier, élevage chevaux"
+        },
+        "nav": {
+            "dashboard": "Mon Dashboard",
+            "login": "Se connecter",
+            "create": "Créer un compte",
+            "download_app": "Télécharger l'app"
+        },
+        "hero": {
+            "new_mobile": "Nouveau : Application Mobile Disponible",
+            "title_main": "La gestion de votre <1>écurie</1>,",
+            "title_sub": "enfin simple et automatisée.",
+            "subtitle": "Facturation, suivi des chevaux, communication propriétaires. Gagnez du temps pour ce qui compte vraiment : <1>vos chevaux</1>.",
+            "cta_create": "Créer mon écurie gratuitement",
+            "cta_access": "Accéder à mon écurie",
+            "elite_offer_btn": "1 mois gratuit"
+        },
+        "metrics": {
+            "horses_work": "Chevaux au travail",
+            "care_todo": "Soins à faire",
+            "weather": "Météo du jour",
+            "sunny": "Ensoleillé"
+        },
+        "pain_points": {
+            "title": "Vous méritez mieux qu'Excel et des papiers volants",
+            "invoices": {
+                "title": "Fini les factures en retard",
+                "text": "Ne courez plus après les paiements. Tout est automatisé pour sécuriser votre trésorerie."
+            },
+            "sms": {
+                "title": "Fini les SMS perdus",
+                "text": "Centralisez toutes les demandes de soins et de travail. Plus rien ne passe à la trappe."
+            },
+            "paperwork": {
+                "title": "Fini la paperasse",
+                "text": "Registres, TVA... Equinox gère la conformité pour vous."
+            }
+        },
+        "features": {
+            "label": "FONCTIONNALITÉS CLÉS",
+            "main_title": "Tout pour gérer votre écurie sereinement",
+            "billing": {
+                "title": "Facturation Automatique",
+                "subtitle": "Générez vos factures de pension en 1 clic. Paiement par CB intégré.",
+                "desc": "Configurez vos pensions récurrentes et laissez Equinox faire le reste. Vos propriétaires reçoivent leur facture par email et peuvent payer instantanément en ligne.",
+                "commission": "* Commission transparente sur les paiements en ligne : 2.5% + 0.25€ par transaction."
+            },
+            "health": {
+                "title": "Carnet de Santé Digital",
+                "subtitle": "Tout l'historique de vos chevaux dans votre poche.",
+                "desc": "Sachez toujours où en sont les rappels de vaccins, vermifuges, maréchalerie. Partagez le carnet de santé avec le propriétaire ou le vétérinaire en un instant."
+            },
+            "messaging": {
+                "title": "Messagerie Dédiée",
+                "subtitle": "Gardez le lien avec vos propriétaires et équipe.",
+                "desc": "Séparez le pro du perso. Discutez par cheval ou par sujet. Envoyez des photos et des vidéos directement depuis l'écurie."
+            }
+        },
+        "pricing": {
+            "title": "Une tarification transparente",
+            "subtitle": "Sans frais cachés. Sans engagement.",
+            "individuals": "Offres Particuliers",
+            "pros": "Offres Professionnelles",
+            "monthly": "Mensuel",
+            "annual": "Annuel",
+            "discount": "-20%",
+            "most_popular": "LE PLUS POPULAIRE",
+            "choose_offer": "Choisir cette offre",
+            "cards": {
+                "discovery": "Découverte",
+                "discovery_target": "Pour débuter",
+                "free": "Gratuit",
+                "passion": "Passion",
+                "passion_target": "Pour les propriétaires",
+                "passion_breeding": "Passion Élevage",
+                "passion_breeding_target": "Pour éleveurs amateurs",
+                "extra_horse": "Cheval Supplémentaire",
+                "extra_horse_target": "Besoin de plus ?",
+                "start": "Start",
+                "start_target": "Petites structures",
+                "breeder": "Spécial Éleveur",
+                "breeder_target": "Haras & élevages",
+                "pro": "Pro",
+                "pro_target": "Écuries actives",
+                "elite": "Elite",
+                "elite_target": "Grandes structures",
+                "features": {
+                    "1_horse_1_mare": "1 Cheval + 1 Jument",
+                    "health_record": "Carnet de Santé",
+                    "breeding_register": "Registre d'Élevage",
+                    "simple_calendar": "Calendrier simple",
+                    "standard_support": "Support (Standard)",
+                    "unlimited_horses": "Chevaux Illimités",
+                    "budget_mgmt": "Gestion Budget",
+                    "storage_media": "Stockage Photos/Vidéos",
+                    "alerts": "Alertes & Rappels",
+                    "competition": "Compétition",
+                    "half_leases": "Demi-Pensions",
+                    "priority_support": "Support Prioritaire",
+                    "5_mares": "5 Juments Poulinières",
+                    "repro_tracking": "Suivi Reproduction",
+                    "option_mare": "Option +1 Jument",
+                    "add_horse_life": "Ajoutez un cheval à vie",
+                    "one_time_payment": "Paiement en une fois",
+                    "no_subscription": "Sans abonnement",
+                    "stackable_free": "Cumulable avec Gratuit",
+                    "up_to_10": "Jusqu'à 10 Chevaux",
+                    "owner_mgmt": "Gestion Propriétaires",
+                    "simple_billing": "Facturation Simple",
+                    "care_reminders": "Soins & Rappels",
+                    "2_staff": "2 Comptes Staff",
+                    "unlimited_mares": "Juments Illimitées",
+                    "gyneco_tracking": "Suivi Gynéco",
+                    "planning": "Planning",
+                    "5_staff": "5 Staff",
+                    "full_billing": "Facturation Complète",
+                    "up_to_30": "Jusqu'à 30 Chevaux",
+                    "recurring_billing": "Facturation Récurrente",
+                    "planning_team": "Planning Équipe (5 Staff)",
+                    "stocks": "Stocks",
+                    "all_unlimited": "Tout Illimité",
+                    "full_breeding": "Module Élevage Complet",
+                    "accounting_export": "Comptabilité Export",
+                    "advanced_stocks": "Gestion Stocks Avancée",
+                    "vip_support": "Support VIP 24/7"
+                }
+            }
+        },
+        "footer": {
+            "tagline": "Le partenaire digital de votre réussite équestre. <br />Conçu avec passion en France.",
+            "legal": "Légal",
+            "terms_use": "Conditions Générales d'Utilisation",
+            "terms_sale": "Conditions Générales de Vente",
+            "legal_notice": "Mentions Légales",
+            "help_contact": "Aide & Contact",
+            "help_center": "Centre d'aide",
+            "contact_support": "Contacter le support",
+            "security": "Sécurité",
+            "secure_payments": "Paiements sécurisés",
+            "stripe_partner": "Partenaire certifié Stripe",
+            "copyright": "© 2025 Equinox, Développé par Dev Normandie. Tous droits réservés."
+        }
+    },
+    "dashboard_page": {
+        "stats": {
+            "horses": "Chevaux",
+            "breeding_horses": "Chevaux à l'élevage",
+            "planned_care": "Soins prévus",
+            "total": "Total"
+        },
+        "weather": {
+            "loading": "Chargement",
+            "my_position": "Ma Position",
+            "thunder": "Orage",
+            "snow": "Neige",
+            "rain": "Pluie",
+            "drizzle": "Bruine",
+            "fog": "Brouillard",
+            "cloudy": "Nuageux",
+            "partly_cloudy": "Eclaircies",
+            "sunny": "Ensoleillé"
+        },
+        "activities": {
+            "title": "Activités à venir",
+            "empty": "Rien de prévu prochainement.",
+            "see": "Voir"
+        },
+        "alerts": {
+            "title": "Alertes Santé",
+            "empty": "Aucune alerte santé.",
+            "see_health_record": "Voir le carnet de santé",
+            "late": "Retard {{days}}j",
+            "days_left": "J-{{days}}"
+        },
+        "upsell": {
+            "passion_title": "Offre Passion",
+            "passion_desc": "Passez à l'offre Passion pour gérer plus de chevaux et accéder aux compétitions.",
+            "discover": "Découvrir {{plan}}"
+        }
+    },
+    "horses_page": {
+        "title": "Mon Écurie",
+        "search_placeholder": "Chercher un cheval (nom, race)...",
+        "add_button": "Ajouter un cheval",
+        "no_results": "Aucun cheval trouvé pour \"{{query}}\"",
+        "edit_photo": "Modifier photo",
+        "upload_photo": "Importer photo",
+        "take_photo": "Prendre photo",
+        "crop_center": "Recadrer / Recentrer",
+        "delete_confirm_title": "Confirmer la suppression",
+        "delete_confirm_desc": "Êtes-vous sûr de vouloir retirer <strong>{{name}}</strong> de votre écurie ? Cette action est irréversible.",
+        "cancel": "Annuler",
+        "delete": "Supprimer",
+        "save": "Enregistrer",
+        "gender": {
+            "mare": "Jument",
+            "gelding": "Hongre",
+            "stallion": "Entier / Étalon"
+        },
+        "modal": {
+            "title": "Nouveau Cheval",
+            "or_manual": "OU REMPLIR MANUELLEMENT",
+            "scan_doc": "Scanner le carnet (Auto-remplissage)",
+            "processing": "Cortex Vision analyse le document...",
+            "photo_label": "Photo Profil",
+            "name_placeholder": "Nom du cheval",
+            "origin_placeholder": "Provenance / D'où vient-il ?",
+            "breed_placeholder": "Race",
+            "age_placeholder": "Âge",
+            "color_placeholder": "Robe (ex: Bai)",
+            "gender_label": "Sexe"
+        },
+        "limit_reached": {
+            "title": "Limite de chevaux atteinte ! 🛑",
+            "desc": "Pour ajouter plus de chevaux, vous devez passer à l'offre supérieure.",
+            "see_offers": "Voir les offres ?"
+        },
+        "upgrade_modal": {
+            "title_breeding": "Passez à l'offre Passion Élevage !",
+            "title_general": "Passez à la vitesse supérieure !",
+            "desc_limited_breeding": "L'offre <strong>Découverte Élevage</strong> est limitée à 1 cheval.",
+            "desc_limited_general": "L'offre <strong>Découverte</strong> est limitée à 1 cheval.",
+            "benefits_breeding": "Avec l'offre Passion Élevage, gérez plus de chevaux, accédez au carnet de santé complet, au module budget et aux alertes poulinage.",
+            "benefits_general": "Avec l'offre Passion, gérez autant de chevaux que vous le souhaitez et accédez à des fonctionnalités exclusives (Budget, Compétitions, Partage...).",
+            "discover_btn": "Découvrir l'offre {{plan}}",
+            "no_thanks": "Non merci, je garde mon cheval unique"
+        },
+        "extra_slot_modal": {
+            "title": "Besoin de plus de place ?",
+            "desc": "Vous avez atteint la limite de votre forfait actuel.",
+            "option_title": "Option Cheval Supplémentaire",
+            "option_desc": "Ajoutez <strong>1 Cheval</strong> à votre écurie pour seulement",
+            "price": "2,00 €",
+            "month": "/ mois",
+            "btn": "Ajouter un cheval (+2€)",
+            "success_alert": "✅ Félicitations ! Un emplacement supplémentaire a été ajouté à votre écurie."
+        }
+    },
+    "care_page": {
+        "title": "Carnet de Santé",
+        "add_button": "Ajouter un soin",
+        "tabs": {
+            "vaccines": "Vaccins",
+            "wormers": "Vermifuges",
+            "farrier": "Maréchal",
+            "osteo": "Ostéo/Dentiste"
+        },
+        "summary": {
+            "title": "Résumé",
+            "up_to_date": "À jour",
+            "upcoming": "À venir (7j)",
+            "late": "En retard"
+        },
+        "advice": {
+            "title": "Conseil Vétérinaire - {{season}}",
+            "recommended": "Molécule recommandée :"
+        },
+        "card": {
+            "reminder_in": "Rappel dans {{days}} jours",
+            "late_by": "En retard de {{days}} jours",
+            "reminder_today": "Rappel Aujourd'hui",
+            "edit": "Modifier",
+            "delete": "Supprimer"
+        },
+        "modal": {
+            "add_title": "Ajouter : {{type}}",
+            "edit_title": "Modifier : {{type}}",
+            "type_label": "Type de Vaccin",
+            "wormer_label": "Marque / Molécule",
+            "label_label": "Libellé",
+            "select": "Sélectionner...",
+            "last_date": "Date du dernier soin (Optionnel - Pour calcul auto)",
+            "event_date": "Date de l'événement / Rappel (Calendrier)",
+            "interval_std": "Intervalle std: {{days}}j",
+            "practitioner": "Intervenant",
+            "select_practitioner": "-- Sélectionner un intervenant --",
+            "team": "Mon Équipe",
+            "partners": "Partenaires (Vétérinaire, Maréchal...)",
+            "owners": "Propriétaires / Clients",
+            "cancel": "Annuler",
+            "validate": "Valider"
+        },
+        "delete_confirm": "Voulez-vous vraiment supprimer cet élément de l'historique de santé ?"
+    },
+    "stock_page": {
+        "stats": {
+            "total_items": "Total Articles",
+            "low_stock": "Stock Faible"
+        },
+        "filter": {
+            "all": "Tout"
+        },
+        "add_button": "Nouvel Article",
+        "order": "COMMANDER",
+        "supplier_prefix": "Fournisseur: ",
+        "min_prefix": "Min: ",
+        "edit": "Modifier",
+        "modal": {
+            "edit_title": "Modifier Article",
+            "new_title": "Nouvel Article",
+            "name_label": "Nom de l'article",
+            "category_label": "Catégorie",
+            "quantity_label": "Quantité Actuelle",
+            "unit_label": "Unité",
+            "threshold_label": "Seuil Alerte (Min)",
+            "supplier_label": "Fournisseur",
+            "cancel": "Annuler",
+            "save": "Enregistrer"
+        },
+        "categories": {
+            "food": "Alimentation",
+            "bedding": "Litière",
+            "care": "Soins",
+            "material": "Matériel",
+            "misc": "Divers"
+        }
+    },
+    "billing_page": {
+        "stats": {
+            "income": "Revenus",
+            "expenses": "Dépenses",
+            "result": "Résultat",
+            "pending": "En attente"
+        },
+        "chart": {
+            "title": "Évolution Financière"
+        },
+        "tabs": {
+            "clients": "Clients",
+            "suppliers": "Fournisseurs"
+        },
+        "actions": {
+            "export": "Export Comptable",
+            "new_invoice": "Nouvelle Facture",
+            "new_expense": "Ajouter une dépense",
+            "edit": "Modifier",
+            "validate": "Valider Facture",
+            "pay_online": "Payer en ligne (Carte Bancaire)",
+            "create_credit_note": "Créer Avoir",
+            "send": "Envoyer",
+            "download_pdf": "PDF",
+            "close": "Fermer"
+        },
+        "invoice_list": {
+            "title": "Dernières Factures Clients",
+            "empty": "Aucune facture client.",
+            "draft": "BROUILLON",
+            "credit_note_ref": "Avoir sur {{ref}}",
+            "status": {
+                "paid": "Payée",
+                "pending": "En attente",
+                "overdue": "En retard"
+            }
+        },
+        "expense_list": {
+            "title": "Factures Fournisseurs (Dépenses)",
+            "empty": "Aucune dépense enregistrée.",
+            "supplier": "Fournisseur",
+            "date": "Date",
+            "amount": "Montant",
+            "category": "Catégorie",
+            "receipt": "Justificatif"
+        },
+        "pdf": {
+            "invoice": "FACTURE",
+            "credit_note": "AVOIR",
+            "draft": "BROUILLON",
+            "date": "Date :",
+            "bill_to": "FACTURE A :",
+            "horse": "Cheval :",
+            "description": "DESCRIPTION",
+            "qty": "QTE",
+            "unit_price": "PRIX UNIT.",
+            "total": "TOTAL",
+            "total_ht": "Total HT :",
+            "vat": "TVA (20%) :",
+            "net_to_pay": "NET A PAYER :",
+            "footer": "Facture générée par la solution Equinox pour le compte de {{stable}}."
+        },
+        "export_pdf": {
+            "title": "RAPPORT COMPTABLE",
+            "date": "Date de l'export :",
+            "headers": [
+                "Date",
+                "Type",
+                "Référence",
+                "Tiers",
+                "Statut",
+                "Montant TTC"
+            ],
+            "types": {
+                "revenue": "Recette",
+                "expense": "Dépense"
+            }
+        }
+    },
+    "billing_modals": {
+        "invoice": {
+            "edit_title": "Modifier Facture",
+            "new_title": "Nouvelle Facture",
+            "client_label": "Client",
+            "horse_label": "Cheval concerné",
+            "date_label": "Date",
+            "recurrence_label": "Récurrence",
+            "recurrence_none": "Aucune (Ponctuelle)",
+            "recurrence_monthly": "Mensuelle",
+            "recurrence_quarterly": "Trimestrielle",
+            "lines_title": "Lignes de facturation",
+            "desc_placeholder": "Description (ex: Pension Février)",
+            "amount_placeholder": "Prix",
+            "add_line": "Ajouter ligne",
+            "total_label": "Total:",
+            "cancel": "Annuler",
+            "save": "Enregistrer"
+        },
+        "expense": {
+            "title": "Nouvelle Dépense",
+            "supplier_label": "Fournisseur",
+            "date_label": "Date",
+            "amount_label": "Montant TTC",
+            "category_label": "Catégorie",
+            "scan_button": "Scanner Facture",
+            "file_button": "Importer Fichier",
+            "cancel": "Annuler",
+            "save": "Enregistrer"
+        }
+    },
+    "billing_alerts": {
+        "finalize_confirm": "Valider cette facture ?\nUne fois validée, elle recevra un numéro officiel et ne pourra plus être modifiée.",
+        "finalize_success": "Facture validée sous le numéro {{number}}",
+        "credit_note_confirm": "Créer un Avoir pour cette facture ?",
+        "credit_note_created": "Brouillon d'avoir créé. Vous pouvez le vérifier et le valider.",
+        "edit_locked": "Impossible de modifier une facture validée (Loi anti-fraude).\nVeuillez créer un Avoir si nécessaire.",
+        "send_confirm": "Envoyer la facture #{{number}} par email au client ?",
+        "send_success": "La facture #{{number}} a été envoyée par email avec succès !",
+        "send_locked": "Veuillez d'abord valider (finaliser) la facture avant de l'envoyer.",
+        "payment_confirm": "Confirmer le règlement de cette facture ?",
+        "online_payment_confirm": "Payer la facture #{{number}} de {{amount}} € en ligne ?\n(Commission Equinox 1% incluse)",
+        "online_payment_error": "Erreur: Le compte bancaire de l'écurie n'est pas connecté.",
+        "cam_error": "Erreur caméra: "
+    },
+    "calendar_page": {
+        "title": "Mon Planning",
+        "views": {
+            "month": "Mois",
+            "week": "Semaine",
+            "day": "Jour"
+        },
+        "back_to_month": "Retour au mois",
+        "today": "Auj.",
+        "add_event": "Ajouter un événement",
+        "planning_of": "Planning du {{date}}",
+        "no_events": "Aucun événement. Ajoutez-en un !",
+        "days": {
+            "mon": "Lun",
+            "tue": "Mar",
+            "wed": "Mer",
+            "thu": "Jeu",
+            "fri": "Ven",
+            "sat": "Sam",
+            "sun": "Dim"
+        },
+        "form": {
+            "title": "Ajouter un événement",
+            "activity": "Activité",
+            "horse": "Cheval",
+            "rider": "Cavalier",
+            "date": "Date",
+            "time": "Heure",
+            "duration": "Durée (min)",
+            "cancel": "Annuler",
+            "save": "Enregistrer",
+            "add_category_prompt": "Nom de la nouvelle catégorie :",
+            "category_exists": "Cette catégorie existe déjà.",
+            "delete_category_confirm": "Supprimer la catégorie \"{{name}}\" ?",
+            "cannot_delete_system": "Impossible de supprimer les catégories système (Autre, Soin).",
+            "select_date_time": "Veuillez sélectionner une date et une heure.",
+            "invalid_date": "Date invalide (Format attendu: AAAA-MM-JJ et HH:MM).",
+            "save_success": "Événement ajouté avec succès !",
+            "duplicate_confirm": "Cet événement existe déjà dans le calendrier (doublon). Voulez-vous l'ajouter quand même ?",
+            "error_saving": "Erreur lors de la sauvegarde : {{error}}",
+            "manage_categories": {
+                "add_tooltip": "Ajouter une catégorie",
+                "delete_tooltip": "Supprimer la catégorie sélectionnée"
+            }
+        },
+        "event_details": {
+            "delete_confirm": "Êtes-vous sûr de vouloir supprimer cet événement ?",
+            "validate_confirm": "Valider cet événement ?",
+            "others": "autres"
+        },
+        "delete_confirm_title": "Supprimer l'événement ?",
+        "delete_confirm_desc": "Cette action est irréversible. L'événement sera définitivement supprimé de votre planning.",
+        "delete_button": "Supprimer"
+    },
+    "activity_types": {
+        "dressage": "Dressage",
+        "saut": "Saut d'obstacles",
+        "tap": "Travail à pied (TAP)",
+        "longe": "Longe",
+        "marcheur": "Marcheur",
+        "stable": "Box",
+        "other": "Autre",
+        "promenade": "Promenade",
+        "trotting": "Trotting",
+        "americaine": "Américaine",
+        "heat": "Travail par Heat",
+        "lignedroite": "Ligne Droite",
+        "speed": "Speed/Vitesse",
+        "training": "Training",
+        "race": "Jour de Course",
+        "care": "Soins Vétérinaires",
+        "chasse": "Galop de chasse",
+        "canter": "Canter",
+        "demitrain": "Demi-train",
+        "boutvite": "Bout-vite",
+        "boites": "Boites",
+        "fond": "Travail de Fond",
+        "denivele": "Travail Dénivelé",
+        "recup": "Récup Active",
+        "carriere": "Carrière"
+    },
+    "messaging_page": {
+        "sidebar": {
+            "title": "Messages",
+            "no_conversations": "Aucune conversation.",
+            "you_prefix": "Vous : "
+        },
+        "chat": {
+            "audio_call_tooltip": "Appel Audio",
+            "video_call_tooltip": "Appel Vidéo",
+            "message_placeholder": "Écrivez un message...",
+            "select_conversation": "Sélectionnez une conversation pour discuter.",
+            "photo_label": "Photo envoyée",
+            "errors": {
+                "send_error": "Erreur lors de l'envoi.",
+                "upload_error": "Erreur lors du téléchargement."
+            }
+        },
+        "notifications": {
+            "enable_tooltip": "Activer les notifications",
+            "enabled_alert": "Notifications activées !",
+            "error_alert": "Erreur d'activation."
+        },
+        "incoming_call": {
+            "title": "Appel Entrant",
+            "calling_text": "{{name}} vous appelle...",
+            "reject": "Refuser",
+            "answer": "Répondre"
+        },
+        "new_conv": {
+            "title": "Nouvelle Conversation",
+            "phone_placeholder": "Numéro de téléphone",
+            "btn_create": "Démarrer",
+            "btn_cancel": "Annuler",
+            "user_not_found": "Utilisateur introuvable",
+            "cannot_message_self": "Vous ne pouvez pas vous écrire à vous-même"
+        }
+    },
+    "pwa_install_title": "Installer Equinox",
+    "pwa_install_desc": "Ajoutez l'application à votre écran d'accueil pour une meilleure expérience et les notifications.",
+    "pwa_ios_step1": "1. Appuyez sur le bouton partage",
+    "pwa_ios_step2_pre": "2. Sélectionnez",
+    "pwa_ios_step2_strong": "Sur l'écran d'accueil",
+    "pwa_install_button": "Installer l'application",
+    "footer": {
+        "tagline": "Le partenaire digital de votre réussite équestre. <br />Conçu avec passion en France.",
+        "legal": "Légal",
+        "terms_use": "Conditions Générales d'Utilisation",
+        "terms_sale": "Conditions Générales de Vente",
+        "legal_notice": "Mentions Légales",
+        "help_contact": "Aide & Contact",
+        "help_center": "Centre d'aide",
+        "contact_support": "Contacter le support",
+        "security": "Sécurité",
+        "secure_payments": "Paiements sécurisés",
+        "stripe_partner": "Partenaire certifié Stripe",
+        "copyright": "© 2025 Equinox, Développé par Dev Normandie. Tous droits réservés."
+    },
+    "breeding_page": {
+        "seo_title": "Élevage - Equinox",
+        "seo_desc": "Suivi de reproduction, saillies et poulinages.",
+        "calendar_btn": "Calendrier",
+        "advice_btn": "Conseil Croisement",
+        "advice_locked_alert": "Fonctionnalité Premium : Passez à la formule supérieure pour accéder aux conseils de croisement.",
+        "add_mare_btn": "Ajouter une poulinière",
+        "stats": {
+            "mares": "Poulinières",
+            "pregnant": "Gestantes",
+            "foals_expected": "Poulains Attendus 2025"
+        },
+        "planning_title": "Planning des Actes",
+        "term_date": "Terme Prévu",
+        "actions": {
+            "profile": "Profil",
+            "health": "Santé",
+            "tracking": "Suivi",
+            "delete_tooltip": "Supprimer la jument",
+            "edit_tooltip": "Modifier"
+        },
+        "modal": {
+            "title_edit": "Modifier la Jument",
+            "title_add": "Nouvelle Poulinière",
+            "role_label": "Type / Rôle",
+            "roles": {
+                "mare": "Poulinière",
+                "recipient": "Porteuse (Receveuse)",
+                "donor": "Donneuse"
+            },
+            "name_label": "Nom de la Jument",
+            "internal_number_label": "Numéro Interne (Collier)",
+            "status_label": "Statut Actuel",
+            "statuses": {
+                "empty": "Vide",
+                "inseminated": "Inseminée (Suivi en cours)",
+                "pregnant": "Gestante",
+                "foaling": "Poulinage Imminent"
+            },
+            "sire_label": "Etalon (Père)",
+            "bio_sire_label": "Père Biologique (Etalon)",
+            "bio_dam_label": "Mère Biologique (Donneuse)",
+            "term_date_label": "Date de Terme (Estimée)",
+            "cancel": "Annuler",
+            "save": "Sauvegarder",
+            "add": "Ajouter"
+        },
+        "upgrade_modal": {
+            "title": "Passez à l'offre Passion Élevage !",
+            "limit_desc": "L'offre <strong>Découverte</strong> est limitée à 1 jument poulinière.",
+            "benefits_desc": "Avec l'offre <strong>Passion Élevage</strong> (4,90 €/mois), gérez jusqu'à 5 juments et accédez à des fonctionnalités exclusives : carnet de santé complet, gestion de budget et support prioritaire.",
+            "cta_button": "Découvrir l'offre Passion Élevage",
+            "cancel_button": "Non merci, je garde ma jument unique"
+        },
+        "payment_modal": {
+            "title": "Augmenter votre quota ?",
+            "limit_reached": "Vous avez atteint la limite de votre formule.",
+            "add_one_mare": "Ajouter +1 Jument",
+            "success_alert": "Paiement validé avec succès ! Quota augmenté.",
+            "pay_btn": "Payer",
+            "cancel": "Annuler",
+            "lifetime_payment": "Paiement unique à vie",
+            "one_time_payment": "Paiement unique"
+        },
+        "delete_modal": {
+            "title": "Confirmer la suppression",
+            "confirm_text": "Êtes-vous sûr de vouloir retirer <strong>{{name}}</strong> ?",
+            "warning_text": "Tout l'historique de reproduction sera effacé.",
+            "cancel": "Annuler",
+            "confirm": "Supprimer"
+        },
+        "status": {
+            "empty": "Vide",
+            "inseminated": "Inseminée",
+            "pregnant": "Gestante",
+            "foaling": "Poulinage"
+        }
+    },
+    "competition_page": {
+        "stats": {
+            "season_earnings": "Gains Saison",
+            "results": "Résultats",
+            "clear_rounds": "Sans Faute",
+            "victories": "Vict.",
+            "races": "Courses",
+            "competitions": "Concours"
+        },
+        "links": {
+            "france_galop": "France Galop ↗",
+            "infonet": "Infonet ↗",
+            "ffe_compet": "FFE Compet ↗"
+        },
+        "add_competition_btn": "Ajouter un Concours",
+        "competition_list": {
+            "entries_count": "Engagés"
+        },
+        "details": {
+            "delete_confirm": "Supprimer ce concours ?",
+            "entries_results_title": "Engagements & Résultats",
+            "no_entries": "Aucun engagement.",
+            "select_hint": "Sélectionnez un concours pour voir les détails"
+        },
+        "entry_item": {
+            "class_prefix": "Epr.",
+            "earnings_label": "Gain:"
+        },
+        "add_entry_form": {
+            "title": "Ajouter un engagement",
+            "horse_placeholder": "Cheval",
+            "rider_placeholder": "Cavalier",
+            "class_placeholder": "Epreuve (ex: 120cm)",
+            "fee_placeholder": "Engag. (€)",
+            "add_btn": "Ajouter"
+        },
+        "modal": {
+            "title": "Nouveau Concours",
+            "name_label": "Nom de l'événement",
+            "name_placeholder": "Ex: Tournée des As",
+            "date_label": "Date",
+            "location_label": "Lieu",
+            "location_placeholder": "Ex: Lamotte Beuvron",
+            "level_label": "Niveau / Label",
+            "level_placeholder": "Ex: National, CSI 1*, Club...",
+            "cancel": "Annuler",
+            "create": "Créer",
+            "sync_alert": "Concours ajouté et synchronisé avec l'Agenda !"
+        }
+    },
+    "nutrition_page": {
+        "title": "Nutrition & Rations",
+        "subtitle": "Gérez l'alimentation de votre écurie",
+        "sidebar_title": "Mes Chevaux",
+        "no_horses": "Aucun cheval enregistré.",
+        "select_hint": "Sélectionnez un cheval pour voir sa ration.",
+        "ration_card": {
+            "title": "Fiche Ration :",
+            "edit_btn": "Modifier la ration",
+            "cancel_btn": "Annuler",
+            "save_btn": "Enregistrer",
+            "save_alert": "Ration mise à jour !"
+        },
+        "meals": {
+            "morning": "Matin",
+            "noon": "Midi",
+            "evening": "Soir",
+            "supplements": "Compléments",
+            "hay": "Fourrage / Foin"
+        },
+        "placeholders": {
+            "ration_input": "Ration {{meal}}...",
+            "add_product_btn": "Ajouter un produit",
+            "undefined": "Non défini"
+        },
+        "needs_estimation": {
+            "title": "Estimation des besoins",
+            "description_part1": "Sur la base des quantités numériques détectées, ce cheval consomme environ",
+            "description_part2": "unités (L/kg)",
+            "description_part3": "par semaine.",
+            "check_stock": "Pensez à vérifier vos stocks régulièrement."
+        }
+    },
+    "team_page": {
+        "title": "Mon Équipe & Partenaires",
+        "subtitle": "Gérez vos collaborateurs et experts",
+        "add_member_btn": "Ajouter un membre",
+        "default_partners": {
+            "vet": "Mon Vétérinaire",
+            "farrier": "Mon Maréchal",
+            "osteo": "Mon Ostéopathe",
+            "dentist": "Mon Dentiste"
+        },
+        "card": {
+            "ext_badge": "EXT",
+            "admin_badge": "Admin (Accès Complet)",
+            "no_phone": "Pas de téléphone",
+            "no_email": "Pas d'email",
+            "code_label": "Code :",
+            "copy_btn": "Copier",
+            "call_btn": "Appeler",
+            "email_btn": "Email",
+            "copied_alert": "Code {{code}} copié !",
+            "tooltips": {
+                "simulate": "Voir comme...",
+                "planning": "Voir le planning",
+                "edit": "Modifier",
+                "delete": "Supprimer"
+            }
+        },
+        "modal": {
+            "title_add": "Ajouter un membre",
+            "title_edit": "Modifier",
+            "name_label": "Nom",
+            "role_label": "Rôle",
+            "phone_label": "Téléphone",
+            "email_label": "Email",
+            "admin_label": "Accès Administrateur",
+            "admin_hint": "(Mêmes droits que moi)",
+            "cancel": "Annuler",
+            "save": "Enregistrer",
+            "roles": {
+                "Cavalier": "Cavalier",
+                "Propriétaire": "Propriétaire",
+                "Demi-pensionnaire": "Demi-pensionnaire",
+                "Groom Maison": "Groom Maison",
+                "Groom Concours": "Groom Concours",
+                "Palefrenier Soigneur": "Palefrenier Soigneur",
+                "Coach": "Coach",
+                "Vétérinaire": "Vétérinaire",
+                "Maréchal": "Maréchal-ferrant",
+                "Dentiste": "Dentiste",
+                "Ostéopathe": "Ostéopathe",
+                "Autre": "Autre"
+            }
+        },
+        "planning_modal": {
+            "title": "Planning de {{name}}",
+            "close": "Fermer",
+            "empty": "Rien à signaler. Planning vide !"
+        },
+        "simulation_modal": {
+            "title": "Mode Simulation",
+            "description": "Vous allez voir l'application en tant que",
+            "warning": "Certaines fonctionnalités (Paramètres, Facturation...) seront masquées selon les droits de cet utilisateur.",
+            "cancel": "Annuler",
+            "confirm": "Confirmer"
+        },
+        "alerts": {
+            "delete_confirm": "Supprimer ce membre ?",
+            "limit_reached": "Limite de {{max}} collaborateurs atteinte. Les partenaires externes (Vétérinaire, etc.) sont illimités."
+        },
+        "email_template": {
+            "subject": "Votre accès équipe Equinox",
+            "body": "Bonjour {{name}},\n\nVous avez été invité à rejoindre l'équipe Equinox.\nVoici votre code d'accès : {{code}}\n\nTéléchargez l'application ici : https://equinox-app.com\n\nÀ très vite sur Equinox !"
+        }
+    },
+    "clients_page": {
+        "search_placeholder": "Rechercher (Nom, Cheval)...",
+        "new_client_btn": "Nouveau Client",
+        "clients_count": "clients",
+        "client_id": "Client #{{id}}",
+        "no_horses": "Aucun cheval",
+        "active_badge": "Actif",
+        "call_btn": "Appeler",
+        "email_btn": "Email",
+        "invoice_btn": "Facture",
+        "delete_tooltip": "Supprimer",
+        "contact_details": "Coordonnées",
+        "main_address": "Adresse Principale",
+        "horses_title": "Chevaux",
+        "notes_title": "Notes",
+        "close_btn": "Fermer",
+        "modal": {
+            "title": "Nouveau Client",
+            "name_label": "Nom Complet",
+            "phone_label": "Téléphone",
+            "email_label": "Email",
+            "address_label": "Adresse",
+            "horses_label": "Chevaux",
+            "notes_label": "Notes",
+            "cancel_btn": "Annuler",
+            "submit_btn": "VALIDER",
+            "placeholders": {
+                "name": "Ex: Jean Dupont",
+                "phone": "06...",
+                "email": "email@...",
+                "address": "Adresse",
+                "horses": "Noms...",
+                "notes": "..."
+            }
+        }
+    },
+    "support_page": {
+        "title": "Support Client",
+        "contact_btn": "Contacter le Support",
+        "input_placeholder": "Écrivez votre message ici...",
+        "typing": "L'assistant écrit...",
+        "bot_welcome": "Bonjour ! Je suis l'assistant virtuel d'Equinox. Comment puis-je vous aider aujourd'hui ?\n\n1. Question technique\n2. Question sur mon abonnement\n3. Signaler un bug\n4. Autre",
+        "bot": {
+            "default_response": "Je comprends. Pourriez-vous me donner plus de détails ?",
+            "technical": "Pour les problèmes techniques, essayez d'abord de rafraîchir la page (F5). Si le problème persiste, videz le cache de votre navigateur. Cela a-t-il aidé ?",
+            "subscription": "Vous pouvez gérer votre abonnement directement dans les Paramètres > Mon Abonnement. Vous y trouverez vos factures et options de mise à niveau.",
+            "bug": "Désolé pour ce désagrément. Pouvez-vous décrire ce qu'il se passe exactement ? Une capture d'écran (que vous pourrez envoyer par mail) aiderait grandement nos équipes.",
+            "contact": "Bien sûr. Vous pouvez contacter notre support technique directement par email en cliquant sur le bouton ci-dessous.",
+            "thanks": "Ravi d'avoir pu vous aider ! N'hésitez pas si vous avez d'autres questions."
+        },
+        "mail": {
+            "subject": "Support Equinox - Demande d'assistance",
+            "body": "Bonjour,\n\nJe rencontre un problème : \n\n[Décrivez votre problème ici]\n\nCordialement,"
+        }
+    },
+    "half_lease_page": {
+        "new_contract_btn": "Nouveau Contrat",
+        "add_contract_btn": "Ajout. Contrat",
+        "health_btn": "Santé",
+        "tasks_title": "À FAIRE",
+        "no_tasks": "Aucune tâche.",
+        "task_placeholder": "Ex: Graisser les pieds...",
+        "ok_btn": "OK",
+        "paid_status": "PAYÉ",
+        "pending_status": "EN ATTENTE",
+        "edit_allowed": "Modif. Autorisée",
+        "read_only": "Lecture Seule",
+        "access_code": "Code",
+        "assigned_days": "JOURS ATTRIBUÉS",
+        "modal": {
+            "title": "Nouveau Contrat DP",
+            "horse_name": "Nom du Cheval",
+            "select_horse": "-- Sélectionner un cheval --",
+            "rider": "Cavalier (DP)",
+            "rider_placeholder": "Nom du cavalier",
+            "email": "Email (pour invitation)",
+            "email_placeholder": "nom@exemple.com",
+            "price": "Prix mensuel (€)",
+            "fixed_days": "Jours Fixes",
+            "cancel_btn": "Annuler",
+            "invite_btn": "Inviter"
+        },
+        "success_modal": {
+            "title": "Contrat Créé !",
+            "subtitle": "Si l'email ne s'est pas ouvert, copiez le message ci-dessous.",
+            "message_label": "MESSAGE D'INVITATION",
+            "close_btn": "Fermer",
+            "copy_btn": "Copier le message",
+            "copied_alert": "Message copié !"
+        },
+        "delete_modal": {
+            "title": "Supprimer ce contrat ?",
+            "subtitle": "L'accès du cavalier sera révoqué immédiatement.",
+            "cancel_btn": "Annuler",
+            "delete_btn": "Supprimer"
+        },
+        "edit_modal": {
+            "title": "Planning : {{rider}}",
+            "modify_days": "Modifier les jours",
+            "organize_work": "Organiser le travail",
+            "organize_desc": "Accéder au calendrier pour définir le programme de travail de {{rider}}.",
+            "open_calendar": "Ouvrir le Calendrier",
+            "close_btn": "Fermer",
+            "save_btn": "Sauvegarder"
+        }
+    },
+    "budget_page": {
+        "title": "Budget",
+        "subtitle": "Suivi des dépenses de votre écurie.",
+        "new_expense_btn": "Nouvelle Dépense",
+        "stats": {
+            "total_month": "Total {{month}}",
+            "top_category": "Poste Principal",
+            "expense_count": "Nombre de dépenses"
+        },
+        "empty_list": "Aucune dépense sur cette période.",
+        "delete_tooltip": "Supprimer",
+        "modal": {
+            "title": "Ajouter une dépense",
+            "amount": "Montant (€)",
+            "date": "Date",
+            "category": "Catégorie",
+            "description": "Description (Optionnel)",
+            "description_placeholder": "Ex: Vermifuge Duo",
+            "cancel_btn": "Annuler",
+            "add_btn": "Ajouter"
+        },
+        "delete_modal": {
+            "title": "Confirmer la suppression ?",
+            "subtitle": "Cette action est irréversible.",
+            "cancel_btn": "Annuler",
+            "confirm_btn": "Supprimer"
+        },
+        "categories": {
+            "pension": "Pension",
+            "farrier": "Maréchal",
+            "vet": "Vétérinaire",
+            "care": "Soins",
+            "competition": "Concours",
+            "lesson": "Cours/Stage",
+            "equipment": "Matériel",
+            "transport": "Transport",
+            "other": "Autre"
+        }
+    },
+    "register_page": {
+        "title": "Registre Légal",
+        "subtitle": "Conforme à l'Arrêté du 5 juin 2000",
+        "pdf_btn": "PDF Officiel",
+        "tabs": {
+            "sanitary": "Sanitaire",
+            "movements": "Mouvements",
+            "establishment": "Établissement"
+        },
+        "search_placeholder": "Rechercher un cheval, un type de soin...",
+        "view_all": "Tout",
+        "view_by_horse": "Par Cheval",
+        "establishment": {
+            "title": "Identification de l'Établissement",
+            "owner": "Détenteur / Responsable",
+            "name": "Nom de la Structure",
+            "address": "Adresse",
+            "vet": "Vétérinaire Sanitaire",
+            "siret": "Numéro SIRET",
+            "edit_btn": "Modifier",
+            "save_btn": "Enregistrer",
+            "not_set": "Non renseigné"
+        },
+        "movements": {
+            "title": "Mouvements des Équidés",
+            "columns": {
+                "date": "Date",
+                "movement": "Mouvement",
+                "horse": "Cheval",
+                "reason": "Motif",
+                "origin_dest": "Prov./Dest."
+            },
+            "empty": "Aucun mouvement ne correspond à votre recherche."
+        },
+        "sanitary": {
+            "title": "Suivi Sanitaire & Soins",
+            "columns": {
+                "date": "Date",
+                "horse": "Cheval Concerné",
+                "nature": "Nature",
+                "details": "Produit / Détails",
+                "practitioner": "Intervenant"
+            },
+            "empty": "Aucune intervention ne correspond à votre recherche.",
+            "warning": "Rappel Réglementaire : Vous devez conserver les ordonnances vétérinaires relatives à ces soins en annexe de ce registre pendant une durée minimale de 5 ans."
+        }
+    },
+    "profile_page": {
+        "upload_error_size": "L'image est trop volumineuse. Maximum 3Mo.",
+        "save_success": "Profil mis à jour avec succès !",
+        "save_error_storage": "Espace de stockage plein ou image trop lourde pour la sauvegarde locale.",
+        "save_error_generic": "Une erreur est survenue lors de la sauvegarde.",
+        "change_logo": "Changer",
+        "name_label": "Nom ou Écurie",
+        "email_label": "Email",
+        "password_label": "Mot de passe",
+        "save_btn": "Enregistrer",
+        "default_name": "Cavalier"
+    },
+    "switch_account": {
+        "title": "Changer de compte",
+        "confirm_forget": "Oublier ce compte de la liste ?",
+        "forget_tooltip": "Oublier ce compte",
+        "no_accounts": "Aucun compte enregistré sur cet appareil.",
+        "add_account_btn": "Se connecter à un autre compte",
+        "create_account_btn": "Créer un nouveau compte",
+        "cancel_btn": "Annuler / Retour"
+    },
+    "login": {
+        "welcome_back": "Bon retour !",
+        "team_code_button": "🔑 J'ai un code d'accès équipe"
+    },
+    "onboarding": {
+        "welcome_on": "Bienvenue sur",
+        "professional": "Professionnel",
+        "owner": "Propriétaire",
+        "pro_modal": {
+            "title": "Configurez votre Écurie",
+            "subtitle": "Adaptez l'application à votre métier",
+            "instruction": "Sélectionnez vos disciplines et activités principales :",
+            "activities": {
+                "sport_horses": "Chevaux de sport",
+                "race_trotters": "Chevaux de course (Trotteurs)",
+                "race_gallopers": "Chevaux de course (Galoppeurs)",
+                "endurance_horses": "Chevaux d'endurance",
+                "owners_stable": "Écurie de propriétaire",
+                "breeder": "Éleveur"
+            },
+            "back_btn": "Retour",
+            "validate_btn": "Valider et Continuer"
+        },
+        "pricing": {
+            "title_pro": "Choisissez votre offre Professionnelle",
+            "title_owner": "Choisissez votre offre Propriétaire",
+            "subtitle": "Des tarifs adaptés à votre activité.",
+            "no_commitment": "✨ Toutes nos offres sont sans engagement",
+            "monthly": "Mensuel",
+            "yearly": "Annuel",
+            "loading": "Chargement des tarifs en direct...",
+            "popular": "POPULAIRE",
+            "free": "Gratuit",
+            "unavailable": "Non disponible",
+            "per_month": "/ mois",
+            "per_year": "/ an",
+            "save_badge": "Economisez",
+            "selected": "Sélectionné",
+            "choose": "Choisir",
+            "validate_selection": "Valider ma sélection",
+            "back_to_profile": "Retour au choix du profil",
+            "demo_pro_elite": "Démo Pro Élite",
+            "demo_free_trial": "Gratuit (30 jours)",
+            "demo_desc": "Testez toutes les fonctionnalités Pro (Facturation, Élevage illimité, Staff...) sans engagement.",
+            "try_now": "Essayer Maintenant",
+            "features": {
+                "one_horse_mare": "1 Cheval + 1 Jument",
+                "health_book": "Carnet de Santé",
+                "breeding_registry": "Registre d'Élevage",
+                "simple_calendar": "Calendrier simple",
+                "support_standard": "Support (Standard)",
+                "five_mares": "5 Juments Poulinières",
+                "repro_tracking": "Suivi Reproduction",
+                "budget_management": "Gestion Budget",
+                "option_mare": "Option +1 Jument (Add-on)",
+                "support_priority": "Support Prioritaire",
+                "unlimited_horses": "Chevaux Illimités",
+                "media_storage": "Stockage Photos/Vidéos",
+                "alerts_reminders": "Alertes & Rappels",
+                "competition_module": "Module Compétition",
+                "half_lease_management": "Gestion Demi-Pensions",
+                "upto_10_horses": "Jusqu'à 10 Chevaux",
+                "owner_management": "Gestion Propriétaires",
+                "simple_billing": "Facturation Simple",
+                "care_reminders": "Soins & Rappels",
+                "two_staff": "2 Comptes Staff",
+                "client_support": "Support Client",
+                "upto_30_horses": "Jusqu'à 30 Chevaux",
+                "recurring_billing": "Facturation Récurrente",
+                "team_planning_5": "Planning Équipe (5 Staff)",
+                "stock_management": "Gestion des Stocks",
+                "unlimited_breeding": "Module Élevage Illimité",
+                "unlimited_staff": "Staff Illimité",
+                "export_accounting": "Comptabilité Export",
+                "unlimited_mares": "Juments Illimitées",
+                "gyn_tracking": "Suivi gynéco",
+                "care": "Soins",
+                "planning": "Planning",
+                "five_staff": "5 Staff",
+                "full_billing": "Facturation complète",
+                "full_features": "Fonctionnalités complètes"
+            }
+        }
+    }
+}

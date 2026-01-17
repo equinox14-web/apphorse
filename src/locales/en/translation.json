@@ -1,0 +1,1314 @@
+{
+    "welcome": "Welcome",
+    "settings": "Settings",
+    "page_titles": {
+        "dashboard": "Dashboard",
+        "horses": "My Stable",
+        "settings": "Settings"
+    },
+    "settings_page": {
+        "subscription": {
+            "title": "My Subscription",
+            "current_offer": "Current Plan:",
+            "invoices_pdf": "Invoices (PDF)",
+            "change_offer": "Change Plan",
+            "cancel_sub": "Cancel Subscription",
+            "plans_title": "Subscription Plans",
+            "monthly": "Monthly",
+            "yearly": "Yearly",
+            "discount": "-20%",
+            "per_month": "/ month",
+            "per_year": "/ year",
+            "current_badge": "Current Plan",
+            "change_sub": "Choose this plan"
+        },
+        "plan_features": {
+            "special_breeder": [
+                "1 Horse + 5 Broodmares",
+                "Health Record & Repro Tracking",
+                "Budget & Stock Management",
+                "Priority Support"
+            ],
+            "start": [
+                "Up to 10 Horses",
+                "Owner Management",
+                "Simple Invoicing",
+                "Care & Reminders"
+            ],
+            "pro": [
+                "Up to 30 Horses",
+                "Recurring Invoicing",
+                "Team Planning",
+                "Accounting Export"
+            ],
+            "elite": [
+                "Unlimited Everything",
+                "Full Breeding Module",
+                "Advanced Stock Management",
+                "VIP Support 24/7"
+            ]
+        },
+        "stripe_connect": {
+            "title": "Collect Payments (Stripe)",
+            "desc": "Connect your bank account to allow your clients to pay invoices online via credit card.",
+            "consent_label": "I accept the payment service terms of use:",
+            "conditions": [
+                "I authorize Equinox to issue invoices in my name and on my behalf (Billing Mandate).",
+                "I accept the 1% service fee per transaction charged by Equinox.",
+                "I accept Stripe's banking fees (approx. 1.4% + €0.25) deducted from each payment."
+            ],
+            "connect_button": "Connect my bank account"
+        },
+        "account": {
+            "title": "My Account",
+            "email_label": "EMAIL ADDRESS",
+            "edit_button": "Edit",
+            "password_label": "PASSWORD",
+            "placeholder_pass": "••••••••",
+            "change_button": "Change",
+            "logout": "Logout",
+            "name_label": "Display Name",
+            "change_pass_title": "Change Password",
+            "new_pass_label": "New Password",
+            "confirm_pass_label": "Confirm Password",
+            "pass_placeholder": "Minimum 6 characters"
+        },
+        "company": {
+            "title": "Legal Information (Billing)",
+            "name_label": "COMPANY NAME / BUSINESS NAME",
+            "name_placeholder": "Not set",
+            "address_label": "HEADQUARTERS ADDRESS",
+            "siret_label": "SIRET (Business ID)",
+            "tva_label": "VAT NUMBER",
+            "save_button": "Save Changes"
+        },
+        "notifications": {
+            "title": "Notifications",
+            "care": "Care Reminders",
+            "care_desc": "Receive alerts for vaccines and wormers.",
+            "support": "Support Messages",
+            "support_desc": "Receive news and important messages."
+        },
+        "backup": {
+            "title": "My Data",
+            "backup_desc": "Download a copy of your data or restore a backup.",
+            "backup_button": "Backup Data",
+            "restore_button": "Restore Backup",
+            "danger_zone": "Danger Zone",
+            "delete_account": "Delete My Account"
+        },
+        "appearance": {
+            "title": "Appearance",
+            "dark_mode": "Dark Mode",
+            "toggle_desc": "Switch between light and dark themes.",
+            "theme_color": "THEME COLOR",
+            "themes": {
+                "saddle": "Saddle (Orange)",
+                "forest": "Forest (Green)",
+                "ocean": "Ocean (Blue)",
+                "berry": "Berry (Pink)",
+                "minimalist": "Minimalist"
+            }
+        },
+        "legal": {
+            "modal_title": "Information & Agreements",
+            "link_text": "View Terms of Use / Sales & Legal Notice"
+        },
+        "alerts": {
+            "cancel_confirm_msg": "Are you sure you want to cancel your subscription?\n\nYou will lose access to Premium features at the end of the current billing period.",
+            "redirect_confirm": "You will be redirected to the secure payment page to validate your new plan:"
+        },
+        "delete_modal": {
+            "confirm_question": "Permanently Delete Account?",
+            "irreversible": "This action is irreversible. All your data (horses, invoices, clients...) will be permanently erased.",
+            "support_alert": "For security reasons, please contact support to finalize the permanent deletion of your account.",
+            "confirm": "Confirm Deletion"
+        }
+    },
+    "settings_subtitle": "Manage your subscription, account and preferences.",
+    "logout": "Logout",
+    "dashboard": "Dashboard",
+    "horses": "Horses",
+    "breeding": "Breeding",
+    "health": "Health",
+    "finances": "Finances",
+    "competition": "Competition",
+    "calendar": "Calendar",
+    "profile": "Profile",
+    "language": "Language",
+    "common": {
+        "close": "Close",
+        "save": "Save",
+        "cancel": "Cancel",
+        "ok": "OK",
+        "add": "Add",
+        "edit": "Edit",
+        "delete": "Delete",
+        "confirm": "Confirm"
+    },
+    "select_language": "Select Language",
+    "appearance": "Appearance",
+    "dark_mode": "Dark Mode",
+    "theme_color": "Accent Color",
+    "home": "Home",
+    "my_stable": "My Stable",
+    "my_breeding": "My Breeding",
+    "legal_register": "Legal Register",
+    "planning": "Planning",
+    "my_team": "My Team",
+    "half_leases": "Half Leases",
+    "budget": "Budget",
+    "billing": "Billing",
+    "clients": "Clients",
+    "stocks": "Stocks",
+    "nutrition": "Nutrition",
+    "gynecology": "Gynecology",
+    "breeding_menu": "Breeding",
+    "messaging": "Messaging",
+    "support": "Support",
+    "partner_mode": "Partner Mode",
+    "welcome_user": "Welcome, {{name}}",
+    "weather": "Weather",
+    "care": "Care",
+    "team_and_partners": "My Team & Partners",
+    "manage_half_leases": "Manage Half Leases",
+    "manage_breeding": "Manage Breeding",
+    "manage_clients": "Client Management",
+    "manage_stocks": "Stock Management",
+    "competition_season": "Competition Season",
+    "training_details": "Training Details",
+    "accounts": "Accounts",
+    "simulation": {
+        "view_for": "View simulated for:",
+        "exit": "Exit"
+    },
+    "demo": {
+        "expired": "Demo period expired! Thank you for trying Equinox.",
+        "bar_text": "Demo Mode: {{days}}d {{hours}}h {{minutes}}min"
+    },
+    "trial": {
+        "text": "Pro Elite Trial: {{days}} days left",
+        "subscribe": "Subscribe"
+    },
+    "landing": {
+        "coming_soon": {
+            "title": "Coming Soon!",
+            "desc": "We are currently finalizing the secure payment integration. Registration will open very soon.",
+            "stay_connected": "Stay tuned: We can't wait to welcome you to enjoy your free trial month!",
+            "button": "Got it, see you soon!"
+        },
+        "seo": {
+            "title": "Stable Management Software & Invoicing",
+            "description": "Manage your stable, finally simple and automated. Auto invoicing, horse tracking, owner communication. Create your stable for free.",
+            "keywords": "stable software, equestrian management, stable invoicing, horse health record, riding center software, rider app, horse breeding"
+        },
+        "nav": {
+            "dashboard": "My Dashboard",
+            "login": "Login",
+            "create": "Create Account",
+            "download_app": "Download App"
+        },
+        "hero": {
+            "new_mobile": "New: Mobile App Available",
+            "title_main": "Your <1>stable</1> management,",
+            "title_sub": "finally simple and automated.",
+            "subtitle": "Invoicing, horse tracking, owner communication. Save time for what matters most: <1>your horses</1>.",
+            "cta_create": "Create my stable for free",
+            "cta_access": "Access my stable",
+            "elite_offer_btn": "1 month free"
+        },
+        "metrics": {
+            "horses_work": "Horses at work",
+            "care_todo": "Care to do",
+            "weather": "Today's Weather",
+            "sunny": "Sunny"
+        },
+        "pain_points": {
+            "title": "You deserve better than Excel and loose papers",
+            "invoices": {
+                "title": "No more late invoices",
+                "text": "Stop chasing payments. Everything is automated to secure your cash flow."
+            },
+            "sms": {
+                "title": "No more lost messages",
+                "text": "Centralize all care and work requests. Nothing slips through the cracks."
+            },
+            "paperwork": {
+                "title": "No more paperwork",
+                "text": "Registers, VAT... Equinox handles compliance for you."
+            }
+        },
+        "features": {
+            "label": "KEY FEATURES",
+            "main_title": "Everything to manage your stable serenely",
+            "billing": {
+                "title": "Automatic Invoicing",
+                "subtitle": "Generate your board invoices in 1 click. Integrated card payment.",
+                "desc": "Configure your recurring board fees and let Equinox do the rest. Your owners receive their invoice by email and can pay instantly online.",
+                "commission": "* Transparent commission on online payments: 2.5% + 0.25€ per transaction."
+            },
+            "health": {
+                "title": "Digital Health Record",
+                "subtitle": "Your horses' entire history in your pocket.",
+                "desc": "Always know where vaccine boosters, dewormers, and farriery stand. Share the health record with the owner or vet in an instant."
+            },
+            "messaging": {
+                "title": "Dedicated Messaging",
+                "subtitle": "Keep in touch with your owners and team.",
+                "desc": "Separate pro from personal. Chat by horse or by topic. Send photos and videos directly from the stable."
+            }
+        },
+        "pricing": {
+            "title": "Transparent Pricing",
+            "subtitle": "No hidden fees. No commitment.",
+            "individuals": "Individual Offers",
+            "pros": "Professional Offers",
+            "monthly": "Monthly",
+            "annual": "Annual",
+            "discount": "-20%",
+            "most_popular": "MOST POPULAR",
+            "choose_offer": "Choose this offer",
+            "cards": {
+                "discovery": "Discovery",
+                "discovery_target": "To start",
+                "free": "Free",
+                "passion": "Passion",
+                "passion_target": "For owners",
+                "passion_breeding": "Passion Breeding",
+                "passion_breeding_target": "For amateur breeders",
+                "extra_horse": "Extra Horse",
+                "extra_horse_target": "Need more?",
+                "start": "Start",
+                "start_target": "Small structures",
+                "breeder": "Breeder Special",
+                "breeder_target": "Studs & breeding",
+                "pro": "Pro",
+                "pro_target": "Active stables",
+                "elite": "Elite",
+                "elite_target": "Large structures",
+                "features": {
+                    "1_horse_1_mare": "1 Horse + 1 Mare",
+                    "health_record": "Health Record",
+                    "breeding_register": "Breeding Register",
+                    "simple_calendar": "Simple Calendar",
+                    "standard_support": "Support (Standard)",
+                    "unlimited_horses": "Unlimited Horses",
+                    "budget_mgmt": "Budget Management",
+                    "storage_media": "Photo/Video Storage",
+                    "alerts": "Alerts & Reminders",
+                    "competition": "Competition",
+                    "half_leases": "Half-Leases",
+                    "priority_support": "Priority Support",
+                    "5_mares": "5 Broodmares",
+                    "repro_tracking": "Reproduction Tracking",
+                    "option_mare": "Option +1 Mare",
+                    "add_horse_life": "Add a horse for life",
+                    "one_time_payment": "One-time payment",
+                    "no_subscription": "No subscription",
+                    "stackable_free": "Combinable with Free",
+                    "up_to_10": "Up to 10 Horses",
+                    "owner_mgmt": "Owner Management",
+                    "simple_billing": "Simple Invoicing",
+                    "care_reminders": "Care & Reminders",
+                    "2_staff": "2 Staff Accounts",
+                    "unlimited_mares": "Unlimited Mares",
+                    "gyneco_tracking": "Gyneco Tracking",
+                    "planning": "Planning",
+                    "5_staff": "5 Staff",
+                    "full_billing": "Full Invoicing",
+                    "up_to_30": "Up to 30 Horses",
+                    "recurring_billing": "Recurring Invoicing",
+                    "planning_team": "Team Planning (5 Staff)",
+                    "stocks": "Stocks",
+                    "all_unlimited": "All Unlimited",
+                    "full_breeding": "Full Breeding Module",
+                    "accounting_export": "Accounting Export",
+                    "advanced_stocks": "Advanced Stock Management",
+                    "vip_support": "VIP Support 24/7"
+                }
+            }
+        },
+        "footer": {
+            "tagline": "The digital partner for your equestrian success. <br />Designed with passion in France.",
+            "legal": "Legal",
+            "terms_use": "Terms of Use",
+            "terms_sale": "Terms of Sale",
+            "legal_notice": "Legal Notice",
+            "help_contact": "Help & Contact",
+            "help_center": "Help Center",
+            "contact_support": "Contact Support",
+            "security": "Security",
+            "secure_payments": "Secure Payments",
+            "stripe_partner": "Stripe Certified Partner",
+            "copyright": "© 2025 Equinox, Developed by Dev Normandie. All rights reserved."
+        }
+    },
+    "dashboard_page": {
+        "stats": {
+            "horses": "Horses",
+            "breeding_horses": "Breeding Horses",
+            "planned_care": "Planned Care",
+            "total": "Total"
+        },
+        "weather": {
+            "loading": "Loading",
+            "my_position": "My Location",
+            "thunder": "Thunderstorm",
+            "snow": "Snow",
+            "rain": "Rain",
+            "drizzle": "Drizzle",
+            "fog": "Fog",
+            "cloudy": "Cloudy",
+            "partly_cloudy": "Partly Cloudy",
+            "sunny": "Sunny"
+        },
+        "activities": {
+            "title": "Upcoming Activities",
+            "empty": "Nothing scheduled soon.",
+            "see": "View"
+        },
+        "alerts": {
+            "title": "Health Alerts",
+            "empty": "No health alerts.",
+            "see_health_record": "View Health Record",
+            "late": "{{days}}d late",
+            "days_left": "{{days}}d left"
+        },
+        "upsell": {
+            "passion_title": "Passion Plan",
+            "passion_desc": "Upgrade to Passion plan to manage more horses and access competitions.",
+            "discover": "Discover {{plan}}"
+        }
+    },
+    "horses_page": {
+        "title": "My Horses",
+        "search_placeholder": "Search a horse (name, breed)...",
+        "add_button": "Add a horse",
+        "no_results": "No horse found for \"{{query}}\"",
+        "edit_photo": "Edit photo",
+        "upload_photo": "Upload photo",
+        "take_photo": "Take photo",
+        "crop_center": "Crop / Recenter",
+        "delete_confirm_title": "Confirm deletion",
+        "delete_confirm_desc": "Are you sure you want to remove <strong>{{name}}</strong> from your stable? This action is irreversible.",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "save": "Save",
+        "gender": {
+            "mare": "Mare",
+            "gelding": "Gelding",
+            "stallion": "Stallion"
+        },
+        "modal": {
+            "title": "New Horse",
+            "or_manual": "OR FILL MANUALLY",
+            "scan_doc": "Scan document (Auto-fill)",
+            "processing": "Cortex Vision analyzing document...",
+            "photo_label": "Profile Photo",
+            "name_placeholder": "Horse Name",
+            "origin_placeholder": "Origin / Where from?",
+            "breed_placeholder": "Breed",
+            "age_placeholder": "Age",
+            "color_placeholder": "Color (ex: Bay)",
+            "gender_label": "Gender"
+        },
+        "limit_reached": {
+            "title": "Horse limit reached! 🛑",
+            "desc": "To add more horses, you must upgrade your plan.",
+            "see_offers": "See offers?"
+        },
+        "upgrade_modal": {
+            "title_breeding": "Upgrade to Passion Breeding!",
+            "title_general": "Gear up!",
+            "desc_limited_breeding": "The <strong>Discovery Breeding</strong> plan is limited to 1 horse.",
+            "desc_limited_general": "The <strong>Discovery</strong> plan is limited to 1 horse.",
+            "benefits_breeding": "With Passion Breeding, manage more horses, access full health records, budget module, and foaling alerts.",
+            "benefits_general": "With Passion, manage unlimited horses and access exclusive features (Budget, Competitions, Sharing...).",
+            "discover_btn": "Discover {{plan}} offer",
+            "no_thanks": "No thanks, I'll keep my single horse"
+        },
+        "extra_slot_modal": {
+            "title": "Need more space?",
+            "desc": "You have reached your current plan limit.",
+            "option_title": "Extra Horse Option",
+            "option_desc": "Add <strong>1 Horse</strong> to your stable for just",
+            "price": "2.00 €",
+            "month": "/ month",
+            "btn": "Add a horse (+2€)",
+            "success_alert": "✅ Congratulations! An additional slot has been added to your stable."
+        }
+    },
+    "care_page": {
+        "title": "Health Record",
+        "add_button": "Add Care",
+        "tabs": {
+            "vaccines": "Vaccines",
+            "wormers": "Wormers",
+            "farrier": "Farrier",
+            "osteo": "Osteo/Dentist"
+        },
+        "summary": {
+            "title": "Summary",
+            "up_to_date": "Up to date",
+            "upcoming": "Upcoming (7d)",
+            "late": "Overdue"
+        },
+        "advice": {
+            "title": "Vet Advice - {{season}}",
+            "recommended": "Recommended molecule:"
+        },
+        "card": {
+            "reminder_in": "Reminder in {{days}} days",
+            "late_by": "{{days}} days overdue",
+            "reminder_today": "Reminder Today",
+            "edit": "Edit",
+            "delete": "Delete"
+        },
+        "modal": {
+            "add_title": "Add: {{type}}",
+            "edit_title": "Edit: {{type}}",
+            "type_label": "Vaccine Type",
+            "wormer_label": "Brand / Molecule",
+            "label_label": "Label",
+            "select": "Select...",
+            "last_date": "Last Care Date (Optional - For auto calc)",
+            "event_date": "Event Date / Reminder (Calendar)",
+            "interval_std": "Std Interval: {{days}}d",
+            "practitioner": "Practitioner",
+            "select_practitioner": "-- Select practitioner --",
+            "team": "My Team",
+            "partners": "Partners (Vet, Farrier...)",
+            "owners": "Owners / Clients",
+            "cancel": "Cancel",
+            "validate": "Validate"
+        },
+        "delete_confirm": "Are you sure you want to delete this health record item?"
+    },
+    "stock_page": {
+        "stats": {
+            "total_items": "Total Items",
+            "low_stock": "Low Stock"
+        },
+        "filter": {
+            "all": "All"
+        },
+        "add_button": "New Item",
+        "order": "ORDER",
+        "supplier_prefix": "Supplier: ",
+        "min_prefix": "Min: ",
+        "edit": "Edit",
+        "modal": {
+            "edit_title": "Edit Item",
+            "new_title": "New Item",
+            "name_label": "Item Name",
+            "category_label": "Category",
+            "quantity_label": "Current Quantity",
+            "unit_label": "Unit",
+            "threshold_label": "Alert Threshold (Min)",
+            "supplier_label": "Supplier",
+            "cancel": "Cancel",
+            "save": "Save"
+        },
+        "categories": {
+            "food": "Feed",
+            "bedding": "Bedding",
+            "care": "Care",
+            "material": "Equipment",
+            "misc": "Misc"
+        }
+    },
+    "billing_page": {
+        "stats": {
+            "income": "Income",
+            "expenses": "Expenses",
+            "result": "Result",
+            "pending": "Pending"
+        },
+        "chart": {
+            "title": "Financial Evolution"
+        },
+        "tabs": {
+            "clients": "Clients",
+            "suppliers": "Suppliers"
+        },
+        "actions": {
+            "export": "Accounting Export",
+            "new_invoice": "New Invoice",
+            "new_expense": "Add Expense",
+            "edit": "Edit",
+            "validate": "Validate Invoice",
+            "pay_online": "Pay Online (Card)",
+            "create_credit_note": "Create Credit Note",
+            "send": "Send",
+            "download_pdf": "PDF",
+            "close": "Close"
+        },
+        "invoice_list": {
+            "title": "Latest Client Invoices",
+            "empty": "No client invoices.",
+            "draft": "DRAFT",
+            "credit_note_ref": "Credit Note on {{ref}}",
+            "status": {
+                "paid": "Paid",
+                "pending": "Pending",
+                "overdue": "Overdue"
+            }
+        },
+        "expense_list": {
+            "title": "Supplier Invoices (Expenses)",
+            "empty": "No expenses recorded.",
+            "supplier": "Supplier",
+            "date": "Date",
+            "amount": "Amount",
+            "category": "Category",
+            "receipt": "Receipt"
+        },
+        "pdf": {
+            "invoice": "INVOICE",
+            "credit_note": "CREDIT NOTE",
+            "draft": "DRAFT",
+            "date": "Date:",
+            "bill_to": "BILL TO:",
+            "horse": "Horse:",
+            "description": "DESCRIPTION",
+            "qty": "QTY",
+            "unit_price": "UNIT PRICE",
+            "total": "TOTAL",
+            "total_ht": "Total Exc. Tax:",
+            "vat": "VAT (20%):",
+            "net_to_pay": "NET TO PAY:",
+            "footer": "Invoice generated by Equinox solution regarding {{stable}}."
+        },
+        "export_pdf": {
+            "title": "ACCOUNTING REPORT",
+            "date": "Export Date:",
+            "headers": [
+                "Date",
+                "Type",
+                "Reference",
+                "Party",
+                "Status",
+                "Amount (Inc. Tax)"
+            ],
+            "types": {
+                "revenue": "Revenue",
+                "expense": "Expense"
+            }
+        }
+    },
+    "billing_modals": {
+        "invoice": {
+            "edit_title": "Edit Invoice",
+            "new_title": "New Invoice",
+            "client_label": "Client",
+            "horse_label": "Concerned Horse",
+            "date_label": "Date",
+            "recurrence_label": "Recurrence",
+            "recurrence_none": "None (One-off)",
+            "recurrence_monthly": "Monthly",
+            "recurrence_quarterly": "Quarterly",
+            "lines_title": "Billing Lines",
+            "desc_placeholder": "Description (e.g. February Livery)",
+            "amount_placeholder": "Price",
+            "add_line": "Add Line",
+            "total_label": "Total:",
+            "cancel": "Cancel",
+            "save": "Save"
+        },
+        "expense": {
+            "title": "New Expense",
+            "supplier_label": "Supplier",
+            "date_label": "Date",
+            "amount_label": "Amount (Inc. Tax)",
+            "category_label": "Category",
+            "scan_button": "Scan Receipt",
+            "file_button": "Import File",
+            "cancel": "Cancel",
+            "save": "Save"
+        }
+    },
+    "billing_alerts": {
+        "finalize_confirm": "Validate this invoice? \nOnce validated, it will receive an official number and cannot be modified.",
+        "finalize_success": "Invoice validated under number {{number}}",
+        "credit_note_confirm": "Create a Credit Note for this invoice?",
+        "credit_note_created": "Draft credit note created. You can verify and validate it.",
+        "edit_locked": "Cannot modify a validated invoice (Anti-fraud law).\nPlease create a Credit Note if necessary.",
+        "send_confirm": "Send invoice #{{number}} by email to the client?",
+        "send_success": "Invoice #{{number}} was sent by email successfully!",
+        "send_locked": "Please validate (finalize) the invoice first before sending it.",
+        "payment_confirm": "Confirm payment of this invoice?",
+        "online_payment_confirm": "Pay invoice #{{number}} of {{amount}} € online?\n(Equinox Commission 1% included)",
+        "online_payment_error": "Error: Stable's bank account is not connected.",
+        "cam_error": "Camera Error: "
+    },
+    "calendar_page": {
+        "title": "My Schedule",
+        "views": {
+            "month": "Month",
+            "week": "Week",
+            "day": "Day"
+        },
+        "back_to_month": "Back to Month",
+        "today": "Today",
+        "add_event": "Add Event",
+        "planning_of": "Schedule for {{date}}",
+        "no_events": "No events. Add one!",
+        "days": {
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat",
+            "sun": "Sun"
+        },
+        "form": {
+            "title": "Add Event",
+            "activity": "Activity",
+            "horse": "Horse",
+            "rider": "Rider",
+            "date": "Date",
+            "time": "Time",
+            "duration": "Duration (min)",
+            "cancel": "Cancel",
+            "save": "Save",
+            "add_category_prompt": "Name of new category:",
+            "category_exists": "This category already exists.",
+            "delete_category_confirm": "Delete category \"{{name}}\"?",
+            "cannot_delete_system": "Cannot delete system categories (Other, Care).",
+            "select_date_time": "Please select a date and time.",
+            "invalid_date": "Invalid date.",
+            "save_success": "Event added successfully!",
+            "duplicate_confirm": "This event already exists (duplicate). Add it anyway?",
+            "error_saving": "Error saving: {{error}}",
+            "manage_categories": {
+                "add_tooltip": "Add category",
+                "delete_tooltip": "Delete selected category"
+            }
+        },
+        "event_details": {
+            "delete_confirm": "Are you sure you want to delete this event?",
+            "validate_confirm": "Validate this event?",
+            "others": "others"
+        },
+        "delete_confirm_title": "Delete Event?",
+        "delete_confirm_desc": "This action is irreversible. The event will be permanently deleted from your schedule.",
+        "delete_button": "Delete"
+    },
+    "activity_types": {
+        "dressage": "Dressage",
+        "saut": "Show Jumping",
+        "tap": "Groundwork",
+        "longe": "Lungeing",
+        "marcheur": "Walker",
+        "stable": "Stable Duty",
+        "other": "Other",
+        "promenade": "Trail Ride",
+        "trotting": "Trotting",
+        "americaine": "American Heat",
+        "heat": "Heat Training",
+        "lignedroite": "Straight Line",
+        "speed": "Speed Work",
+        "training": "Training",
+        "race": "Race Day",
+        "care": "Veterinary Care",
+        "chasse": "Hunting Gallop",
+        "canter": "Canter",
+        "demitrain": "Half-Pace",
+        "boutvite": "Sprint",
+        "boites": "Starting Gates",
+        "fond": "Endurance",
+        "denivele": "Hill Work",
+        "recup": "Active Recovery",
+        "carriere": "Arena Work"
+    },
+    "messaging_page": {
+        "sidebar": {
+            "title": "Messages",
+            "no_conversations": "No conversations yet.",
+            "you_prefix": "You: "
+        },
+        "chat": {
+            "audio_call_tooltip": "Audio Call",
+            "video_call_tooltip": "Video Call",
+            "message_placeholder": "Type a message...",
+            "select_conversation": "Select a conversation to start chatting.",
+            "photo_label": "Photo Sent",
+            "errors": {
+                "send_error": "Error sending message.",
+                "upload_error": "Error uploading file."
+            }
+        },
+        "notifications": {
+            "enable_tooltip": "Enable Notifications",
+            "enabled_alert": "Notifications enabled!",
+            "error_alert": "Error enabling notifications."
+        },
+        "incoming_call": {
+            "title": "Incoming Call",
+            "calling_text": "{{name}} is calling...",
+            "reject": "Decline",
+            "answer": "Answer"
+        },
+        "new_conv": {
+            "title": "New Conversation",
+            "phone_placeholder": "Phone Number",
+            "btn_create": "Start Chat",
+            "btn_cancel": "Cancel",
+            "user_not_found": "User not found",
+            "cannot_message_self": "You cannot message yourself"
+        }
+    },
+    "pwa_install_title": "Install Equinox",
+    "pwa_install_desc": "Add the app to your home screen for a better experience and notifications.",
+    "pwa_ios_step1": "1. Tap the share button",
+    "pwa_ios_step2_pre": "2. Select",
+    "pwa_ios_step2_strong": "Add to Home Screen",
+    "pwa_install_button": "Install App",
+    "footer": {
+        "tagline": "The digital partner for your equestrian success. <br />Designed with passion in France.",
+        "legal": "Legal",
+        "terms_use": "Terms of Use",
+        "terms_sale": "Terms of Sale",
+        "legal_notice": "Legal Notice",
+        "help_contact": "Help & Contact",
+        "help_center": "Help Center",
+        "contact_support": "Contact Support",
+        "security": "Security",
+        "secure_payments": "Secure Payments",
+        "stripe_partner": "Stripe Certified Partner",
+        "copyright": "© 2025 Equinox, Developed by Dev Normandie. All rights reserved."
+    },
+    "breeding_page": {
+        "seo_title": "Breeding - Equinox",
+        "seo_desc": "Reproduction tracking, coverings, and foaling.",
+        "calendar_btn": "Calendar",
+        "advice_btn": "Breeding Advice",
+        "advice_locked_alert": "Premium Feature: Upgrade to a higher plan to access breeding advice.",
+        "add_mare_btn": "Add a Broodmare",
+        "stats": {
+            "mares": "Broodmares",
+            "pregnant": "Pregnant",
+            "foals_expected": "Expected Foals 2025"
+        },
+        "planning_title": "Action Plan",
+        "term_date": "Due Date",
+        "actions": {
+            "profile": "Profile",
+            "health": "Health",
+            "tracking": "Tracking",
+            "delete_tooltip": "Delete Mare",
+            "edit_tooltip": "Edit"
+        },
+        "modal": {
+            "title_edit": "Edit Mare",
+            "title_add": "New Broodmare",
+            "role_label": "Type / Role",
+            "roles": {
+                "mare": "Broodmare",
+                "recipient": "Recipient (Surrogate)",
+                "donor": "Donor"
+            },
+            "name_label": "Mare Name",
+            "internal_number_label": "Internal Number (Collar)",
+            "status_label": "Current Status",
+            "statuses": {
+                "empty": "Empty",
+                "inseminated": "Inseminated (Tracking in progress)",
+                "pregnant": "Pregnant",
+                "foaling": "Imminent Foaling"
+            },
+            "sire_label": "Stallion (Sire)",
+            "bio_sire_label": "Biological Sire (Stallion)",
+            "bio_dam_label": "Biological Dam (Donor)",
+            "term_date_label": "Due Date (Estimated)",
+            "cancel": "Cancel",
+            "save": "Save",
+            "add": "Add"
+        },
+        "upgrade_modal": {
+            "title": "Upgrade to Breeder Passion!",
+            "limit_desc": "The <strong>Discovery</strong> plan is limited to 1 broodmare.",
+            "benefits_desc": "With the <strong>Breeder Passion</strong> plan (4.90 €/month), manage up to 5 mares and access exclusive features: full health records, budget management, and priority support.",
+            "cta_button": "Discover Breeder Passion Plan",
+            "cancel_button": "No thanks, I'll keep my single mare"
+        },
+        "payment_modal": {
+            "title": "Increase your quota?",
+            "limit_reached": "You have reached your plan's limit.",
+            "add_one_mare": "Add +1 Mare",
+            "success_alert": "Payment successful! Quota increased.",
+            "pay_btn": "Pay",
+            "cancel": "Cancel",
+            "lifetime_payment": "One-time lifetime payment",
+            "one_time_payment": "One-time payment"
+        },
+        "delete_modal": {
+            "title": "Confirm Deletion",
+            "confirm_text": "Are you sure you want to remove <strong>{{name}}</strong>?",
+            "warning_text": "All reproduction history will be erased.",
+            "cancel": "Cancel",
+            "confirm": "Delete"
+        },
+        "status": {
+            "empty": "Empty",
+            "inseminated": "Inseminated",
+            "pregnant": "Pregnant",
+            "foaling": "Foaling"
+        }
+    },
+    "competition_page": {
+        "stats": {
+            "season_earnings": "Season Earnings",
+            "results": "Results",
+            "clear_rounds": "Clear Rounds",
+            "victories": "Wins",
+            "races": "Races",
+            "competitions": "Competitions"
+        },
+        "links": {
+            "france_galop": "France Galop ↗",
+            "infonet": "Infonet ↗",
+            "ffe_compet": "FFE Compet ↗"
+        },
+        "add_competition_btn": "Add Competition",
+        "competition_list": {
+            "entries_count": "Entries"
+        },
+        "details": {
+            "delete_confirm": "Delete this competition?",
+            "entries_results_title": "Entries & Results",
+            "no_entries": "No entries yet.",
+            "select_hint": "Select a competition to view details"
+        },
+        "entry_item": {
+            "class_prefix": "Class",
+            "earnings_label": "Earn:"
+        },
+        "add_entry_form": {
+            "title": "Add an Entry",
+            "horse_placeholder": "Horse",
+            "rider_placeholder": "Rider",
+            "class_placeholder": "Class (e.g. 120cm)",
+            "fee_placeholder": "Fee (€)",
+            "add_btn": "Add"
+        },
+        "modal": {
+            "title": "New Competition",
+            "name_label": "Event Name",
+            "name_placeholder": "Ex: Grand Prix Series",
+            "date_label": "Date",
+            "location_label": "Location",
+            "location_placeholder": "Ex: Paris",
+            "level_label": "Level / Label",
+            "level_placeholder": "Ex: National, CSI 1*, Club...",
+            "cancel": "Cancel",
+            "create": "Create",
+            "sync_alert": "Competition added and synced to Calendar!"
+        }
+    },
+    "nutrition_page": {
+        "title": "Nutrition & Rations",
+        "subtitle": "Manage your stable's feeding plan",
+        "sidebar_title": "My Horses",
+        "no_horses": "No horses registered.",
+        "select_hint": "Select a horse to view its ration.",
+        "ration_card": {
+            "title": "Ration Sheet:",
+            "edit_btn": "Edit Ration",
+            "cancel_btn": "Cancel",
+            "save_btn": "Save",
+            "save_alert": "Ration updated!"
+        },
+        "meals": {
+            "morning": "Morning",
+            "noon": "Noon",
+            "evening": "Evening",
+            "supplements": "Supplements",
+            "hay": "Forage / Hay"
+        },
+        "placeholders": {
+            "ration_input": "{{meal}} ration...",
+            "add_product_btn": "Add product",
+            "undefined": "Undefined"
+        },
+        "needs_estimation": {
+            "title": "Needs Estimation",
+            "description_part1": "Based on detected numerical quantities, this horse consumes approximately",
+            "description_part2": "units (L/kg)",
+            "description_part3": "per week.",
+            "check_stock": "Remember to check your stocks regularly."
+        }
+    },
+    "team_page": {
+        "title": "My Team & Partners",
+        "subtitle": "Manage your staff and experts",
+        "add_member_btn": "Add Member",
+        "default_partners": {
+            "vet": "My Vet",
+            "farrier": "My Farrier",
+            "osteo": "My Osteo",
+            "dentist": "My Dentist"
+        },
+        "card": {
+            "ext_badge": "EXT",
+            "admin_badge": "Admin (Full Access)",
+            "no_phone": "No phone",
+            "no_email": "No email",
+            "code_label": "Code:",
+            "copy_btn": "Copy",
+            "call_btn": "Call",
+            "email_btn": "Email",
+            "copied_alert": "Code {{code}} copied!",
+            "tooltips": {
+                "simulate": "View as...",
+                "planning": "View schedule",
+                "edit": "Edit",
+                "delete": "Delete"
+            }
+        },
+        "modal": {
+            "title_add": "Add Member",
+            "title_edit": "Edit",
+            "name_label": "Name",
+            "role_label": "Role",
+            "phone_label": "Phone",
+            "email_label": "Email",
+            "admin_label": "Admin Access",
+            "admin_hint": "(Same rights as me)",
+            "cancel": "Cancel",
+            "save": "Save",
+            "roles": {
+                "Cavalier": "Rider",
+                "Propriétaire": "Owner",
+                "Demi-pensionnaire": "Half-Lease",
+                "Groom Maison": "Home Groom",
+                "Groom Concours": "Show Groom",
+                "Palefrenier Soigneur": "Stable Hand",
+                "Coach": "Coach",
+                "Vétérinaire": "Vet",
+                "Maréchal": "Farrier",
+                "Dentiste": "Dentist",
+                "Ostéopathe": "Osteopath",
+                "Autre": "Other"
+            }
+        },
+        "planning_modal": {
+            "title": "Schedule for {{name}}",
+            "close": "Close",
+            "empty": "Nothing to report. Empty schedule!"
+        },
+        "simulation_modal": {
+            "title": "Simulation Mode",
+            "description": "You are about to view the app as",
+            "warning": "Some features (Settings, Billing...) will be hidden according to this user's rights.",
+            "cancel": "Cancel",
+            "confirm": "Confirm"
+        },
+        "alerts": {
+            "delete_confirm": "Delete this member?",
+            "limit_reached": "Limit of {{max}} staff members reached. External partners (Vet, etc.) are unlimited."
+        },
+        "email_template": {
+            "subject": "Your Equinox Access Code",
+            "body": "Hello {{name}},\n\nYou have been invited to join the Equinox team.\nHere is your access code: {{code}}\n\nDownload the app here: https://equinox-app.com\n\nSee you soon on Equinox!"
+        }
+    },
+    "clients_page": {
+        "search_placeholder": "Search (Name, Horse)...",
+        "new_client_btn": "New Client",
+        "clients_count": "clients",
+        "client_id": "Client #{{id}}",
+        "no_horses": "No horse",
+        "active_badge": "Active",
+        "call_btn": "Call",
+        "email_btn": "Email",
+        "invoice_btn": "Invoice",
+        "delete_tooltip": "Delete",
+        "contact_details": "Contact Details",
+        "main_address": "Main Address",
+        "horses_title": "Horses",
+        "notes_title": "Notes",
+        "close_btn": "Close",
+        "modal": {
+            "title": "New Client",
+            "name_label": "Full Name",
+            "phone_label": "Phone",
+            "email_label": "Email",
+            "address_label": "Address",
+            "horses_label": "Horses",
+            "notes_label": "Notes",
+            "cancel_btn": "Cancel",
+            "submit_btn": "SUBMIT",
+            "placeholders": {
+                "name": "Ex: John Doe",
+                "phone": "555...",
+                "email": "email@...",
+                "address": "Address",
+                "horses": "Names...",
+                "notes": "..."
+            }
+        }
+    },
+    "support_page": {
+        "title": "Customer Support",
+        "contact_btn": "Contact Support",
+        "input_placeholder": "Type your message here...",
+        "typing": "Assistant is typing...",
+        "bot_welcome": "Hello! I am the Equinox virtual assistant. How can I help you today?\n\n1. Technical question\n2. Question about my subscription\n3. Report a bug\n4. Other",
+        "bot": {
+            "default_response": "I understand. Could you please provide more details?",
+            "technical": "For technical issues, try refreshing the page (F5) first. If the problem persists, clear your browser cache. Did that help?",
+            "subscription": "You can manage your subscription directly in Settings > My Subscription. You will find your invoices and upgrade options there.",
+            "bug": "Sorry for the inconvenience. Can you describe exactly what is happening? A screenshot (which you can send by email) would greatly help our teams.",
+            "contact": "Sure. You can contact our technical support directly by email by clicking the button below.",
+            "thanks": "Glad I could help! Feel free if you have any other questions."
+        },
+        "mail": {
+            "subject": "Equinox Support - Assistance Request",
+            "body": "Hello,\n\nI am encountering an issue: \n\n[Describe your issue here]\n\nBest regards,"
+        }
+    },
+    "half_lease_page": {
+        "new_contract_btn": "New Contract",
+        "add_contract_btn": "Add Contract",
+        "health_btn": "Health",
+        "tasks_title": "TO DO",
+        "no_tasks": "No tasks.",
+        "task_placeholder": "Ex: Oil hooves...",
+        "ok_btn": "OK",
+        "paid_status": "PAID",
+        "pending_status": "PENDING",
+        "edit_allowed": "Edit Allowed",
+        "read_only": "Read Only",
+        "access_code": "Code",
+        "assigned_days": "ASSIGNED DAYS",
+        "modal": {
+            "title": "New Half-Lease Contract",
+            "horse_name": "Horse Name",
+            "select_horse": "-- Select a horse --",
+            "rider": "Rider (Leaser)",
+            "rider_placeholder": "Rider's name",
+            "email": "Email (for invitation)",
+            "email_placeholder": "name@example.com",
+            "price": "Monthly Price (€)",
+            "fixed_days": "Fixed Days",
+            "cancel_btn": "Cancel",
+            "invite_btn": "Invite"
+        },
+        "success_modal": {
+            "title": "Contract Created!",
+            "subtitle": "If the email did not open, copy the message below.",
+            "message_label": "INVITATION MESSAGE",
+            "close_btn": "Close",
+            "copy_btn": "Copy Message",
+            "copied_alert": "Message copied!"
+        },
+        "delete_modal": {
+            "title": "Delete this contract?",
+            "subtitle": "The rider's access will be revoked immediately.",
+            "cancel_btn": "Cancel",
+            "delete_btn": "Delete"
+        },
+        "edit_modal": {
+            "title": "Schedule: {{rider}}",
+            "modify_days": "Modify Days",
+            "organize_work": "Organize Work",
+            "organize_desc": "Access the calendar to define the work program for {{rider}}.",
+            "open_calendar": "Open Calendar",
+            "close_btn": "Close",
+            "save_btn": "Save"
+        }
+    },
+    "budget_page": {
+        "title": "Budget",
+        "subtitle": "Track your stable expenses.",
+        "new_expense_btn": "New Expense",
+        "stats": {
+            "total_month": "Total {{month}}",
+            "top_category": "Top Category",
+            "expense_count": "Expense Count"
+        },
+        "empty_list": "No expenses for this period.",
+        "delete_tooltip": "Delete",
+        "modal": {
+            "title": "Add Expense",
+            "amount": "Amount (€)",
+            "date": "Date",
+            "category": "Category",
+            "description": "Description (Optional)",
+            "description_placeholder": "Ex: Dewormer Duo",
+            "cancel_btn": "Cancel",
+            "add_btn": "Add"
+        },
+        "delete_modal": {
+            "title": "Confirm deletion?",
+            "subtitle": "This action is irreversible.",
+            "cancel_btn": "Cancel",
+            "confirm_btn": "Delete"
+        },
+        "categories": {
+            "pension": "Boarding",
+            "farrier": "Farrier",
+            "vet": "Veterinarian",
+            "care": "Care",
+            "competition": "Competition",
+            "lesson": "Lesson/Clinic",
+            "equipment": "Equipment",
+            "transport": "Transport",
+            "other": "Other"
+        }
+    },
+    "register_page": {
+        "title": "Legal Register",
+        "subtitle": "Compliant with regulations",
+        "pdf_btn": "Official PDF",
+        "tabs": {
+            "sanitary": "Sanitary",
+            "movements": "Movements",
+            "establishment": "Establishment"
+        },
+        "search_placeholder": "Search a horse, a treatment...",
+        "view_all": "View All",
+        "view_by_horse": "By Horse",
+        "establishment": {
+            "title": "Establishment Identification",
+            "owner": "Owner / Manager",
+            "name": "Structure Name",
+            "address": "Address",
+            "vet": "Sanitary Vet",
+            "siret": "Registration Number",
+            "edit_btn": "Edit",
+            "save_btn": "Save",
+            "not_set": "Not set"
+        },
+        "movements": {
+            "title": "Equine Movements",
+            "columns": {
+                "date": "Date",
+                "movement": "Movement",
+                "horse": "Horse",
+                "reason": "Reason",
+                "origin_dest": "Origin/Dest."
+            },
+            "empty": "No movements found."
+        },
+        "sanitary": {
+            "title": "Sanitary & Care Follow-up",
+            "columns": {
+                "date": "Date",
+                "horse": "Concerned Horse",
+                "nature": "Type",
+                "details": "Product / Details",
+                "practitioner": "Practitioner"
+            },
+            "empty": "No interventions found.",
+            "warning": "Regulatory Reminder: You must keep veterinary prescriptions related to these treatments attached to this register for a minimum of 5 years."
+        }
+    },
+    "profile_page": {
+        "upload_error_size": "Image too large. Maximum 3MB.",
+        "save_success": "Profile updated successfully!",
+        "save_error_storage": "Storage full or image too large for local storage.",
+        "save_error_generic": "An error occurred while saving.",
+        "change_logo": "Change",
+        "name_label": "Name or Stable",
+        "email_label": "Email",
+        "password_label": "Password",
+        "save_btn": "Save",
+        "default_name": "Rider"
+    },
+    "switch_account": {
+        "title": "Switch Account",
+        "confirm_forget": "Remove this account from list?",
+        "forget_tooltip": "Remove account",
+        "no_accounts": "No accounts saved on this device.",
+        "add_account_btn": "Log in to another account",
+        "create_account_btn": "Create a new account",
+        "cancel_btn": "Cancel / Back"
+    },
+    "login": {
+        "welcome_back": "Welcome back!",
+        "team_code_button": "🔑 I have a team access code"
+    },
+    "onboarding": {
+        "welcome_on": "Welcome to",
+        "professional": "Professional",
+        "owner": "Horse Owner",
+        "pro_modal": {
+            "title": "Configure Stable",
+            "subtitle": "Customize the app for your business",
+            "instruction": "Select your main disciplines and activities:",
+            "activities": {
+                "sport_horses": "Sport Horses",
+                "race_trotters": "Race Horses (Trotters)",
+                "race_gallopers": "Race Horses (Gallopers)",
+                "endurance_horses": "Endurance Horses",
+                "owners_stable": "Livery Stable",
+                "breeder": "Breeder"
+            },
+            "back_btn": "Back",
+            "validate_btn": "Validate and Continue"
+        },
+        "pricing": {
+            "title_pro": "Choose your Professional Offer",
+            "title_owner": "Choose your Owner Offer",
+            "subtitle": "Plans tailored to your activity.",
+            "no_commitment": "✨ All our plans are without commitment",
+            "monthly": "Monthly",
+            "yearly": "Yearly",
+            "loading": "Loading live prices...",
+            "popular": "POPULAR",
+            "free": "Free",
+            "unavailable": "Not available",
+            "per_month": "/ month",
+            "per_year": "/ year",
+            "save_badge": "Save",
+            "selected": "Selected",
+            "choose": "Choose",
+            "validate_selection": "Validate my Selection",
+            "back_to_profile": "Back with Profile Selection",
+            "demo_pro_elite": "Pro Elite Demo",
+            "demo_free_trial": "Free (30 days)",
+            "demo_desc": "Test all Pro features (Billing, Unlimited Breeding, Staff...) without commitment.",
+            "try_now": "Try Now",
+            "features": {
+                "one_horse_mare": "1 Horse + 1 Mare",
+                "health_book": "Health Book",
+                "breeding_registry": "Breeding Registry",
+                "simple_calendar": "Simple Calendar",
+                "support_standard": "Support (Standard)",
+                "five_mares": "5 Broodmares",
+                "repro_tracking": "Reproduction Tracking",
+                "budget_management": "Budget Management",
+                "option_mare": "Option +1 Mare (Add-on)",
+                "support_priority": "Priority Support",
+                "unlimited_horses": "Unlimited Horses",
+                "media_storage": "Photo/Video Storage",
+                "alerts_reminders": "Alerts & Reminders",
+                "competition_module": "Competition Module",
+                "half_lease_management": "Half-Lease Management",
+                "upto_10_horses": "Up to 10 Horses",
+                "owner_management": "Owner Management",
+                "simple_billing": "Simple Billing",
+                "care_reminders": "Care & Reminders",
+                "two_staff": "2 Staff Accounts",
+                "client_support": "Client Support",
+                "upto_30_horses": "Up to 30 Horses",
+                "recurring_billing": "Recurring Billing",
+                "team_planning_5": "Team Planning (5 Staff)",
+                "stock_management": "Stock Management",
+                "unlimited_breeding": "Unlimited Breeding Module",
+                "unlimited_staff": "Unlimited Staff",
+                "export_accounting": "Accounting Export",
+                "unlimited_mares": "Unlimited Mares",
+                "gyn_tracking": "Gyn Tracking",
+                "care": "Care",
+                "planning": "Planning",
+                "five_staff": "5 Staff",
+                "full_billing": "Full Billing",
+                "full_features": "Full Features"
+            }
+        }
+    }
+}
