@@ -9,6 +9,8 @@ export const useAuth = () => {
     return useContext(AuthContext);
 };
 
+// ... (imports restent les mêmes)
+
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [userProfile, setUserProfile] = useState(null);
@@ -16,6 +18,20 @@ export const AuthProvider = ({ children }) => {
 
     // Fonction utilitaire pour synchroniser le profil utilisateur Firestore -> LocalState
     const syncUserProfile = async (user) => {
+        // En mode démo (sans DB), on simule juste le profil
+        if (!db) {
+            console.log("[Auth] Demo Mode : Pas de synchronisation Firestore.");
+            const demoProfile = {
+                email: 'demo@equinox.com',
+                name: localStorage.getItem('user_name') || 'Utilisateur Démo',
+                role: 'Admin',
+                plans: ['admin'],
+                isDemo: true
+            };
+            setUserProfile(demoProfile);
+            return;
+        }
+
         if (!user) {
             setUserProfile(null);
             return;
@@ -92,6 +108,28 @@ export const AuthProvider = ({ children }) => {
         let unsubscribeAuth = null;
         let unsubscribeSubs = null;
 
+        // MODE DÉMO (Firebase non configuré)
+        if (!auth) {
+            console.warn("⚠️ AuthContext: Firebase Auth non disponible. Mode DÉMO activé.");
+
+            // Simuler un utilisateur connecté automatiquement en mode démo
+            const demoUser = {
+                uid: 'demo-user-123',
+                email: 'demo@equinox.com',
+                displayName: 'Mode Démo',
+                photoURL: null,
+                isAnonymous: true
+            };
+
+            setCurrentUser(demoUser);
+            // Charger un profil démo
+            syncUserProfile(demoUser);
+
+            setLoading(false);
+            return;
+        }
+
+        // MODE NORMAL (Firebase configuré)
         unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             setCurrentUser(user);
             if (user) {
@@ -124,62 +162,64 @@ export const AuthProvider = ({ children }) => {
 
                 // 2. Real-time Subscription Listener (Strict Logic from Spec)
                 // "Surveiller la collection customers/{uid}/subscriptions"
-                const subsRef = collection(db, 'customers', user.uid, 'subscriptions');
-                const q = query(subsRef, where('status', 'in', ['active', 'trialing']));
+                if (db) { // Check if DB is available even if Auth is
+                    const subsRef = collection(db, 'customers', user.uid, 'subscriptions');
+                    const q = query(subsRef, where('status', 'in', ['active', 'trialing']));
 
-                unsubscribeSubs = onSnapshot(q, (snapshot) => {
-                    // Default to 'decouverte' unless active sub found
-                    // Preserve 'admin' if it was already set by syncUserProfile (special case)
-                    let activePlan = ['decouverte'];
-                    let activeRole = 'rider';
+                    unsubscribeSubs = onSnapshot(q, (snapshot) => {
+                        // Default to 'decouverte' unless active sub found
+                        // Preserve 'admin' if it was already set by syncUserProfile (special case)
+                        let activePlan = ['decouverte'];
+                        let activeRole = 'rider';
 
-                    if (!snapshot.empty) {
-                        const subDoc = snapshot.docs[0].data(); // Take the first active one
-                        // "Vérifier le champ role (assigné via les métadonnées produit)"
-                        if (subDoc.role) {
-                            console.log("Abonnement détecté, Role:", subDoc.role);
-                            activePlan = [subDoc.role]; // ex: ['pro'], ['elite']...
-                            activeRole = subDoc.role;
-                        }
-                    }
-
-                    // Check if we need to preserve Admin status from static profile
-                    // (We can't easily access the latest userProfile state inside this callback without refs or deps, 
-                    // but we can check the localStorage or previous logic. 
-                    // Let's rely on a check: if the user is authorized as Admin via email in syncUserProfile, 
-                    // we shouldn't downgrade them just because they lack a stripe sub.
-                    // However, strictly following the Stripe spec for "Pro" features:
-
-                    // Update State
-                    setUserProfile(prev => {
-                        // If previously admin, keep admin
-                        if (prev?.role === 'Admin') return prev;
-
-                        // PROTECTION: If user is in "Simulated" mode (Dev test) or has Admin Bypass, 
-                        // DO NOT overwrite their plan with 'decouverte' just because they have no Stripe sub.
-                        const isSimulated = prev?.simulated || prev?.isAdminBypass || localStorage.getItem('user_simulated') === 'true';
-
-                        if (snapshot.empty && isSimulated) {
-                            console.log("[Auth] Keeping simulated/bypass plan:", prev?.plans);
-                            return prev || { ...prev, plans: JSON.parse(localStorage.getItem('subscriptionPlan') || "['decouverte']") };
+                        if (!snapshot.empty) {
+                            const subDoc = snapshot.docs[0].data(); // Take the first active one
+                            // "Vérifier le champ role (assigné via les métadonnées produit)"
+                            if (subDoc.role) {
+                                console.log("Abonnement détecté, Role:", subDoc.role);
+                                activePlan = [subDoc.role]; // ex: ['pro'], ['elite']...
+                                activeRole = subDoc.role;
+                            }
                         }
 
-                        const newProfile = {
-                            ...prev,
-                            plans: activePlan,
-                            role: activeRole === 'rider' && prev?.role ? prev.role : activeRole
-                        };
+                        // Check if we need to preserve Admin status from static profile
+                        // (We can't easily access the latest userProfile state inside this callback without refs or deps, 
+                        // but we can check the localStorage or previous logic. 
+                        // Let's rely on a check: if the user is authorized as Admin via email in syncUserProfile, 
+                        // we shouldn't downgrade them just because they lack a stripe sub.
+                        // However, strictly following the Stripe spec for "Pro" features:
 
-                        // Sync LocalStorage
-                        if (localStorage.getItem('is_simulation') !== 'true') {
-                            localStorage.setItem('subscriptionPlan', JSON.stringify(activePlan));
-                            if (activeRole !== 'rider') localStorage.setItem('user_role', activeRole);
-                        }
-                        return newProfile;
+                        // Update State
+                        setUserProfile(prev => {
+                            // If previously admin, keep admin
+                            if (prev?.role === 'Admin') return prev;
+
+                            // PROTECTION: If user is in "Simulated" mode (Dev test) or has Admin Bypass, 
+                            // DO NOT overwrite their plan with 'decouverte' just because they have no Stripe sub.
+                            const isSimulated = prev?.simulated || prev?.isAdminBypass || localStorage.getItem('user_simulated') === 'true';
+
+                            if (snapshot.empty && isSimulated) {
+                                console.log("[Auth] Keeping simulated/bypass plan:", prev?.plans);
+                                return prev || { ...prev, plans: JSON.parse(localStorage.getItem('subscriptionPlan') || "['decouverte']") };
+                            }
+
+                            const newProfile = {
+                                ...prev,
+                                plans: activePlan,
+                                role: activeRole === 'rider' && prev?.role ? prev.role : activeRole
+                            };
+
+                            // Sync LocalStorage
+                            if (localStorage.getItem('is_simulation') !== 'true') {
+                                localStorage.setItem('subscriptionPlan', JSON.stringify(activePlan));
+                                if (activeRole !== 'rider') localStorage.setItem('user_role', activeRole);
+                            }
+                            return newProfile;
+                        });
+                    }, (error) => {
+                        console.error("Erreur écoute abonnements:", error);
                     });
-                }, (error) => {
-                    console.error("Erreur écoute abonnements:", error);
-                });
+                }
 
             } else {
                 localStorage.removeItem('auth');
@@ -199,12 +239,21 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await firebaseSignOut(auth);
+            if (auth) {
+                await firebaseSignOut(auth);
+            }
             // Clear local storage completely on logout to be safe
             localStorage.clear();
             // Re-init theme defaults so UI doesn't break
             localStorage.setItem('app_theme', 'slate');
             localStorage.setItem('app_mode', 'light');
+
+            // In demo mode, redirect or just clear state
+            if (!auth) {
+                setCurrentUser(null);
+                setUserProfile(null);
+                window.location.reload(); // Force reload to reset
+            }
         } catch (error) {
             console.error("Erreur déconnexion:", error);
         }
