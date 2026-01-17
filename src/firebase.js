@@ -6,7 +6,6 @@ import { getMessaging } from "firebase/messaging";
 import { getStorage } from "firebase/storage";
 import { getAI } from "firebase/ai";
 
-
 // Configuration Firebase
 // Les valeurs sont chargées depuis le fichier .env
 const firebaseConfig = {
@@ -19,15 +18,36 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialisation de Firebase
-const app = initializeApp(firebaseConfig);
+// Vérifier si Firebase est configuré (variables d'environnement présentes)
+const isFirebaseConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== 'undefined';
 
-// Export des services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const functions = getFunctions(app, 'europe-west1');
-export const messaging = getMessaging(app);
-export const storage = getStorage(app);
-export const ai = getAI(app);
+// Initialisation conditionnelle de Firebase
+let app = null;
+let auth = null;
+let db = null;
+let functions = null;
+let messaging = null;
+let storage = null;
+let ai = null;
 
+if (isFirebaseConfigured) {
+    // Firebase is configured - initialize normally
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    functions = getFunctions(app, 'europe-west1');
+    try {
+        messaging = getMessaging(app);
+    } catch (e) {
+        console.warn('Firebase Messaging not available:', e.message);
+    }
+    storage = getStorage(app);
+    ai = getAI(app);
+} else {
+    // Firebase NOT configured - demo mode (localStorage only)
+    console.warn('⚠️ Firebase not configured. Running in DEMO mode with localStorage only.');
+}
+
+// Export des services (peuvent être null en mode demo)
+export { auth, db, functions, messaging, storage, ai };
 export default app;
