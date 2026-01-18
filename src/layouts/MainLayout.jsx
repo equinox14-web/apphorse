@@ -192,7 +192,7 @@ const MainLayout = () => {
 
                 <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem', overflowY: 'auto', minHeight: 0, scrollbarWidth: 'none' }}>
 
-                    {/* 1. LE DASHBOARD */}
+                    {/* 1. LE DASHBOARD (Force Sidebar Update 2026-01-18) */}
                     {!isExternalUser() && <SidebarItem to="/dashboard" icon={LayoutDashboard} label="Accueil" />}
                     <SidebarItem to="/planning" icon={Calendar} label="Planning" />
 
