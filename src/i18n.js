@@ -21,7 +21,8 @@ i18n
                 translation: fr
             }
         },
-        // For bots, we ignore navigator to let fallbackLng (fr) take over (or htmlTag)
+        // Force French for bots/crawlers (SEO optimization)
+        lng: isBot ? 'fr' : undefined, // Force French for bots
         detection: {
             order: isBot ? ['htmlTag'] : ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag'],
             caches: ['localStorage', 'cookie'],
