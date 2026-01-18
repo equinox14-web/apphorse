@@ -266,32 +266,43 @@ const SignUp = () => {
                             </button>
                         </div>
                         <div style={{ padding: '1.5rem', overflowY: 'auto', lineHeight: '1.6', color: '#374151', fontSize: '0.95rem' }}>
-                            <h4 style={{ fontWeight: 700, marginTop: '0', color: '#111827' }}>MANDAT DE FACTURATION</h4>
+                            <h4 style={{ fontWeight: 700, marginTop: '0', color: '#111827' }}>1. OBJET</h4>
+                            <p>Les présentes Conditions Générales ont pour objet de définir les modalités de mise à disposition de l'application EQUINOX par la société Dev Normandie.</p>
+
+                            <h4 style={{ fontWeight: 700, marginTop: '1rem', color: '#111827' }}>2. ABONNEMENT (SaaS)</h4>
+                            <p>Le Client souscrit à l'une des offres (Mensuel sans engagement ou Annuel avec engagement 12 mois). Tout mois entamé est dû.</p>
+
+                            <h4 style={{ fontWeight: 700, marginTop: '1rem', color: '#111827' }}>3. PAIEMENT & FACTURATION (STRIPE CONNECT)</h4>
+                            <p>EQUINOX agit comme plateforme technique. Les fonds sont gérés par Stripe.</p>
+
+                            <p className="mt-2 font-bold">3.2. MANDAT DE FACTURATION</p>
                             <p>
-                                En acceptant les présentes conditions, le Client (l'Écurie) donne expressément mandat à EQUINOX (la Plateforme) d'émettre
-                                en son nom et pour son compte les factures destinées à ses propres clients (les Cavaliers/Propriétaires),
-                                conformément à l'article 289 du Code Général des Impôts.
-                            </p>
-                            <p>
-                                Le Client conserve l'entière responsabilité de ses obligations en matière de facturation et de ses conséquences
-                                au regard de la TVA. Le Client s'engage à verser au Trésor Public la taxe mentionnée sur les factures émises en son nom.
+                                En acceptant ces conditions, le Client donne mandat à EQUINOX d'émettre ses factures en son nom et pour son compte,
+                                conformément à l'article 289 du CGI.
                             </p>
 
-                            <h4 style={{ fontWeight: 700, marginTop: '1rem', color: '#111827' }}>FRAIS DE SERVICE</h4>
-                            <p>
-                                <strong>Transaction Bancaire (Stripe) :</strong> ~1.4% + 0.25€ par transaction réussie.<br />
-                                <strong>Frais de Plateforme (Equinox) :</strong> 1% par transaction (Application Fee).<br />
-                                <strong>Frais de Facturation (Stripe Invoicing) :</strong> Gratuit jusqu'à 25 factures/mois, puis 0.4% par facture payée (plafonné à 2€).
-                            </p>
+                            <p className="mt-2 font-bold">3.3. FRAIS DE SERVICE</p>
+                            <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
+                                <li><strong>Commission Plateforme :</strong> 1% par transaction.</li>
+                                <li><strong>Frais Bancaires Stripe :</strong> ~1.4% + 0.25€ par transaction.</li>
+                                <li><strong>Frais Facturation :</strong> Gratuit jusqu'à 25 factures/mois, puis 0.4% par facture (max 2€).</li>
+                            </ul>
 
-                            <h4 style={{ fontWeight: 700, marginTop: '1rem', color: '#111827' }}>RESPONSABILITÉ</h4>
-                            <p>
-                                EQUINOX agit en tant qu'intermédiaire technique et ne saurait être tenu responsable des litiges commerciaux
-                                entre l'Écurie et le propriétaire/client.
-                            </p>
+                            <h4 style={{ fontWeight: 700, marginTop: '1rem', color: '#111827' }}>4. RESPONSABILITÉ & IA</h4>
+                            <p>EQUINOX est soumis à une obligation de moyens.</p>
+
+                            <p className="mt-2 font-bold">4.3. Utilisation de l'IA (Santé)</p>
+                            <p>Les analyses d'ordonnances ou suggestions de soins par IA sont fournies à titre indicatif. <strong>Elles ne constituent pas un diagnostic vétérinaire.</strong></p>
+                            <p className="mt-1">Le Client s'engage à VERIFIER toute donnée suggérée par l'IA avant administration. EQUINOX décline toute responsabilité en cas d'erreur de l'IA.</p>
+
+                            <p className="mt-2 font-bold">4.5. Tiers (Google Gemini)</p>
+                            <p>Le Client accepte que les données nécessaires à l'analyse soient traitées par les API de Google Cloud.</p>
+
+                            <h4 style={{ fontWeight: 700, marginTop: '1rem', color: '#111827' }}>5. LOI APPLICABLE</h4>
+                            <p>Droit français. Compétence exclusive des tribunaux du siège d'EQUINOX.</p>
 
                             <div style={{ marginTop: '2rem', padding: '1rem', background: '#eff6ff', borderRadius: '8px', fontSize: '0.9rem', color: '#1e40af' }}>
-                                Les Conditions Générales complètes sont consultables à tout moment dans les Paramètres de l'application.
+                                Les Conditions Générales complètes et détaillées sont consultables dans les Paramètres de l'application après inscription.
                             </div>
                         </div>
                         <div style={{ padding: '1rem', borderTop: '1px solid #e5e7eb', textAlign: 'right' }}>

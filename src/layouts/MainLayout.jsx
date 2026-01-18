@@ -3,7 +3,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, LayoutList, Calendar, Settings, Menu, Users, Heart, Handshake, MessageCircle, FileText, Package, Trophy, ClipboardList, PieChart, Headset, Eye, LogOut, Utensils, Repeat, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Calendar, LayoutList, Activity, Utensils, Trophy, Heart, Brain, Sparkles, MessageCircle, Users, FileText, Package, ClipboardList, Handshake, Repeat, Headphones, Settings, Menu, LogOut, Eye, PieChart, UserCheck } from 'lucide-react';
 import { canAccess, getMaxHorses, isExternalUser } from '../utils/permissions';
 import { useTheme } from '../context/ThemeContext';
 import NotificationManager from '../components/NotificationManager';
@@ -36,6 +36,12 @@ const BottomNavItem = ({ to, icon: Icon, label }) => (
         <Icon size={24} />
         <span style={{ fontSize: '0.7rem' }}>{label}</span>
     </NavLink>
+);
+
+const SidebarSectionTitle = ({ title }) => (
+    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2 px-4">
+        {title}
+    </div>
 );
 
 const MainLayout = () => {
@@ -132,6 +138,7 @@ const MainLayout = () => {
             case '/competition': return t('competition_season');
             case '/register': return t('legal_register');
             case '/assistant': return 'Assistant IA';
+            case '/ai-coach': return 'AI Training Coach';
             case '/training/Detail': return t('training_details');
             default: return 'Equinox';
         }
@@ -183,49 +190,56 @@ const MainLayout = () => {
                     />
                 </div>
 
-                <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', overflowY: 'auto', minHeight: 0, scrollbarWidth: 'none' }}>
-                    {!isExternalUser() && <SidebarItem to="/dashboard" icon={LayoutDashboard} label={t('home')} />}
+                <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem', overflowY: 'auto', minHeight: 0, scrollbarWidth: 'none' }}>
 
-                    <SidebarItem to="/assistant" icon={Sparkles} label="Assistant IA" />
+                    {/* 1. LE DASHBOARD */}
+                    {!isExternalUser() && <SidebarItem to="/dashboard" icon={LayoutDashboard} label="Accueil" />}
+                    <SidebarItem to="/planning" icon={Calendar} label="Planning" />
 
-                    <SidebarItem to="/calendar" icon={Calendar} label={t('planning')} />
+                    {/* 2. SECTION : CAVALERIE */}
+                    <SidebarSectionTitle title="CAVALERIE" />
 
-                    {/* Logic to show Horses/Breeding based on Plan */}
-                    {(getMaxHorses() > 0 || isExternalUser()) && <SidebarItem to="/horses" icon={LayoutList} label={isBreederOnly ? t('my_breeding') : t('my_stable')} />}
+                    <SidebarItem to="/horses" icon={LayoutList} label="Mon Écurie" /> {/* HorseHead not available */}
+                    <SidebarItem to="/health" icon={Activity} label="Santé & Soins" />
+                    <SidebarItem to="/rations" icon={Utensils} label="Rations" />
+                    <SidebarItem to="/competition" icon={Trophy} label="Compétition" />
+                    <SidebarItem to="/breeding" icon={Heart} label="Élevage" />
 
-                    {/* Breeding accessible for Breeders OR Vets */}
-                    {canAccess('breeding') && <SidebarItem to="/breeding" icon={Heart} label={isBreederOnly ? t('gynecology') : t('breeding_menu')} />}
+                    {/* 3. SECTION : INTELLIGENCE (IA) */}
+                    <SidebarSectionTitle title="INTELLIGENCE (IA)" />
 
-                    {!isExternalUser() && canAccess('competition') && <SidebarItem to="/competition" icon={Trophy} label={t('competition')} />}
+                    <SidebarItem to="/ai-coach" icon={Brain} label="AI Training Coach" />
+                    <SidebarItem to="/ai-assistant" icon={Sparkles} label="Assistant IA" />
 
-                    {!isExternalUser() && canAccess('stock') && <SidebarItem to="/nutrition" icon={Utensils} label="Rations" />}
+                    {/* 4. SECTION : GESTION & ADMIN */}
+                    <SidebarSectionTitle title="GESTION & ADMIN" />
 
-                    {!isExternalUser() && canAccess('stock') && <SidebarItem to="/stock" icon={Package} label={t('stocks')} />}
+                    <SidebarItem to="/messages" icon={MessageCircle} label="Messagerie" />
+                    <SidebarItem to="/clients" icon={Users} label="Clients" />
+                    <SidebarItem to="/team" icon={UserCheck} label="Mon Équipe" />
+                    <SidebarItem to="/billing" icon={FileText} label="Facturation" />
+                    <SidebarItem to="/stocks" icon={Package} label="Stocks" />
+                    <SidebarItem to="/legal-register" icon={ClipboardList} label="Registre Légal" />
+                    <SidebarItem to="/sharing" icon={Handshake} label="Demi-Pensions" />
 
-                    {canAccess('messaging') && <SidebarItem to="/messages" icon={MessageCircle} label={t('messaging')} />}
+                    {/* FOOTER */}
+                    <div className="my-4 border-t border-gray-100 dark:border-gray-700"></div>
 
-                    {!isExternalUser() && canAccess('team') && <SidebarItem to="/team" icon={Users} label={t('my_team')} />}
-                    {!isExternalUser() && canAccess('clients') && <SidebarItem to="/contacts" icon={Users} label={t('clients')} />}
+                    <SidebarItem to="/accounts" icon={Repeat} label="Comptes" />
+                    <SidebarItem to="/support" icon={Headphones} label="Support" />
 
-                    {!isExternalUser() && canAccess('leases') && <SidebarItem to="/leases" icon={Handshake} label={t('half_leases')} />}
-                    {!isExternalUser() && canAccess('billing') && <SidebarItem to="/billing" icon={FileText} label={t('billing')} />}
-                    {!isExternalUser() && canAccess('budget') && <SidebarItem to="/budget" icon={PieChart} label={t('budget')} />}
+                    {/* Settings - Always visible or restricted? Previously controlled by !isExternalUser. 
+                        User snippet shows it unconditionally. I will keep existing logic for safety if needed, 
+                        or assume User snippet overrides. 
+                        User snippet: <SidebarItem icon={SettingsIcon} text="Paramètres" to="/settings" />
+                        I will apply !isExternalUser check if logic requires it, but user requested explicit list.
+                        I'll stick to User Request but keep permissions if they are critical to prevent crashes.
+                        Actually, Settings is usually for everyone (Profile etc). 
+                        I'll show it for everyone as per request layout. 
+                    */}
+                    <SidebarItem to="/settings" icon={Settings} label="Paramètres" />
 
-                    {!isExternalUser() && canAccess('register') && <SidebarItem to="/register" icon={ClipboardList} label={t('legal_register')} />}
                 </nav>
-
-                <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.3)', paddingTop: '1rem' }}>
-                    <SidebarItem to="/switch-account" icon={Repeat} label={t('accounts')} />
-                    {!isExternalUser() && canAccess('support') && <SidebarItem to="/support" icon={Headset} label={t('support')} />}
-                    {!isExternalUser() && <SidebarItem to="/settings" icon={Settings} label={t('settings')} />}
-
-
-
-
-                    <div style={{ padding: '0 1rem', fontSize: '0.8rem', opacity: 0.7, marginTop: '0.5rem' }}>
-                        {isExternalUser() && t('partner_mode')}
-                    </div>
-                </div>
             </aside>
 
             {/* Main Content Area */}

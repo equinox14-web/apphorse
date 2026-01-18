@@ -1,12 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --color-primary: #831843;
-  --color-primary-light: #fbcfe8;
-  --bg-gradient-1: #4f46e5;
-  --bg-gradient-2: #831843;
-  --bg-gradient-3: #fbcfe8;
-  --bg-gradient-4: #c084fc;
+  /* Default Theme (Saddle) */
+  --color-primary: #ea580c;
+  /* orange-600 */
+  --color-primary-light: #fed7aa;
+  /* orange-200 */
+  --bg-gradient-1: #ea580c;
+  --bg-gradient-2: #c2410c;
+
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.5);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
@@ -27,8 +33,41 @@
   --header-height: 80px;
 }
 
+/* Themes Definition */
+[data-theme='forest'] {
+  --color-primary: #059669;
+  /* emerald-600 */
+  --color-primary-light: #a7f3d0;
+  --bg-gradient-1: #059669;
+  --bg-gradient-2: #047857;
+}
+
+[data-theme='ocean'] {
+  --color-primary: #0284c7;
+  /* sky-600 */
+  --color-primary-light: #bae6fd;
+  --bg-gradient-1: #0284c7;
+  --bg-gradient-2: #0369a1;
+}
+
+[data-theme='berry'] {
+  --color-primary: #db2777;
+  /* pink-600 */
+  --color-primary-light: #fbcfe8;
+  --bg-gradient-1: #db2777;
+  --bg-gradient-2: #be185d;
+}
+
+[data-theme='minimalist'] {
+  --color-primary: #475569;
+  /* slate-600 */
+  --color-primary-light: #cbd5e1;
+  --bg-gradient-1: #475569;
+  --bg-gradient-2: #334155;
+}
+
 /* Dark Mode Variables */
-[data-theme='dark'] {
+[data-mode='dark'] {
   --color-bg: #0f172a;
   --color-text-main: #f1f5f9;
   --color-text-muted: #94a3b8;
@@ -48,9 +87,19 @@
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
+
+  /* Liquid Background Intense */
   background-color: var(--color-bg);
+  background-image:
+    radial-gradient(at 0% 0%, color-mix(in srgb, var(--color-primary), transparent 70%) 0px, transparent 65%),
+    radial-gradient(at 100% 0%, var(--color-bg) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, color-mix(in srgb, var(--color-primary), transparent 70%) 0px, transparent 65%),
+    radial-gradient(at 0% 100%, var(--color-bg) 0px, transparent 50%);
+  background-attachment: fixed;
+  background-size: 100% 100%;
+
   color: var(--color-text-main);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease, background-image 0.3s ease;
   overflow-x: hidden;
   /* Prevent horizontal scroll */
 }

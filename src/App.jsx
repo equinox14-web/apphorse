@@ -38,6 +38,7 @@ import LandingPage from './pages/LandingPage';
 import Assistant from './pages/Assistant';
 import WeightTracking from './pages/WeightTracking';
 import NutritionCalculator from './pages/NutritionCalculator';
+import AITrainingCoach from './pages/AITrainingCoach';
 import PWAPrompt from './components/PWAPrompt';
 import UpdateNotification from './components/UpdateNotification';
 import { useServiceWorker } from './hooks/useServiceWorker';
@@ -131,18 +132,18 @@ function AppContent() {
           <Route path="horses/:id/care" element={<Care />} />
           <Route path="horses/:id/weight" element={<WeightTracking />} />
           <Route path="horses/:id/nutrition" element={<NutritionCalculator />} />
-          <Route path="care" element={<Care />} />
+          <Route path="health" element={<Care />} />
 
           <Route path="training/:id" element={<TrainingDetail />} />
           <Route path="weather" element={<Weather />} />
-          <Route path="calendar" element={<Calendar />} />
+          <Route path="planning" element={<Calendar />} />
 
           <Route path="team" element={<FeatureGuard feature="team"><Team /></FeatureGuard>} />
           <Route path="budget" element={<FeatureGuard feature="budget"><Budget /></FeatureGuard>} />
           <Route path="billing" element={<FeatureGuard feature="billing"><Billing /></FeatureGuard>} />
-          <Route path="contacts" element={<FeatureGuard feature="clients"><ClientsManagement /></FeatureGuard>} />
-          <Route path="stock" element={<FeatureGuard feature="stock"><Stock /></FeatureGuard>} />
-          <Route path="nutrition" element={<FeatureGuard feature="stock"><Nutrition /></FeatureGuard>} />
+          <Route path="clients" element={<FeatureGuard feature="clients"><ClientsManagement /></FeatureGuard>} />
+          <Route path="stocks" element={<FeatureGuard feature="stock"><Stock /></FeatureGuard>} />
+          <Route path="rations" element={<FeatureGuard feature="stock"><Nutrition /></FeatureGuard>} />
           <Route path="competition" element={<FeatureGuard feature="competition"><Competition /></FeatureGuard>} />
 
           <Route path="breeding" element={<FeatureGuard feature="breeding"><Breeding /></FeatureGuard>} />
@@ -152,19 +153,20 @@ function AppContent() {
           <Route path="horse/:id" element={<FeatureGuard feature="my_horses"><HorseProfile /></FeatureGuard>} />
           <Route path="horse/:id/media" element={<FeatureGuard feature="media"><MediaGallery /></FeatureGuard>} />
 
-          <Route path="leases" element={<FeatureGuard feature="leases"><HalfLease /></FeatureGuard>} />
+          <Route path="sharing" element={<FeatureGuard feature="leases"><HalfLease /></FeatureGuard>} />
           <Route path="messages" element={<FeatureGuard feature="messaging"><Messaging /></FeatureGuard>} />
-          <Route path="register" element={<FeatureGuard feature="register"><Register /></FeatureGuard>} />
+          <Route path="legal-register" element={<FeatureGuard feature="register"><Register /></FeatureGuard>} />
           <Route path="support" element={<FeatureGuard feature="support"><Support /></FeatureGuard>} />
           <Route path="settings" element={<Settings />} />
-          <Route path="assistant" element={<Assistant />} />
+          <Route path="ai-coach" element={<AITrainingCoach />} />
+          <Route path="ai-assistant" element={<Assistant />} />
         </Route>
 
         {/* Protected Standalone Routes (Not part of MainLayout but require Auth) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/payment" element={<Payment />} />
-          <Route path="/switch-account" element={<SwitchAccount />} />
+          <Route path="/accounts" element={<SwitchAccount />} />
         </Route>
 
         {/* Catch-all redirect to root */}

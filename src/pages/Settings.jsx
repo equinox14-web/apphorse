@@ -11,6 +11,7 @@ import {
 
 // Component Imports
 import Card from '../components/Card';
+import Button from '../components/Button';
 import SEO from '../components/SEO';
 
 // Context & Utils Imports
@@ -30,7 +31,7 @@ const Settings = () => {
         i18n.changeLanguage(lng);
     };
     const { userProfile, currentUser, logout } = useAuth();
-    const { mode, toggleMode, setTheme } = useTheme();
+    const { theme, mode, toggleMode, setTheme } = useTheme();
 
     // --- Stripe Connect Callback Handling ---
     useEffect(() => {
@@ -565,22 +566,22 @@ const Settings = () => {
                                 <p className="text-xl font-bold text-gray-900 dark:text-white">{currentPlanName}</p>
                             </div>
                         </div>
-                        <div className="flex flex-wrap gap-3">
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                             <button
                                 onClick={handleDownloadInvoices}
-                                className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
+                                className="px-6 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm"
                             >
                                 {t('settings_page.subscription.invoices_pdf')}
                             </button>
                             <button
                                 onClick={handleScrollToPricing}
-                                className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
+                                className="px-6 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm"
                             >
                                 {t('settings_page.subscription.change_offer')}
                             </button>
                             <button
                                 onClick={handleCancelClick}
-                                className="px-4 py-2 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 bg-white dark:bg-gray-800 rounded-md text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20"
+                                className="px-6 py-2 border border-red-200 dark:border-red-900/50 bg-white dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shadow-sm"
                             >
                                 {t('settings_page.subscription.cancel_sub')}
                             </button>
@@ -588,142 +589,7 @@ const Settings = () => {
                     </div>
                 </Card>
 
-                {/* 3. CARD: NOS FORMULES (The Grid) */}
-                <div ref={pricingRef} className="pb-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">👑 {t('settings_page.subscription.plans_title')}</h3>
-                        {isProfessional && (
-                            <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex border border-gray-200 dark:border-gray-700">
-                                <button
-                                    onClick={() => setBillingPeriod('monthly')}
-                                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${billingPeriod === 'monthly' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
-                                >
-                                    {t('settings_page.subscription.monthly')}
-                                </button>
-                                <button
-                                    onClick={() => setBillingPeriod('yearly')}
-                                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${billingPeriod === 'yearly' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
-                                >
-                                    {t('settings_page.subscription.yearly')} <span className="text-green-600 dark:text-green-400 text-xs ml-1">{t('settings_page.subscription.discount')}</span>
-                                </button>
-                            </div>
-                        )}
-                    </div>
 
-                    {/* PRICING GRID */}
-                    {/* PRICING GRID */}
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        {isProfessional ? (
-                            <>
-                                {/* Spécial Éleveur */}
-                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full bg-white dark:bg-gray-900/50">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-pink-500">🦄</span>
-                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.breeder')}</span>
-                                    </div>
-                                    <p className="text-2xl font-bold dark:text-white">{getPrice(69)} HT <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
-                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                        {(t('settings_page.plan_features.special_breeder', { returnObjects: true }) || []).map((f, i) => (
-                                            <li key={i}>• {f}</li>
-                                        ))}
-                                    </ul>
-                                    <button onClick={() => handleChangePlanClick('eleveur', 69)} className="mt-auto w-full py-2 bg-gray-800 dark:bg-indigo-600 text-white rounded-md text-sm hover:opacity-90">{currentPlanId === 'eleveur' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}</button>
-                                </Card>
-                                {/* Start */}
-                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full bg-white dark:bg-gray-900/50">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-blue-500">👜</span>
-                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.start')}</span>
-                                    </div>
-                                    <p className="text-2xl font-bold dark:text-white">{getPrice(29)} HT <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
-                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                        {(t('settings_page.plan_features.start', { returnObjects: true }) || []).map((f, i) => (
-                                            <li key={i}>• {f}</li>
-                                        ))}
-                                    </ul>
-                                    <button onClick={() => handleChangePlanClick('start', 29)} className="mt-auto w-full py-2 bg-gray-800 dark:bg-indigo-600 text-white rounded-md text-sm hover:opacity-90">{currentPlanId === 'start' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}</button>
-                                </Card>
-                                {/* Pro */}
-                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full border-2 border-indigo-500 bg-indigo-50/10 dark:bg-indigo-900/10">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-indigo-500">⭐</span>
-                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.pro')}</span>
-                                    </div>
-                                    <p className="text-2xl font-bold dark:text-white">{getPrice(79)} HT <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
-                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                        {(t('settings_page.plan_features.pro', { returnObjects: true }) || []).map((f, i) => (
-                                            <li key={i}>• {f}</li>
-                                        ))}
-                                    </ul>
-                                    <button onClick={() => handleChangePlanClick('pro', 79)} className="mt-auto w-full py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md text-sm hover:opacity-90">{currentPlanId === 'pro' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}</button>
-                                </Card>
-                                {/* Elite */}
-                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full bg-white dark:bg-gray-900/50">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-purple-500">👑</span>
-                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.elite')}</span>
-                                    </div>
-                                    <p className="text-2xl font-bold dark:text-white">{getPrice(129)} HT <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
-                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                        {(t('settings_page.plan_features.elite', { returnObjects: true }) || []).map((f, i) => (
-                                            <li key={i}>• {f}</li>
-                                        ))}
-                                    </ul>
-                                    <button onClick={() => handleChangePlanClick('elite', 129)} className="mt-auto w-full py-2 bg-gray-800 dark:bg-indigo-600 text-white rounded-md text-sm hover:opacity-90">{currentPlanId === 'elite' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}</button>
-                                </Card>
-                            </>
-                        ) : (
-                            <>
-                                {/* OWNERS / AMATEURS CARDS */}
-
-                                {/* Découverte */}
-                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full bg-white dark:bg-gray-900/50">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-gray-500">🌱</span>
-                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.discovery')}</span>
-                                    </div>
-                                    <p className="text-2xl font-bold dark:text-white">Gratuit</p>
-                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                        {(t('settings_page.plan_features.discovery', { returnObjects: true }) || []).map((f, i) => (
-                                            <li key={i}>• {f}</li>
-                                        ))}
-                                    </ul>
-                                    <button onClick={() => handleChangePlanClick('decouverte', 0)} className="mt-auto w-full py-2 bg-gray-800 dark:bg-indigo-600 text-white rounded-md text-sm hover:opacity-90">{currentPlanId === 'decouverte' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}</button>
-                                </Card>
-
-                                {/* Passion */}
-                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full border-2 border-indigo-500 bg-indigo-50/10 dark:bg-indigo-900/10">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-pink-500">❤️</span>
-                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.passion')}</span>
-                                    </div>
-                                    <p className="text-2xl font-bold dark:text-white">{getPrice(9.90)} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
-                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                        {(t('settings_page.plan_features.passion', { returnObjects: true }) || []).map((f, i) => (
-                                            <li key={i}>• {f}</li>
-                                        ))}
-                                    </ul>
-                                    <button onClick={() => handleChangePlanClick('passion', 9.90)} className="mt-auto w-full py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md text-sm hover:opacity-90">{currentPlanId === 'passion' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}</button>
-                                </Card>
-
-                                {/* Passion Élevage - Using amateur ID 'eleveur_amateur_paid' */}
-                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full bg-white dark:bg-gray-900/50">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-purple-500">🦄</span>
-                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.passion_breeding')}</span>
-                                    </div>
-                                    <p className="text-2xl font-bold dark:text-white">{getPrice(4.90)} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
-                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                        {(t('settings_page.plan_features.passion_breeding', { returnObjects: true }) || []).map((f, i) => (
-                                            <li key={i}>• {f}</li>
-                                        ))}
-                                    </ul>
-                                    <button onClick={() => handleChangePlanClick('eleveur_amateur_paid', 4.90)} className="mt-auto w-full py-2 bg-gray-800 dark:bg-indigo-600 text-white rounded-md text-sm hover:opacity-90">{currentPlanId === 'eleveur_amateur_paid' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}</button>
-                                </Card>
-                            </>
-                        )}
-                    </div>
-                </div>
 
                 {/* 4. CARD: ENCAISSER MES CLIENTS (Stripe Connect) - PRO ONLY */}
                 {isProfessional && (
@@ -980,14 +846,14 @@ const Settings = () => {
                                 <button
                                     key={t_item.id}
                                     onClick={() => handleThemeChange(t_item.id)}
-                                    className={`relative group w-full sm:w-28 h-20 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 overflow-hidden ${(localStorage.getItem('app_theme') || 'saddle') === t_item.id
+                                    className={`relative group w-full sm:w-28 h-20 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 overflow-hidden ${(theme || 'saddle') === t_item.id
                                         ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20'
                                         : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700'
                                         }`}
                                 >
                                     <div className={`w-8 h-8 rounded-full shadow-inner ${t_item.color} group-hover:scale-110 transition-transform`}></div>
                                     <span className="text-[10px] font-bold uppercase tracking-tight text-gray-600 dark:text-gray-400">{t_item.label}</span>
-                                    {(localStorage.getItem('app_theme') || 'saddle') === t_item.id && (
+                                    {(theme || 'saddle') === t_item.id && (
                                         <div className="absolute top-1 right-1">
                                             <Check className="w-3 h-3 text-indigo-500" />
                                         </div>
@@ -997,14 +863,14 @@ const Settings = () => {
 
                             <button
                                 onClick={() => handleThemeChange('minimalist')}
-                                className={`relative group w-full sm:w-28 h-20 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 overflow-hidden ${(localStorage.getItem('app_theme')) === 'minimalist'
+                                className={`relative group w-full sm:w-28 h-20 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 overflow-hidden ${theme === 'minimalist'
                                     ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20'
                                     : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700'
                                     }`}
                             >
                                 <div className="w-8 h-8 rounded-full shadow-inner bg-gray-800 group-hover:scale-110 transition-transform border border-white/20"></div>
                                 <span className="text-[10px] font-bold uppercase tracking-tight text-gray-600 dark:text-gray-400">{t('settings_page.appearance.themes.minimalist')}</span>
-                                {(localStorage.getItem('app_theme')) === 'minimalist' && (
+                                {theme === 'minimalist' && (
                                     <div className="absolute top-1 right-1">
                                         <Check className="w-3 h-3 text-indigo-500" />
                                     </div>
@@ -1026,6 +892,193 @@ const Settings = () => {
                         <ChevronRight className="w-5 h-5 text-gray-400" />
                     </div>
                 </Card>
+
+
+                {/* 3. CARD: NOS FORMULES (The Grid) */}
+                <div ref={pricingRef} className="pb-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">👑 {t('settings_page.subscription.plans_title')}</h3>
+                        {isProfessional && (
+                            <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex border border-gray-200 dark:border-gray-700">
+                                <button
+                                    onClick={() => setBillingPeriod('monthly')}
+                                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${billingPeriod === 'monthly' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
+                                >
+                                    {t('settings_page.subscription.monthly')}
+                                </button>
+                                <button
+                                    onClick={() => setBillingPeriod('yearly')}
+                                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${billingPeriod === 'yearly' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
+                                >
+                                    {t('settings_page.subscription.yearly')} <span className="text-green-600 dark:text-green-400 text-xs ml-1">{t('settings_page.subscription.discount')}</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* PRICING GRID */}
+                    {/* PRICING GRID */}
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        {isProfessional ? (
+                            <>
+                                {/* Spécial Éleveur */}
+                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full bg-white dark:bg-gray-900/50">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-pink-500">🦄</span>
+                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.breeder')}</span>
+                                    </div>
+                                    <p className="text-2xl font-bold dark:text-white">{getPrice(69)} HT <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
+                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                        {(t('settings_page.plan_features.special_breeder', { returnObjects: true }) || []).map((f, i) => (
+                                            <li key={i}>• {f}</li>
+                                        ))}
+                                    </ul>
+                                    <button
+                                        onClick={() => handleChangePlanClick('eleveur', 69)}
+                                        className={currentPlanId === 'eleveur'
+                                            ? "w-full mt-4 py-3 px-4 rounded-xl bg-slate-900 text-white font-medium shadow-lg hover:bg-slate-800 transition-all"
+                                            : "w-full mt-4 py-3 px-4 rounded-xl bg-white text-slate-700 border border-gray-200 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"}
+                                    >
+                                        {currentPlanId === 'eleveur' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}
+                                    </button>
+                                </Card>
+                                {/* Start */}
+                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full bg-white dark:bg-gray-900/50">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-blue-500">👜</span>
+                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.start')}</span>
+                                    </div>
+                                    <p className="text-2xl font-bold dark:text-white">{getPrice(29)} HT <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
+                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                        {(t('settings_page.plan_features.start', { returnObjects: true }) || []).map((f, i) => (
+                                            <li key={i}>• {f}</li>
+                                        ))}
+                                    </ul>
+                                    <button
+                                        onClick={() => handleChangePlanClick('start', 29)}
+                                        className={currentPlanId === 'start'
+                                            ? "w-full mt-4 py-3 px-4 rounded-xl bg-slate-900 text-white font-medium shadow-lg hover:bg-slate-800 transition-all"
+                                            : "w-full mt-4 py-3 px-4 rounded-xl bg-white text-slate-700 border border-gray-200 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"}
+                                    >
+                                        {currentPlanId === 'start' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}
+                                    </button>
+                                </Card>
+                                {/* Pro */}
+                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full border-2 border-indigo-500 bg-indigo-50/10 dark:bg-indigo-900/10">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-indigo-500">⭐</span>
+                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.pro')}</span>
+                                    </div>
+                                    <p className="text-2xl font-bold dark:text-white">{getPrice(79)} HT <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
+                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                        {(t('settings_page.plan_features.pro', { returnObjects: true }) || []).map((f, i) => (
+                                            <li key={i}>• {f}</li>
+                                        ))}
+                                    </ul>
+                                    <button
+                                        onClick={() => handleChangePlanClick('pro', 79)}
+                                        className={currentPlanId === 'pro'
+                                            ? "w-full mt-4 py-3 px-4 rounded-xl bg-slate-900 text-white font-medium shadow-lg hover:bg-slate-800 transition-all"
+                                            : "w-full mt-4 py-3 px-4 rounded-xl bg-white text-slate-700 border border-gray-200 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"}
+                                    >
+                                        {currentPlanId === 'pro' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}
+                                    </button>
+                                </Card>
+                                {/* Elite */}
+                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full bg-white dark:bg-gray-900/50">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-purple-500">👑</span>
+                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.elite')}</span>
+                                    </div>
+                                    <p className="text-2xl font-bold dark:text-white">{getPrice(129)} HT <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
+                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                        {(t('settings_page.plan_features.elite', { returnObjects: true }) || []).map((f, i) => (
+                                            <li key={i}>• {f}</li>
+                                        ))}
+                                    </ul>
+                                    <button
+                                        onClick={() => handleChangePlanClick('elite', 129)}
+                                        className={currentPlanId === 'elite'
+                                            ? "w-full mt-4 py-3 px-4 rounded-xl bg-slate-900 text-white font-medium shadow-lg hover:bg-slate-800 transition-all"
+                                            : "w-full mt-4 py-3 px-4 rounded-xl bg-white text-slate-700 border border-gray-200 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"}
+                                    >
+                                        {currentPlanId === 'elite' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}
+                                    </button>
+                                </Card>
+                            </>
+                        ) : (
+                            <>
+                                {/* OWNERS / AMATEURS CARDS */}
+
+                                {/* Découverte */}
+                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full bg-white dark:bg-gray-900/50">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-gray-500">🌱</span>
+                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.discovery')}</span>
+                                    </div>
+                                    <p className="text-2xl font-bold dark:text-white">Gratuit</p>
+                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                        {(t('settings_page.plan_features.discovery', { returnObjects: true }) || []).map((f, i) => (
+                                            <li key={i}>• {f}</li>
+                                        ))}
+                                    </ul>
+                                    <button
+                                        onClick={() => handleChangePlanClick('decouverte', 0)}
+                                        className={currentPlanId === 'decouverte'
+                                            ? "w-full mt-4 py-3 px-4 rounded-xl bg-slate-900 text-white font-medium shadow-lg hover:bg-slate-800 transition-all"
+                                            : "w-full mt-4 py-3 px-4 rounded-xl bg-white text-slate-700 border border-gray-200 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"}
+                                    >
+                                        {currentPlanId === 'decouverte' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}
+                                    </button>
+                                </Card>
+
+                                {/* Passion */}
+                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full border-2 border-indigo-500 bg-indigo-50/10 dark:bg-indigo-900/10">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-pink-500">❤️</span>
+                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.passion')}</span>
+                                    </div>
+                                    <p className="text-2xl font-bold dark:text-white">{getPrice(9.90)} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
+                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                        {(t('settings_page.plan_features.passion', { returnObjects: true }) || []).map((f, i) => (
+                                            <li key={i}>• {f}</li>
+                                        ))}
+                                    </ul>
+                                    <button
+                                        onClick={() => handleChangePlanClick('passion', 9.90)}
+                                        className={currentPlanId === 'passion'
+                                            ? "w-full mt-4 py-3 px-4 rounded-xl bg-slate-900 text-white font-medium shadow-lg hover:bg-slate-800 transition-all"
+                                            : "w-full mt-4 py-3 px-4 rounded-xl bg-white text-slate-700 border border-gray-200 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"}
+                                    >
+                                        {currentPlanId === 'passion' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}
+                                    </button>
+                                </Card>
+
+                                {/* Passion Élevage - Using amateur ID 'eleveur_amateur_paid' */}
+                                <Card className="hover:border-indigo-500 transition-all flex flex-col h-full bg-white dark:bg-gray-900/50">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-purple-500">🦄</span>
+                                        <span className="font-bold dark:text-white">{t('landing.pricing.cards.passion_breeding')}</span>
+                                    </div>
+                                    <p className="text-2xl font-bold dark:text-white">{getPrice(4.90)} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{periodLabel}</span></p>
+                                    <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                        {(t('settings_page.plan_features.passion_breeding', { returnObjects: true }) || []).map((f, i) => (
+                                            <li key={i}>• {f}</li>
+                                        ))}
+                                    </ul>
+                                    <button
+                                        onClick={() => handleChangePlanClick('eleveur_amateur_paid', 4.90)}
+                                        className={currentPlanId === 'eleveur_amateur_paid'
+                                            ? "w-full mt-4 py-3 px-4 rounded-xl bg-slate-900 text-white font-medium shadow-lg hover:bg-slate-800 transition-all"
+                                            : "w-full mt-4 py-3 px-4 rounded-xl bg-white text-slate-700 border border-gray-200 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"}
+                                    >
+                                        {currentPlanId === 'eleveur_amateur_paid' ? t('settings_page.subscription.current_badge') : t('settings_page.subscription.change_sub')}
+                                    </button>
+                                </Card>
+                            </>
+                        )}
+                    </div>
+                </div>
 
                 {/* 11. DANGER ZONE */}
                 <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 shadow-lg rounded-2xl overflow-hidden transition-all">
@@ -1276,7 +1329,7 @@ const Settings = () => {
                             </div>
 
                             <div className="p-8 overflow-y-auto text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-normal bg-white dark:bg-gray-900 custom-scrollbar">
-                                <p className="mb-6 italic text-xs text-gray-500 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800">Dernière mise à jour : 28/12/2025</p>
+                                <p className="mb-6 italic text-xs text-gray-500 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800">Dernière mise à jour : 18/01/2026</p>
 
                                 <h5 className="font-bold mt-6 mb-3 text-gray-900 dark:text-white flex items-center gap-2">1. OBJET</h5>
                                 <p className="mb-4">Les présentes Conditions Générales ont pour objet de définir les modalités de mise à disposition de l'application EQUINOX (ci-après "la Solution") par la société Dev Normandie, immatriculée sous le numéro SIRET 85217162800021, dont le siège est situé à 2030 route de Pont l'évêque 14800 TOURGEVILLE (ci-après "EQUINOX"), auprès des écuries et professionnels du cheval (ci-après "le Client").</p>
@@ -1301,19 +1354,33 @@ const Settings = () => {
                                 <div className="pl-4 mt-3 border-l-4 border-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/10 p-4 rounded-r-xl">
                                     <p className="mb-3"><span className="font-bold text-indigo-900 dark:text-indigo-300">A. Commission de Plateforme (EQUINOX)</span><br />EQUINOX prélève une commission de 1 % sur le montant total TTC de chaque transaction encaissée.</p>
                                     <p className="mb-3"><span className="font-bold text-indigo-900 dark:text-indigo-300">B. Frais de Transaction Bancaire (STRIPE)</span><br />Le Client supporte les frais de traitement bancaire appliqués par Stripe (environ 1,4 % + 0,25 € par transaction pour les cartes européennes standard).</p>
-                                    <p className="mb-3"><span className="font-bold text-indigo-900 dark:text-indigo-300">C. Frais du Module de Facturation (STRIPE INVOICING)</span><br />L'utilisation du service de génération et d'envoi de factures est soumise à la tarification "Stripe Invoicing Starter". Au jour de la signature des présentes, les conditions sont les suivantes :</p>
+                                    <p className="mb-3"><span className="font-bold text-indigo-900 dark:text-indigo-300">C. Frais du Module de Facturation (STRIPE INVOICING)</span><br />L'utilisation du service de génération et d'envoi de factures est soumise à la tarification "Stripe Invoicing Starter". Au jour de la signature des présentes :</p>
                                     <ul className="list-disc pl-5 mb-3 text-xs space-y-1">
                                         <li>Jusqu'à 25 factures payées par mois : 0 € (Gratuit).</li>
-                                        <li>Au-delà de 25 factures par mois : 0,4 % du montant de la facture (avec un plafond maximal de 2,00 € par facture).</li>
+                                        <li>Au-delà de 25 factures par mois : 0,4 % du montant de la facture (plafond de 2,00 € par facture).</li>
                                     </ul>
                                     <p><span className="font-bold text-indigo-900 dark:text-indigo-300">D. Modalités de paiement</span><br />Le Client accepte que l'ensemble de ces frais (A, B et C) soient déduits automatiquement par Stripe du montant versé par le payeur avant le virement sur le compte bancaire de l'Écurie.</p>
                                 </div>
 
                                 <p className="mt-6 mb-4"><span className="font-semibold text-indigo-600 dark:text-indigo-400">3.4. Gestion des litiges :</span> EQUINOX n'est pas partie au contrat entre le Client (l'écurie) et le Cavalier. Tout litige doit être réglé directement entre l'écurie et le cavalier.</p>
 
-                                <h5 className="font-bold mt-8 mb-3 text-gray-900 dark:text-white">4. RESPONSABILITÉ</h5>
+                                <h5 className="font-bold mt-8 mb-3 text-gray-900 dark:text-white">4. RESPONSABILITÉ ET INTELLIGENCE ARTIFICIELLE</h5>
                                 <p className="mb-2"><span className="font-semibold text-indigo-600 dark:text-indigo-400">4.1. Responsabilité d'EQUINOX :</span> EQUINOX s'engage à fournir le service avec diligence (obligation de moyens). Sa responsabilité ne saurait être engagée en cas de panne temporaire des serveurs.</p>
                                 <p className="mb-4"><span className="font-semibold text-indigo-600 dark:text-indigo-400">4.2. Données des chevaux et des tiers :</span> Le Client est seul responsable des données qu'il entre dans l'application. EQUINOX agit en tant que sous-traitant au sens du RGPD.</p>
+
+                                <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                                    <p className="mb-2 font-bold text-blue-800 dark:text-blue-300">4.3. Utilisation des fonctionnalités d'IA (Santé & Soins)</p>
+                                    <p className="mb-3 text-sm">L'application intègre des outils d'analyse basés sur l'Intelligence Artificielle (IA), notamment pour la lecture automatique d'ordonnances vétérinaires ou l'analyse d'images.</p>
+                                    <ul className="list-disc pl-5 space-y-2 text-sm">
+                                        <li><strong>Absence de diagnostic :</strong> Les informations extraites ou suggérées par l'IA (nom de médicament, dosage, pathologie) sont fournies à titre purement indicatif et probabiliste. Elles ne constituent en aucun cas un diagnostic vétérinaire ni une prescription médicale.</li>
+                                        <li><strong>Vérification obligatoire :</strong> L'IA étant susceptible d'erreurs d'interprétation ("hallucinations"), le Client s'engage à vérifier systématiquement l'exactitude des données (notamment les posologies et durées de traitement) avant toute validation ou administration de soins.</li>
+                                        <li><strong>Limitation de responsabilité :</strong> EQUINOX décline toute responsabilité en cas d'erreur de lecture de l'IA ayant entraîné une administration de soins inappropriée ou un oubli. La décision finale de soin et la responsabilité de la santé de l'animal incombent exclusivement au Client et à son vétérinaire.</li>
+                                    </ul>
+                                </div>
+
+                                <p className="mt-4 mb-2"><span className="font-semibold text-indigo-600 dark:text-indigo-400">4.4. Générateur d'Entraînement (Coach IA) :</span> Les programmes d'entraînement générés par l'IA sont des modèles théoriques basés sur les données déclaratives fournies par le Client (poids, âge, discipline). Le Client est seul juge de la capacité physique et mentale de ses chevaux à exécuter les exercices proposés. EQUINOX ne saurait être tenu responsable de toute blessure, boiterie ou contre-performance survenant à la suite de l'application d'un programme suggéré par l'IA. Il appartient au Client d'adapter la charge de travail aux conditions réelles (terrain, météo, état de forme).</p>
+
+                                <p className="mb-4"><span className="font-semibold text-indigo-600 dark:text-indigo-400">4.5. Traitement des données par des tiers (IA) :</span> Pour fournir les services d'analyse intelligente, l'Application utilise les interfaces de programmation (API) de fournisseurs tiers (notamment Google Gemini / Google Cloud). En utilisant ces fonctionnalités, le Client accepte que les données nécessaires (texte des prompts, images anonymisées) soient transmises à ces tiers uniquement à des fins de traitement technique sécurisé.</p>
 
                                 <h5 className="font-bold mt-8 mb-3 text-gray-900 dark:text-white">5. LOI APPLICABLE</h5>
                                 <p className="mb-8">Les présentes conditions sont soumises au droit français. Tout litige relève de la compétence exclusive des tribunaux du ressort du siège social d'EQUINOX.</p>

@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { canAccess } from '../utils/permissions';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { Syringe, Stethoscope, Calendar, AlertCircle, CheckCircle, Plus, ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { Syringe, Stethoscope, Calendar, AlertCircle, CheckCircle, Plus, ArrowLeft, Pencil, Trash2, Camera, Loader2 } from 'lucide-react';
+import { analyzePrescription } from '../utils/geminiVision';
 
 import { useTranslation, Trans } from 'react-i18next';
 
@@ -12,6 +13,11 @@ const Care = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('vaccins');
+    // Scanner State
+    const [isScanning, setIsScanning] = useState(false);
+    const [scannedData, setScannedData] = useState([]);
+    const [showValidationModal, setShowValidationModal] = useState(false);
+    const fileInputRef = React.useRef(null);
 
 
 
@@ -256,6 +262,79 @@ const Care = () => {
     };
     const advice = getSeasonVermifugeAdvice();
 
+    // --- SCANNER HANDLERS ---
+    const [scanError, setScanError] = useState(null); // Local Error State
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setIsScanning(true);
+        setScanError(null); // Reset error
+
+        try {
+            const results = await analyzePrescription(file);
+            setScannedData(results); // Array of { name, dosage, frequency, duration, start_date }
+            setShowValidationModal(true);
+        } catch (error) {
+            console.error("Erreur Scanner:", error);
+            setScanError("Erreur : " + error.message);
+            // alert("Erreur lors de l'analyse : " + error.message); // Too intrusive/flaky sometimes
+        } finally {
+            setIsScanning(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const confirmPrescription = () => {
+        const newItems = [];
+        const baseId = Date.now();
+
+        scannedData.forEach((med, index) => {
+            // Fallback dates if missing or invalid
+            let currentDay = new Date();
+            if (med.start_date) {
+                currentDay = new Date(med.start_date);
+            }
+
+            const duration = parseInt(med.duration) || 1;
+
+            for (let i = 0; i < duration; i++) {
+                // Clone date to avoid reference issues
+                const d = new Date(currentDay);
+                d.setDate(d.getDate() + i);
+                const dateStr = d.toISOString().split('T')[0];
+
+                const daysLeft = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+                let status = 'ok';
+                if (daysLeft < 0) status = 'urgent'; // Late
+                else if (daysLeft < 2) status = 'warning'; // Soon
+
+                // Use currently resolved horse or generic
+                let targetHorseName = resolvedHorse ? resolvedHorse.name : 'Cheval Inconnu';
+                let targetHorseId = id || '99';
+
+                newItems.push({
+                    id: baseId + index + (i * 1000), // Unique ID
+                    type: 'vaccins', // Store under Medical/Vaccines tab for now
+                    horse: targetHorseName,
+                    horseId: targetHorseId,
+                    name: `${med.name} (${med.dosage})`,
+                    date: dateStr,
+                    status: status,
+                    daysLeft: daysLeft,
+                    practitioner: 'Vétérinaire (Ordonnance)',
+                    notes: `Fréquence: ${med.frequency}`
+                });
+            }
+        });
+
+        setItems(prev => [...prev, ...newItems]);
+        setShowValidationModal(false);
+        setScannedData([]);
+        alert(`${newItems.length} soins ajoutés au planning !`);
+    };
+
     return (
         <div className="animate-fade-in">
 
@@ -268,11 +347,43 @@ const Care = () => {
                     )}
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0 }}>{title}</h2>
                 </div>
-                <Button onClick={openAddModal}>
-                    <Plus size={18} />
-                    {t('care_page.add_button')}
-                </Button>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleFileChange}
+                    />
+                    <Button
+                        variant="secondary"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isScanning}
+                    >
+                        {isScanning ? <Loader2 className="animate-spin" size={18} /> : <Camera size={18} />}
+                        {isScanning ? 'Analyse...' : 'Scanner Ordonnance'}
+                    </Button>
+                    <Button onClick={openAddModal}>
+                        <Plus size={18} />
+                        {t('care_page.add_button')}
+                    </Button>
+                </div>
             </div>
+
+            {scanError && (
+                <div style={{
+                    padding: '1rem',
+                    background: '#fef2f2',
+                    border: '1px solid #fee2e2',
+                    color: '#ef4444',
+                    borderRadius: '8px',
+                    marginBottom: '1rem',
+                    display: 'flex', alignItems: 'center', gap: '0.5rem'
+                }}>
+                    <AlertCircle size={20} />
+                    <span>{scanError}</span>
+                </div>
+            )}
 
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }} className="care-layout">
@@ -546,6 +657,45 @@ const Care = () => {
                                 <Button type="submit" style={{ flex: 1 }}>{t('care_page.modal.validate')}</Button>
                             </div>
                         </form>
+                    </Card>
+                </div>
+            )}
+
+            {/* Validation Modal for Scanner */}
+            {showValidationModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.5)', zIndex: 1100,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <Card style={{ width: '90%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
+                        <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <CheckCircle color="green" /> Analyse Terminée
+                        </h3>
+                        <p style={{ marginBottom: '1rem' }}>Voici les médicaments détectés sur l'ordonnance. Vous pouvez valider pour les ajouter au calendrier.</p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                            {scannedData.map((med, idx) => (
+                                <div key={idx} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                    <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{med.name}</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                                        <div><strong>Dosage:</strong> {med.dosage}</div>
+                                        <div><strong>Fréquence:</strong> {med.frequency}</div>
+                                        <div><strong>Durée:</strong> {med.duration} jours</div>
+                                        <div><strong>Début:</strong> {med.start_date}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {scannedData.length === 0 && <p style={{ color: 'red' }}>Aucun médicament détecté.</p>}
+
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <Button variant="secondary" onClick={() => setShowValidationModal(false)} style={{ flex: 1 }}>Annuler</Button>
+                            <Button onClick={confirmPrescription} style={{ flex: 1 }} disabled={scannedData.length === 0}>
+                                Valider et Ajouter au Planning
+                            </Button>
+                        </div>
                     </Card>
                 </div>
             )}
