@@ -13,6 +13,7 @@ export default defineConfig({
       manifest: {
         name: 'Equinox - Gestion Écurie & Élevage',
         short_name: 'Equinox',
+        version: '2.0.0', // Force PWA update
         description: 'L\'application complète pour la gestion de vos écuries, chevaux, et élevages. Suivi sanitaire, reproduction, et plus encore.',
         theme_color: '#7c3aed',
         background_color: '#ffffff',
