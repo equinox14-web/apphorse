@@ -23,8 +23,8 @@ export async function generateTrainingPlan(params) {
     try {
         const { horse, discipline, level, frequency, focus } = params;
 
-        // Modèle à utiliser (flash pour rapidité et coût)
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        // Modèle à utiliser (pro pour stabilité)
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
         // Construction du prompt système
         const systemPrompt = `Tu es un entraîneur équin expert et diplômé d'État. Tu as une expertise dans toutes les disciplines équestres.
@@ -139,7 +139,7 @@ export async function generateQuickTips(params) {
     try {
         const { discipline, exercise, horseName } = params;
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
         const prompt = `Tu es un coach équestre expert. Donne 3 conseils concrets et rapides pour bien réaliser l'exercice suivant :
 
@@ -175,7 +175,7 @@ export async function analyzeProgress(params) {
     try {
         const { sessionHistory, horseProfile, currentGoal } = params;
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
         const prompt = `Tu es un entraîneur équin expert. Analyse la progression suivante et donne des recommandations.
 

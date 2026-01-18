@@ -57,7 +57,7 @@ export async function analyzePrescription(imageFile) {
 
     try {
         console.log("💊 Analyse de l'ordonnance en cours avec Gemini 1.5 Flash...");
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
 
         const imagePart = await fileToGenerativePart(imageFile);
 
