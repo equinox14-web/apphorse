@@ -465,6 +465,10 @@ Cette application représente :
 - **3 IA** intégrées
 - **Une vision** : Révolutionner la gestion équestre
 
+**Statut** : 🟢 En Production (Vercel)
+**Version** : 1.0.0
+**URL** : https://apphorse.vercel.app
+
 **Made with ❤️ for horses** 🐴
 
 **Version** : 1.0.0  

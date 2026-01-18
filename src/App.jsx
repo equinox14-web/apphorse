@@ -39,6 +39,8 @@ import Assistant from './pages/Assistant';
 import WeightTracking from './pages/WeightTracking';
 import NutritionCalculator from './pages/NutritionCalculator';
 import PWAPrompt from './components/PWAPrompt';
+import UpdateNotification from './components/UpdateNotification';
+import { useServiceWorker } from './hooks/useServiceWorker';
 import { canAccess } from './utils/permissions';
 
 // Simple Auth Guard
@@ -59,6 +61,7 @@ const FeatureGuard = ({ feature, children }) => {
 
 function AppContent() {
   const { currentUser } = useAuth();
+  const { needRefresh, offlineReady, updateApp, dismissUpdate } = useServiceWorker();
 
   useEffect(() => {
     // Force Purge of Old Data (One-time - Run V3)
@@ -85,6 +88,13 @@ function AppContent() {
 
   return (
     <ThemeProvider>
+      {/* Notification de mise à jour PWA */}
+      <UpdateNotification
+        needRefresh={needRefresh}
+        offlineReady={offlineReady}
+        onUpdate={updateApp}
+        onDismiss={dismissUpdate}
+      />
 
       <Routes>
         {/* Public Routes (Redirect to dashboard if already logged in) */}

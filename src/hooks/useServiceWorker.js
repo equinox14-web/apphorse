@@ -1,0 +1,76 @@
+import { useEffect, useState, useCallback } from 'react';
+
+// Fonction pour vérifier si on est en production et si le module PWA est disponible
+const isPWAAvailable = () => {
+    return import.meta.env.PROD && 'serviceWorker' in navigator;
+};
+
+export function useServiceWorker() {
+    const [needRefresh, setNeedRefresh] = useState(false);
+    const [offlineReady, setOfflineReady] = useState(false);
+    const [updateSW, setUpdateSW] = useState(null);
+
+    useEffect(() => {
+        // Ne pas enregistrer le Service Worker en mode développement
+        if (!isPWAAvailable()) {
+            console.log('⚠️ Service Worker désactivé en mode développement');
+            return;
+        }
+
+        // Import dynamique du module PWA en production uniquement
+        import('virtual:pwa-register')
+            .then(({ registerSW }) => {
+                const updateServiceWorker = registerSW({
+                    immediate: true,
+                    onNeedRefresh() {
+                        console.log('🔄 Nouvelle version disponible');
+                        setNeedRefresh(true);
+                    },
+                    onOfflineReady() {
+                        console.log('✅ Application prête pour le mode hors ligne');
+                        setOfflineReady(true);
+                    },
+                    onRegisteredSW(swUrl, registration) {
+                        console.log('✅ Service Worker enregistré:', swUrl);
+
+                        // Vérifier les mises à jour toutes les heures
+                        if (registration) {
+                            setInterval(() => {
+                                console.log('🔍 Vérification des mises à jour...');
+                                registration.update();
+                            }, 60 * 60 * 1000); // 1 heure
+                        }
+                    },
+                    onRegisterError(error) {
+                        console.error('❌ Erreur d\'enregistrement du Service Worker:', error);
+                    },
+                });
+
+                setUpdateSW(() => updateServiceWorker);
+            })
+            .catch((error) => {
+                console.error('❌ Impossible de charger le module PWA:', error);
+            });
+
+        return () => {
+            // Cleanup si nécessaire
+        };
+    }, []);
+
+    const handleUpdate = useCallback(() => {
+        if (updateSW) {
+            updateSW(true); // Cela force le rechargement avec la nouvelle version
+        }
+    }, [updateSW]);
+
+    const dismissUpdate = useCallback(() => {
+        setNeedRefresh(false);
+    }, []);
+
+    return {
+        needRefresh,
+        offlineReady,
+        updateApp: handleUpdate,
+        dismissUpdate,
+    };
+}
