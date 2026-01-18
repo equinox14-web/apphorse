@@ -5,6 +5,7 @@ import { getFunctions } from "firebase/functions";
 import { getMessaging } from "firebase/messaging";
 import { getStorage } from "firebase/storage";
 import { getAI } from "firebase/ai";
+import { getAnalytics, isSupported } from "firebase/analytics";
 
 // Configuration Firebase
 // Les valeurs sont chargées depuis le fichier .env
@@ -29,6 +30,7 @@ let functions = null;
 let messaging = null;
 let storage = null;
 let ai = null;
+let analytics = null;
 
 if (isFirebaseConfigured) {
     // Firebase is configured - initialize normally
@@ -43,11 +45,19 @@ if (isFirebaseConfigured) {
     }
     storage = getStorage(app);
     ai = getAI(app);
+
+    // Initialisation sécurisée de l'Analytics
+    isSupported().then((supported) => {
+        if (supported) {
+            analytics = getAnalytics(app);
+            console.log("Analytics initialized ✅");
+        }
+    });
 } else {
     // Firebase NOT configured - demo mode (localStorage only)
     console.warn('⚠️ Firebase not configured. Running in DEMO mode with localStorage only.');
 }
 
 // Export des services (peuvent être null en mode demo)
-export { auth, db, functions, messaging, storage, ai };
+export { auth, db, functions, messaging, storage, ai, analytics };
 export default app;
