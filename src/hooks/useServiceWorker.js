@@ -65,6 +65,7 @@ export function useServiceWorker() {
 
     const dismissUpdate = useCallback(() => {
         setNeedRefresh(false);
+        setOfflineReady(false);
     }, []);
 
     return {
