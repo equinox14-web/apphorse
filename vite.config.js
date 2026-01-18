@@ -40,6 +40,9 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
 
+        // Augmenter la limite pour les gros fichiers (Firebase, AI, etc.)
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
+
         // Stratégie de cache
         runtimeCaching: [
           {

@@ -85,8 +85,6 @@ const HorseProfile = () => {
             ueln: '?',
             microchip: '?',
             image: null,
-            microchip: '?',
-            image: null,
             pedigree: { sire: '?', dam: '?', ss: '?', sd: '?', ds: '?', dd: '?' },
             ration: { morning: '', noon: '', evening: '', supplements: '', hay: '' }
         });
