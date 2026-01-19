@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import ReactMarkdown from 'react-markdown';
 import { chatWithAssistant } from '../services/geminiService';
+import { syncAIChatToFirestore, fetchAIChatFromFirestore } from '../services/dataSyncService';
 
 const Assistant = () => {
     const { t } = useTranslation();
@@ -35,6 +36,23 @@ const Assistant = () => {
         }];
     });
 
+    // Chargement Cloud au démarrage si connecté
+    useEffect(() => {
+        if (currentUser) {
+            fetchAIChatFromFirestore(currentUser.uid).then(cloudHistory => {
+                if (cloudHistory && cloudHistory.length > 0) {
+                    console.log("📥 Historique Cloud chargé");
+                    // Conversion des dates (Firestore timestamp string) en objets Date
+                    const formatted = cloudHistory.map(msg => ({
+                        ...msg,
+                        timestamp: new Date(msg.timestamp)
+                    }));
+                    setMessages(formatted);
+                }
+            });
+        }
+    }, [currentUser]);
+
     const [inputValue, setInputValue] = useState('');
     const [isThinking, setIsThinking] = useState(false);
     const messagesEndRef = useRef(null);
@@ -43,11 +61,15 @@ const Assistant = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    // Sauvegarde automatique dans localStorage
+    // Sauvegarde automatique (Local + Cloud)
     useEffect(() => {
         localStorage.setItem('equinox_assistant_history', JSON.stringify(messages));
+        if (currentUser) {
+            // Debounce simple ou appel direct (c'est léger)
+            syncAIChatToFirestore(currentUser.uid, messages);
+        }
         scrollToBottom();
-    }, [messages, isThinking]);
+    }, [messages, isThinking, currentUser]);
 
     const clearHistory = () => {
         if (confirm("Voulez-vous vraiment effacer l'historique de la conversation ?")) {

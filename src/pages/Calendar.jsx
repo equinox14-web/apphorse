@@ -5,11 +5,38 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, MapPin, Activity, Plus, User, Box, Trash2, ArrowLeft, CheckCircle } from 'lucide-react';
 import { canAccess, isExternalUser } from '../utils/permissions';
+import { useAuth } from '../context/AuthContext';
+import { syncCalendarToFirestore, fetchCalendarFromFirestore } from '../services/dataSyncService';
 
 
 const Calendar = () => {
     const { t, i18n } = useTranslation();
+    const { currentUser } = useAuth();
     console.log("Calendar Language:", i18n.language);
+
+    // ... (rest of states)
+
+    // Sync Cloud Calendar on Mount
+    useEffect(() => {
+        if (currentUser) {
+            fetchCalendarFromFirestore(currentUser.uid).then(data => {
+                if (data) {
+                    console.log("📥 Calendrier chargé depuis le Cloud");
+                    if (data.customEvents) localStorage.setItem('appHorse_customEvents', JSON.stringify(data.customEvents));
+                    if (data.careEvents) localStorage.setItem('appHorse_careItems_v3', JSON.stringify(data.careEvents));
+                    // Reload UI
+                    loadAllEvents();
+                } else {
+                    // Si rien dans le cloud, on pousse ce qu'on a en local (première sync)
+                    const localCustom = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
+                    const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                    if (localCustom.length > 0 || localCare.length > 0) {
+                        syncCalendarToFirestore(currentUser.uid, localCustom, localCare);
+                    }
+                }
+            });
+        }
+    }, [currentUser]);
     const [view, setView] = useState('month'); // 'month', 'week', 'day'
     const [currentDate, setCurrentDate] = useState(new Date());
     const [events, setEvents] = useState([]);
@@ -362,6 +389,12 @@ const Calendar = () => {
             const updated = existing.map(e => String(e.id) === String(validateId) ? { ...e, completed: true } : e);
             localStorage.setItem('appHorse_customEvents', JSON.stringify(updated));
 
+            // Sync Cloud
+            if (currentUser) {
+                const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                syncCalendarToFirestore(currentUser.uid, updated, localCare);
+            }
+
             // UI Refresh
             loadAllEvents();
             setValidateId(null);
@@ -442,6 +475,12 @@ const Calendar = () => {
             const updated = [...existing, eventToSave];
             localStorage.setItem('appHorse_customEvents', JSON.stringify(updated));
 
+            // Sync Cloud
+            if (currentUser) {
+                const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                syncCalendarToFirestore(currentUser.uid, updated, localCare);
+            }
+
             // Reload view
             loadAllEvents();
             setShowModal(false);
@@ -474,6 +513,12 @@ const Calendar = () => {
             const existing = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
             const updated = existing.filter(e => String(e.id) !== String(deleteId));
             localStorage.setItem('appHorse_customEvents', JSON.stringify(updated));
+
+            // Sync Cloud
+            if (currentUser) {
+                const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                syncCalendarToFirestore(currentUser.uid, updated, localCare);
+            }
 
             // Update UI without reload
             loadAllEvents();

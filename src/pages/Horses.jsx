@@ -7,6 +7,8 @@ import Button from '../components/Button';
 import { Plus, User, Activity, Heart, X, Upload, Camera, Search, Trash2, Zap } from 'lucide-react';
 import { getMaxHorses, getUserPlanIds, canManageHorses } from '../utils/permissions';
 import { startCheckoutSession } from '../utils/stripePayment';
+import { useAuth } from '../context/AuthContext';
+import { syncHorsesToFirestore, fetchHorsesFromFirestore } from '../services/dataSyncService';
 import { useTranslation, Trans } from 'react-i18next';
 
 // Helper to resize images
@@ -277,9 +279,11 @@ const HorseCard = ({ horse, onUpdateImage, onUpdatePosition, onRequestDelete, na
     );
 };
 
+
 const Horses = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const { currentUser } = useAuth();
 
     // Default Data - Cleared for production feel / clean start
     const defaultHorses = [];
@@ -289,19 +293,43 @@ const Horses = () => {
         return saved ? JSON.parse(saved) : defaultHorses;
     });
 
+    // Chargement Cloud au démarrage si connecté (Hybride)
+    useEffect(() => {
+        if (currentUser) {
+            fetchHorsesFromFirestore(currentUser.uid).then(cloudHorses => {
+                // Stratégie simple : Le Cloud gagne s'il a des données, sinon on garde le local (ou on merge)
+                // Pour l'instant, si Cloud > 0, on remplace le local.
+                // Idéalement, on devrait merger par date de modif, mais restons simple.
+                if (cloudHorses && cloudHorses.length > 0) {
+                    console.log("📥 Mise à jour chevaux depuis le Cloud");
+                    setHorses(cloudHorses);
+                    // Update local storage too to keep sync
+                    localStorage.setItem('my_horses_v4', JSON.stringify(cloudHorses));
+                } else if (horses.length > 0) {
+                    // Si Cloud vide mais Local plein -> C'est la première sync -> On pousse vers Cloud
+                    console.log("📤 Première synchronisation vers le Cloud...");
+                    syncHorsesToFirestore(currentUser.uid, horses);
+                }
+            });
+        }
+    }, [currentUser]); // Run once on user load
+
     const [showModal, setShowModal] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
+    // ... states ...
+
+    // Reste des states existants (newHorse, preview, etc)
     const [newHorse, setNewHorse] = useState({
         name: '', breed: '', age: '', color: '', gender: 'H', image: null, origin: '', ueln: '', sireNumber: '',
         pedigree: { sire: '', dam: '', ss: '', sd: '', ds: '', dd: '' }
     });
     const [preview, setPreview] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [horseToDelete, setHorseToDelete] = useState(null); // State for delete modal
-    const [showPaymentModal, setShowPaymentModal] = useState(false); // State for upsell
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false); // State for upgrade prompt
-    const [showExtraSlotModal, setShowExtraSlotModal] = useState(false); // State for extra slot (Star/Pro)
-    const [upgradeType, setUpgradeType] = useState('passion'); // 'passion' or 'breeding'
+    const [horseToDelete, setHorseToDelete] = useState(null);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showExtraSlotModal, setShowExtraSlotModal] = useState(false);
+    const [upgradeType, setUpgradeType] = useState('passion');
 
     const filteredHorses = horses.filter(h =>
         h.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -314,14 +342,22 @@ const Horses = () => {
 
     const confirmDelete = () => {
         if (horseToDelete) {
-            setHorses(horses.filter(h => h.id !== horseToDelete.id));
+            const updated = horses.filter(h => h.id !== horseToDelete.id);
+            setHorses(updated);
             setHorseToDelete(null);
+            // Sync immédiate lors d'une suppression
+            if (currentUser) syncHorsesToFirestore(currentUser.uid, updated);
         }
     };
 
+    // Sauvegarde automatique (Local + Cloud)
     useEffect(() => {
         localStorage.setItem('my_horses_v4', JSON.stringify(horses));
-    }, [horses]);
+        if (currentUser && horses.length > 0) {
+            // Debounce idéalement, mais ici direct pour simplicité (optimisation future possible)
+            syncHorsesToFirestore(currentUser.uid, horses);
+        }
+    }, [horses, currentUser]);
 
     // Handle Extra Slot Payment Success
     useEffect(() => {
