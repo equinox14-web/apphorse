@@ -57,9 +57,23 @@ export function useServiceWorker() {
         };
     }, []);
 
-    const handleUpdate = useCallback(() => {
+    const handleUpdate = useCallback(async () => {
         if (updateSW) {
-            updateSW(true); // Cela force le rechargement avec la nouvelle version
+            try {
+                console.log('🔄 Activation de la nouvelle version...');
+                await updateSW(true); // Active le nouveau SW
+                console.log('✅ Nouvelle version activée, rechargement...');
+                // Force le rechargement complet de la page
+                window.location.reload();
+            } catch (error) {
+                console.error('❌ Erreur lors de la mise à jour:', error);
+                // Force quand même le rechargement en cas d'erreur
+                window.location.reload();
+            }
+        } else {
+            // Si updateSW n'est pas disponible, force le rechargement
+            console.log('⚠️ updateSW non disponible, rechargement forcé');
+            window.location.reload();
         }
     }, [updateSW]);
 

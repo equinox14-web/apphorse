@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { generateTrainingPlan, generateQuickTips, analyzeProgress } from '../services/geminiService';
+import { generateTrainingPlan, generateQuickTips, analyzeProgress, testGeminiConnection } from '../services/geminiService';
 
 /**
  * Hook pour gérer les interactions avec l'IA Gemini
@@ -104,6 +104,20 @@ export function useTrainingAI() {
         setLoading(false);
     }, []);
 
+    /**
+     * Teste la connexion à l'API Gemini
+     */
+    const testConnection = useCallback(async () => {
+        setLoading(true);
+        try {
+            const result = await testGeminiConnection();
+            console.log('📊 Résultat du test:', result);
+            return result;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     return {
         loading,
         error,
@@ -111,6 +125,7 @@ export function useTrainingAI() {
         generatePlan,
         getTips,
         analyze,
-        reset
+        reset,
+        testConnection
     };
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { ArrowLeft, Activity, Dna, Calendar, User, FileText, QrCode, Upload, Camera, Edit2, Save, X, ScanLine, Trash2, Utensils, MapPin, Image as ImageIcon, Scale } from 'lucide-react';
+import { ArrowLeft, Activity, Dna, Calendar, User, FileText, QrCode, Upload, Camera, Edit2, Save, X, ScanLine, Trash2, Utensils, MapPin, Image as ImageIcon, Scale, Plus as PlusIcon } from 'lucide-react';
 import { canEdit, canManageHorses } from '../utils/permissions';
 
 // Helper to resize images
@@ -628,7 +628,7 @@ const HorseProfile = () => {
                                                     }}
                                                     style={{ fontSize: '0.8rem', color: '#1890ff', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '4px' }}
                                                 >
-                                                    <Plus size={14} /> Ajouter un produit
+                                                    <PlusIcon size={14} /> Ajouter un produit
                                                 </button>
                                             </div>
                                         ) : (
@@ -679,7 +679,7 @@ const HorseProfile = () => {
                                                 }}
                                                 style={{ fontSize: '0.8rem', color: '#1890ff', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '4px' }}
                                             >
-                                                <Plus size={14} /> Ajouter
+                                                <PlusIcon size={14} /> Ajouter
                                             </button>
                                         </div>
                                     ) : (

@@ -1,13 +1,52 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-// Initialisation du client Gemini
+// Configuration de l'API Gemini via REST directement (v1)
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1/models';
 
 if (!API_KEY) {
     console.error('❌ VITE_GEMINI_API_KEY non définie dans .env');
 }
 
-const genAI = new GoogleGenerativeAI(API_KEY);
+/**
+ * Appel direct à l'API REST Gemini v1
+ * @param {string} modelName - Nom du modèle
+ * @param {string} prompt - Texte du prompt
+ * @returns {Promise<string>} Réponse générée
+ */
+async function callGeminiAPI(modelName, prompt, config = {}) {
+    const url = `${API_ENDPOINT}/${modelName}:generateContent?key=${API_KEY}`;
+
+    const requestBody = {
+        contents: [{
+            parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+            temperature: config.temperature || 0.7,
+            topP: config.topP || 0.8,
+            maxOutputTokens: config.maxOutputTokens || 4096,  // Défaut augmenté pour Gemini 2.5
+        }
+    };
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API Error ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+        throw new Error('Réponse invalide de l\'API');
+    }
+
+    return data.candidates[0].content.parts[0].text;
+}
 
 /**
  * Génère un planning d'entraînement personnalisé avec Gemini
@@ -22,9 +61,6 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 export async function generateTrainingPlan(params) {
     try {
         const { horse, discipline, level, frequency, focus } = params;
-
-        // Modèle à utiliser (pro pour stabilité)
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
         // Construction du prompt système
         const systemPrompt = `Tu es un entraîneur équin expert et diplômé d'État. Tu as une expertise dans toutes les disciplines équestres.
@@ -93,11 +129,13 @@ FORMAT DE RÉPONSE OBLIGATOIRE (JSON STRICT) :
 
 Réponds UNIQUEMENT avec le JSON, sans texte avant ou après. Le JSON doit être parsable directement.`;
 
-        // Génération du contenu
-        console.log('🤖 Génération du planning avec Gemini...');
-        const result = await model.generateContent(systemPrompt);
-        const response = await result.response;
-        const text = response.text();
+        // Génération du contenu via API REST v1 avec Gemini 2.5 Flash
+        console.log('🤖 Génération du planning avec Gemini 2.5 Flash...');
+        const text = await callGeminiAPI('gemini-2.0-flash', systemPrompt, {
+            temperature: 0.7,
+            topP: 0.8,
+            maxOutputTokens: 8192  // Gemini 2.5 Flash supporte jusqu'à 65k
+        });
 
         console.log('✅ Réponse brute de Gemini:', text.substring(0, 200) + '...');
 
@@ -121,11 +159,60 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après. Le JSON doit être
 
     } catch (error) {
         console.error('❌ Erreur lors de la génération du planning:', error);
+        console.error('Type d\'erreur:', typeof error);
+        console.error('Détails complets:', JSON.stringify(error, null, 2));
+
+        let errorMessage = 'Erreur inconnue';
+
+        // Extraire le message d'erreur depuis différents formats possibles
+        const errMsg = error?.message || error?.error || JSON.stringify(error);
+
+        // Messages d'erreur plus clairs pour l'utilisateur
+        if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key')) {
+            errorMessage = 'Cle API Gemini invalide. Verifiez votre configuration.';
+        } else if (errMsg.includes('quota') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+            errorMessage = 'Quota Gemini epuise. Reessayez plus tard.';
+        } else if (errMsg.includes('SAFETY') || errMsg.includes('blocked')) {
+            errorMessage = 'Contenu bloque par les filtres de securite.';
+        } else if (errMsg.includes('NOT_FOUND')) {
+            errorMessage = 'Modele Gemini non trouve. Verifiez la configuration.';
+        } else if (errMsg.includes('PERMISSION_DENIED')) {
+            errorMessage = 'API Gemini non activee sur ce projet.';
+        } else {
+            errorMessage = `Erreur Gemini: ${errMsg.substring(0, 100)}`;
+        }
 
         return {
             success: false,
-            error: error.message || 'Erreur inconnue',
+            error: errorMessage,
             data: null
+        };
+    }
+}
+
+/**
+ * Test simple de connexion à l'API Gemini
+ * @returns {Promise<Object>} Résultat du test
+ */
+export async function testGeminiConnection() {
+    try {
+        console.log('🔍 Test de connexion Gemini (API REST v1)...');
+        console.log('🔑 API Key présente:', API_KEY ? 'Oui' : 'Non');
+
+        const text = await callGeminiAPI('gemini-2.0-flash', 'Dis bonjour en francais en une phrase.');
+
+        console.log('✅ Test réussi! Réponse:', text);
+
+        return {
+            success: true,
+            message: 'Connexion Gemini OK',
+            response: text
+        };
+    } catch (error) {
+        console.error('❌ Test échoué:', error);
+        return {
+            success: false,
+            error: error.message || JSON.stringify(error)
         };
     }
 }
@@ -139,8 +226,6 @@ export async function generateQuickTips(params) {
     try {
         const { discipline, exercise, horseName } = params;
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
         const prompt = `Tu es un coach équestre expert. Donne 3 conseils concrets et rapides pour bien réaliser l'exercice suivant :
 
 Discipline : ${discipline}
@@ -149,12 +234,11 @@ Cheval : ${horseName}
 
 Réponds en français, sous forme de liste à puces, maximum 3 conseils de 2 lignes chacun.`;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
+        const text = await callGeminiAPI('gemini-2.0-flash', prompt);
 
         return {
             success: true,
-            tips: response.text()
+            tips: text
         };
 
     } catch (error) {
@@ -174,8 +258,6 @@ Réponds en français, sous forme de liste à puces, maximum 3 conseils de 2 lig
 export async function analyzeProgress(params) {
     try {
         const { sessionHistory, horseProfile, currentGoal } = params;
-
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
         const prompt = `Tu es un entraîneur équin expert. Analyse la progression suivante et donne des recommandations.
 
@@ -204,9 +286,7 @@ FORMAT JSON :
 
 Réponds uniquement avec le JSON.`;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const text = await callGeminiAPI('gemini-2.0-flash', prompt);
 
         let cleanedText = text.trim();
         if (cleanedText.startsWith('```')) {
@@ -229,8 +309,29 @@ Réponds uniquement avec le JSON.`;
     }
 }
 
+/**
+ * Chat générique avec l'assistant (remplace l'extension Firebase)
+ * @param {string} prompt - Le prompt complet contexte + question
+ * @returns {Promise<string>} La réponse de l'IA
+ */
+export async function chatWithAssistant(prompt) {
+    try {
+        console.log('💬 Appels Assistant IA (REST)...');
+        const text = await callGeminiAPI('gemini-2.0-flash', prompt, {
+            temperature: 0.7,
+            maxOutputTokens: 2048
+        });
+        return { success: true, response: text };
+    } catch (error) {
+        console.error('❌ Erreur Chat Assistant:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 export default {
     generateTrainingPlan,
     generateQuickTips,
-    analyzeProgress
+    analyzeProgress,
+    testGeminiConnection,
+    chatWithAssistant
 };

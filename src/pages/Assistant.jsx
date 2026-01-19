@@ -1,25 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebase'; // Adjust path if needed
 import { collection, addDoc, onSnapshot } from 'firebase/firestore';
-import { Send, Sparkles, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Sparkles, Bot, User, Loader2, Check, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import ReactMarkdown from 'react-markdown';
-
+import { chatWithAssistant } from '../services/geminiService';
 
 const Assistant = () => {
     const { t } = useTranslation();
     const { currentUser } = useAuth();
     const { mode } = useTheme(); // 'light' or 'dark'
-    const [messages, setMessages] = useState([
-        {
+
+    // Initialisation depuis localStorage ou message par défaut
+    const [messages, setMessages] = useState(() => {
+        const saved = localStorage.getItem('equinox_assistant_history');
+        if (saved) {
+            try {
+                // Reconstruire les objets Date car JSON.parse retourne des strings
+                return JSON.parse(saved).map(msg => ({
+                    ...msg,
+                    timestamp: new Date(msg.timestamp)
+                }));
+            } catch (e) {
+                console.error("Erreur lecture historique", e);
+            }
+        }
+        return [{
             id: 'intro',
             role: 'assistant',
-            content: "Bonjour ! Je suis votre assistant Equinox. Comment puis-je vous aider aujourd'hui dans la gestion de votre écurie ?",
+            content: "Bonjour ! Je suis votre assistant Equinox. Comment puis-je vous aider aujourd'hui ?",
             timestamp: new Date()
-        }
-    ]);
+        }];
+    });
+
     const [inputValue, setInputValue] = useState('');
     const [isThinking, setIsThinking] = useState(false);
     const messagesEndRef = useRef(null);
@@ -28,9 +43,24 @@ const Assistant = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
+    // Sauvegarde automatique dans localStorage
     useEffect(() => {
+        localStorage.setItem('equinox_assistant_history', JSON.stringify(messages));
         scrollToBottom();
     }, [messages, isThinking]);
+
+    const clearHistory = () => {
+        if (confirm("Voulez-vous vraiment effacer l'historique de la conversation ?")) {
+            const newHistory = [{
+                id: Date.now().toString(),
+                role: 'assistant',
+                content: "Historique effacé. De quoi voulez-vous parler ?",
+                timestamp: new Date()
+            }];
+            setMessages(newHistory);
+            localStorage.setItem('equinox_assistant_history', JSON.stringify(newHistory));
+        }
+    };
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
@@ -55,33 +85,48 @@ const Assistant = () => {
         const todayStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
         // 2. Construction du Prompt Système Avancé
-        const advancedPrompt = `CONTEXTE:
-Tu es l'assistant expert de l'application Equinox.
-Date actuelle : ${todayStr}.
-Cheval par défaut si non précisé : demande lequel.
+        // 2. Construction du Prompt Système Avancé (Equinox Vet Guard)
+        const advancedPrompt = `Tu es "Equinox Vet Guard", un assistant IA expert en santé équine et pharmacologie vétérinaire, intégré à l'application de gestion d'écurie "Equinox".
 
-CHEVAUX DE L'ÉCURIE (Nom et ID):
-${horsesListStr}
+TES OBJECTIFS :
+1. Analyser les demandes de soins et santé.
+2. Répondre aux questions des propriétaires avec précision et prudence.
+3. Aider à la planification des soins et de l'entraînement.
 
-INSTRUCTIONS:
-- Réponds toujours en français.
-- SI l'utilisateur demande de PLANIFIER ou CRÉER des séances :
-   1. Vérifie si tu as le cheval et la date.
-   2. Génère un bloc JSON spécial entouré de \`\`\`json_planning et \`\`\` contenant un tableau d'événements.
+RÈGLES DE SÉCURITÉ ABSOLUES (CRITIQUE) :
+- Tu n'es PAS un vétérinaire. Tu ne poses jamais de diagnostic définitif.
+- Si l'utilisateur décrit une urgence vitale (coliques, fracture, hémorragie, cheval couché), ta PREMIÈRE phrase doit être : "🚨 URGENCE : Appelez immédiatement votre vétérinaire."
+- Rappelle toujours que tes conseils ne remplacent pas une consultation physique.
+
+MODE CONSEIL & DISCUSSION :
+- Ton ton est professionnel, empathique et éducatif. Utilise le vouvoiement.
+- Sois concis. Listes à puces appréciées.
+- Base tes réponses sur la médecine vétérinaire équine moderne.
+- Si on demande un dosage sans ordonnance, refuse de donner une dose précise (risque de surdosage).
+
+MODE PLANIFICATION (Si l'utilisateur demande de CRÉER ou PLANIFIER des séances) :
+- Vérifie si tu as le cheval et la date.
+- Génère un bloc JSON spécial entouré de \`\`\`json_planning et \`\`\` contenant un tableau d'événements.
    Format JSON attendu :
    [
      {
-       "title": "Saut d'obstacles",
+       "title": "Nom de la séance",
        "date": "YYYY-MM-DD",
        "time": "14:00",
-       "type": "saut",
+       "type": "care" (ou stable, other, saut, longe...),
        "horseId": "ID_EXACT_DU_CHEVAL",
-       "details": "Description courte"
+       "details": "Description courte",
+       "color": "#e11d48" (Rouge pour santé) ou autre
      }
    ]
-   (Types valides: dressage, saut, longe, trotting, marcheur, care, stable, other)
 
-QUESTION UTILISATEUR:
+CONTEXTE UTILISATEUR :
+Date actuelle : ${todayStr}
+L'utilisateur est un gérant d'écurie ou propriétaire.
+CHEVAUX DE L'ÉCURIE (Nom et ID) :
+${horsesListStr}
+
+QUESTION UTILISATEUR :
 ${userMsg}`;
 
         console.log("--------------- DEBUG PROMPT ---------------");
@@ -89,53 +134,37 @@ ${userMsg}`;
         console.log("-------------------------------------------");
 
         try {
-            // Create a document in 'generate' collection
-            const docRef = await addDoc(collection(db, 'generate'), {
-                prompt: advancedPrompt,
-                createdAt: new Date(),
-                userId: currentUser?.uid
-            });
-            console.log("Document created with ID:", docRef.id);
+            // APPEL DIRECT À L'API GEMINI (Sans passer par Firestore)
+            const result = await chatWithAssistant(advancedPrompt);
 
-            // Listen for changes to this document (waiting for the 'output' field)
-            const unsubscribe = onSnapshot(docRef, (docSnap) => {
-                const data = docSnap.data();
-                if (data) {
-                    // Cas 1 : Succès
-                    if (data.output) {
-                        const aiMessageObj = {
-                            id: docSnap.id,
-                            role: 'assistant',
-                            content: data.output,
-                            timestamp: new Date()
-                        };
-                        setMessages(prev => [...prev, aiMessageObj]);
-                        setIsThinking(false);
-                        unsubscribe();
-                    }
-                    // Cas 2 : Erreur renvoyée par l'extension
-                    else if (data.status && data.status.state === 'ERRORED') {
-                        console.error("Erreur Extension Gemini:", data.status);
-                        setMessages(prev => [...prev, {
-                            id: Date.now().toString(),
-                            role: 'assistant',
-                            content: `Erreur IA: ${data.status.error || "Une erreur inconnue est survenue côté serveur."}`,
-                            isError: true,
-                            timestamp: new Date()
-                        }]);
-                        setIsThinking(false);
-                        unsubscribe();
-                    }
-                }
-            });
+            if (result.success) {
+                const aiMessageObj = {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: result.response,
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, aiMessageObj]);
+            } else {
+                console.error("Erreur Gemini Service:", result.error);
+                setMessages(prev => [...prev, {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: `Une erreur est survenue : ${result.error}`,
+                    isError: true,
+                    timestamp: new Date()
+                }]);
+            }
+
+            setIsThinking(false);
 
         } catch (error) {
-            console.error("Error sending message:", error);
+            console.error("Error calling Gemini:", error);
             setIsThinking(false);
             setMessages(prev => [...prev, {
                 id: Date.now().toString(),
                 role: 'assistant',
-                content: "Désolé, une erreur est survenue lors de la communication avec l'IA.",
+                content: "Désolé, une erreur technique est survenue.",
                 isError: true,
                 timestamp: new Date()
             }]);
@@ -145,8 +174,112 @@ ${userMsg}`;
 
 
 
-    // Helper pour rendu de message simple
+    // Fonction pour ajouter au calendrier
+    const addToCalendar = (eventData) => {
+        try {
+            const existing = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
+            const newEvent = {
+                id: Date.now(),
+                title: eventData.title,
+                dateStr: new Date(`${eventData.date}T${eventData.time}`).toISOString(),
+                type: eventData.type || 'other',
+                types: [eventData.type || 'other'],
+                color: eventData.color || '#3b82f6',
+                horseId: eventData.horseId,
+                rider: 'Moi',
+                details: eventData.details || 'Planifié via Assistant IA',
+                completed: false
+            };
+
+            const updated = [...existing, newEvent];
+            localStorage.setItem('appHorse_customEvents', JSON.stringify(updated));
+            alert(`✅ "${eventData.title}" ajouté au calendrier pour le ${eventData.date} à ${eventData.time} !`);
+
+            // Événement personnalisé pour rafraîchir le calendrier si ouvert
+            window.dispatchEvent(new Event('storage'));
+        } catch (e) {
+            console.error(e);
+            alert("Erreur lors de l'ajout au calendrier");
+        }
+    };
+
+    // Helper pour rendu de message (Texte + Carte Planning)
     const renderMessageContent = (msg) => {
+        // Détection du bloc JSON planning
+        const planningRegex = /```json_planning([\s\S]*?)```/;
+        const match = msg.content.match(planningRegex);
+
+        if (match) {
+            const jsonStr = match[1];
+            const textPart = msg.content.replace(planningRegex, '').trim();
+            let events = [];
+            try {
+                events = JSON.parse(jsonStr);
+            } catch (e) {
+                console.error("Erreur parsing JSON planning", e);
+            }
+
+            return (
+                <div className="markdown-content">
+                    {textPart && <ReactMarkdown>{textPart}</ReactMarkdown>}
+
+                    {events.length > 0 && (
+                        <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 600, opacity: 0.8, textTransform: 'uppercase' }}>
+                                📅 Proposition de planning ({events.length})
+                            </div>
+                            {events.map((evt, idx) => (
+                                <div key={idx} style={{
+                                    background: 'white',
+                                    color: '#333',
+                                    padding: '1rem',
+                                    borderRadius: '12px',
+                                    borderLeft: `4px solid ${evt.color || '#3b82f6'}`,
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                }}>
+                                    <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{evt.title}</div>
+                                    <div style={{ display: 'flex', gap: '1rem', margin: '0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            🗓️ {evt.date}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            🕒 {evt.time}
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>
+                                        {evt.details}
+                                    </div>
+                                    <button
+                                        onClick={() => addToCalendar(evt)}
+                                        style={{
+                                            background: '#f3f4f6',
+                                            border: 'none',
+                                            color: '#333',
+                                            padding: '0.5rem 1rem',
+                                            borderRadius: '8px',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            fontSize: '0.9rem',
+                                            width: '100%',
+                                            justifyContent: 'center',
+                                            transition: 'background 0.2s'
+                                        }}
+                                        onMouseOver={e => e.target.style.background = '#e5e7eb'}
+                                        onMouseOut={e => e.target.style.background = '#f3f4f6'}
+                                    >
+                                        <Check size={16} /> Ajouter au calendrier
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
         return (
             <div className="markdown-content">
                 <ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -187,10 +320,35 @@ ${userMsg}`;
                 }}>
                     <Sparkles size={24} />
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                     <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Assistant IA Equinox</h1>
                     <p style={{ margin: 0, opacity: 0.7, fontSize: '0.9rem' }}>Propulsé par Google Gemini</p>
                 </div>
+
+                {messages.length > 2 && (
+                    <button
+                        onClick={clearHistory}
+                        title="Effacer l'historique"
+                        style={{
+                            background: 'transparent',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-color)',
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            opacity: 0.7
+                        }}
+                        onMouseOver={e => { e.target.style.opacity = 1; e.target.style.background = 'rgba(239, 68, 68, 0.1)'; e.target.style.borderColor = '#ef4444'; e.target.style.color = '#ef4444'; }}
+                        onMouseOut={e => { e.target.style.opacity = 0.7; e.target.style.background = 'transparent'; e.target.style.borderColor = 'var(--border-color)'; e.target.style.color = 'var(--text-color)'; }}
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                )}
             </div>
 
             {/* Chat Area */}

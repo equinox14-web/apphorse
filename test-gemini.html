@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Gemini API</title>
+</head>
+
+<body>
+    <h1>Test de l'API Gemini</h1>
+    <button onclick="listModels()">Lister les modèles disponibles</button>
+    <button onclick="testModel()">Tester un modèle</button>
+    <pre id="result"></pre>
+
+    <script>
+        const API_KEY = 'AIzaSyAf4YeqOAAoJBbqLHcnCaIS7Dk3E5_llag';
+
+        async function listModels() {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${API_KEY}`);
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Erreur: ' + error.message;
+            }
+        }
+
+        async function testModel() {
+            const modelName = 'gemini-1.5-flash'; // On teste ce nom
+            const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${API_KEY}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: 'Dis bonjour' }]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Erreur: ' + error.message;
+            }
+        }
+    </script>
+</body>
+
+</html>

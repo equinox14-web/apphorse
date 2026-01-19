@@ -9,7 +9,7 @@ import SEO from '../components/SEO';
 
 export default function AITrainingCoach() {
     const navigate = useNavigate();
-    const { generatePlan, loading, error, trainingPlan } = useTrainingAI();
+    const { generatePlan, loading, error, trainingPlan, testConnection } = useTrainingAI();
 
     // État du wizard
     const [step, setStep] = useState(1);
@@ -28,6 +28,16 @@ export default function AITrainingCoach() {
         const horsesData = JSON.parse(localStorage.getItem('my_horses_v4')) || [];
         setHorses(horsesData);
     }, []);
+
+    // Test de connexion Gemini
+    const handleTestGemini = async () => {
+        const result = await testConnection();
+        if (result.success) {
+            alert(`✅ Test réussi !\n\n${result.response}`);
+        } else {
+            alert(`❌ Test échoué :\n\n${result.error}`);
+        }
+    };
 
     // Disciplines disponibles
     const disciplines = [
@@ -129,6 +139,18 @@ export default function AITrainingCoach() {
     return (
         <div className="animate-fade-in">
             <SEO title="AI Training Coach - Equinox" description="Générez un planning d'entraînement personnalisé avec l'IA" />
+
+            {/* Bouton de test DEBUG - À retirer après diagnostic */}
+            <div style={{ position: 'fixed', top: '80px', right: '20px', zIndex: 1000 }}>
+                <Button
+                    onClick={handleTestGemini}
+                    variant="secondary"
+                    disabled={loading}
+                    style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+                >
+                    🔍 Test Gemini
+                </Button>
+            </div>
 
             {/* Stepper */}
             <Card style={{ marginBottom: '2rem' }}>

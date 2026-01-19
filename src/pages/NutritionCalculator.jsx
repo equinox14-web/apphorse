@@ -438,7 +438,14 @@ function NutritionCalculator() {
                                     </h3>
                                     <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#b91c1c' }}>
                                         {ration.warnings.map((w, i) => (
-                                            <li key={i}>{w}</li>
+                                            <li key={i} style={{ marginBottom: '0.5rem' }}>
+                                                <strong>{w.message}</strong>
+                                                {w.recommendation && (
+                                                    <div style={{ fontSize: '0.9rem', color: '#dc2626', marginTop: '0.25rem' }}>
+                                                        → {w.recommendation}
+                                                    </div>
+                                                )}
+                                            </li>
                                         ))}
                                     </ul>
                                 </Card>

@@ -220,6 +220,7 @@ const Calendar = () => {
     const loadAllEvents = () => {
         let careEvents = [];
         let customEvents = [];
+        let aiPlanningEvents = [];
 
         try {
             // 1. Get Care Items (Read-only source)
@@ -258,7 +259,41 @@ const Calendar = () => {
             }
         } catch (e) { console.error("Error loading custom events", e); }
 
-        let allEvents = [...careEvents, ...customEvents];
+        try {
+            // 3. Get AI Training Plans
+            const savedAIPlans = localStorage.getItem('ai_training_plans');
+            if (savedAIPlans) {
+                const plans = JSON.parse(savedAIPlans);
+
+                plans.forEach((planData, planIndex) => {
+                    const plan = planData.plan;
+                    if (plan && plan.weeklySchedule) {
+                        // Convertir chaque session du planning en événement
+                        plan.weeklySchedule.forEach((session, sessionIndex) => {
+                            if (session.day && session.sessionName) {
+                                // Calculer la date basée sur le jour de la semaine
+                                const today = new Date();
+                                const dayOfWeek = getDayOfWeekNumber(session.day);
+                                const targetDate = getNextDateForDay(today, dayOfWeek);
+
+                                aiPlanningEvents.push({
+                                    id: `ai-plan-${planIndex}-${sessionIndex}`,
+                                    title: `🤖 ${session.sessionName}`,
+                                    date: targetDate,
+                                    type: 'training',
+                                    color: '#8b5cf6', // Violet pour l'IA
+                                    details: `${session.intensity} • ${session.duration}`,
+                                    description: session.tips || '',
+                                    horseName: planData.horseName || 'Planning IA'
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        } catch (e) { console.error("Error loading AI training plans", e); }
+
+        let allEvents = [...careEvents, ...customEvents, ...aiPlanningEvents];
 
         // Filter for External Users (Vets, Farriers, etc.)
         if (isExternalUser()) {
@@ -285,6 +320,29 @@ const Calendar = () => {
         }
 
         setEvents(allEvents);
+    };
+
+    // Helper functions for AI planning dates
+    const getDayOfWeekNumber = (dayName) => {
+        const days = {
+            'lundi': 1, 'monday': 1,
+            'mardi': 2, 'tuesday': 2,
+            'mercredi': 3, 'wednesday': 3,
+            'jeudi': 4, 'thursday': 4,
+            'vendredi': 5, 'friday': 5,
+            'samedi': 6, 'saturday': 6,
+            'dimanche': 0, 'sunday': 0
+        };
+        return days[dayName.toLowerCase()] || 0;
+    };
+
+    const getNextDateForDay = (startDate, targetDay) => {
+        const date = new Date(startDate);
+        const currentDay = date.getDay();
+        let daysToAdd = targetDay - currentDay;
+        if (daysToAdd < 0) daysToAdd += 7;
+        date.setDate(date.getDate() + daysToAdd);
+        return date;
     };
 
     useEffect(() => {
@@ -983,7 +1041,7 @@ const Calendar = () => {
                             )}
 
                             {/* Cheval */}
-                            {selectedEvent.horseId && (
+                            {(selectedEvent.horseId || selectedEvent.horseName) && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <div style={{
                                         width: '40px',
@@ -1001,7 +1059,32 @@ const Calendar = () => {
                                             {t('calendar_page.form.horse')}
                                         </div>
                                         <div style={{ color: '#333', fontWeight: 500 }}>
-                                            {horsesList.find(h => String(h.id) === String(selectedEvent.horseId))?.name || 'Inconnu'}
+                                            {selectedEvent.horseName || horsesList.find(h => String(h.id) === String(selectedEvent.horseId))?.name || 'Inconnu'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Conseils IA */}
+                            {selectedEvent.description && (
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '10px',
+                                        background: '#f3f4f6',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        💡
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#999', textTransform: 'uppercase', marginBottom: '2px' }}>
+                                            Conseils
+                                        </div>
+                                        <div style={{ color: '#333', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                                            {selectedEvent.description}
                                         </div>
                                     </div>
                                 </div>
