@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { loadUserDataFromFirestore, saveUserDataToFirestore } from '../services/firestoreSync';
 
 const AuthContext = createContext();
 
@@ -160,7 +161,10 @@ export const AuthProvider = ({ children }) => {
                 // 1. Fetch static profile data first
                 await syncUserProfile(user);
 
-                // 2. Real-time Subscription Listener (Strict Logic from Spec)
+                // 2. Charger les données utilisateur depuis Firestore
+                await loadUserDataFromFirestore(user.uid);
+
+                // 3. Real-time Subscription Listener (Strict Logic from Spec)
                 // "Surveiller la collection customers/{uid}/subscriptions"
                 if (db) { // Check if DB is available even if Auth is
                     const subsRef = collection(db, 'customers', user.uid, 'subscriptions');
@@ -239,14 +243,35 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
+            // 1. Sauvegarder les données dans Firestore avant de partir
+            if (currentUser?.uid) {
+                await saveUserDataToFirestore(currentUser.uid);
+            }
+
+            // 2. Déconnexion Firebase
             if (auth) {
                 await firebaseSignOut(auth);
             }
-            // Clear local storage completely on logout to be safe
+
+            // 3. Nettoyer UNIQUEMENT les données d'authentification
+            // (Ne PAS effacer les données utilisateur qui sont maintenant dans Firestore)
+            const keysToKeep = ['app_theme', 'app_mode', 'known_accounts'];
+            const toKeep = {};
+            keysToKeep.forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value) toKeep[key] = value;
+            });
+
             localStorage.clear();
-            // Re-init theme defaults so UI doesn't break
-            localStorage.setItem('app_theme', 'slate');
-            localStorage.setItem('app_mode', 'light');
+
+            // Restaurer les préférences
+            Object.entries(toKeep).forEach(([key, value]) => {
+                localStorage.setItem(key, value);
+            });
+
+            // Re-init theme defaults si absents
+            if (!localStorage.getItem('app_theme')) localStorage.setItem('app_theme', 'slate');
+            if (!localStorage.getItem('app_mode')) localStorage.setItem('app_mode', 'light');
 
             // In demo mode, redirect or just clear state
             if (!auth) {
