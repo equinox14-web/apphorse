@@ -62,16 +62,17 @@ export function useServiceWorker() {
             try {
                 console.log('🔄 Activation de la nouvelle version...');
                 await updateSW(true); // Active le nouveau SW
-                console.log('✅ Nouvelle version activée, rechargement...');
-                // Force le rechargement complet de la page
-                window.location.reload();
+
+                // Petit délai pour laisser le temps au SW de s'activer
+                setTimeout(() => {
+                    console.log('✅ Rechargement pour appliquer la mise à jour...');
+                    window.location.reload();
+                }, 500);
             } catch (error) {
                 console.error('❌ Erreur lors de la mise à jour:', error);
-                // Force quand même le rechargement en cas d'erreur
                 window.location.reload();
             }
         } else {
-            // Si updateSW n'est pas disponible, force le rechargement
             console.log('⚠️ updateSW non disponible, rechargement forcé');
             window.location.reload();
         }

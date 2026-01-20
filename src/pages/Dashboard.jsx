@@ -90,10 +90,10 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchCity = async (lat, lon) => {
             try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=fr`);
                 const data = await response.json();
-                const city = data.address.city || data.address.town || data.address.village || "Ma Position";
-                const country = data.address.country === 'France' ? 'FR' : (data.address.country_code ? data.address.country_code.toUpperCase() : '');
+                const city = data.city || data.locality || data.principalSubdivision || "Ma Position";
+                const country = data.countryCode === 'FR' ? 'FR' : data.countryCode;
                 setLocationName(country ? `${city}, ${country}` : city);
             } catch (err) {
                 // setLocationName('Paris, FR'); // Keep ... or default

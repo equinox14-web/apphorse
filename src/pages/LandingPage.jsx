@@ -195,6 +195,15 @@ const LandingPage = () => {
                         width: 100% !important; 
                         max-width: 180px !important; 
                     }
+                    .flex-col-mobile {
+                        flex-direction: column !important;
+                        align-items: center !important;
+                        width: 100% !important;
+                    }
+
+                    .nav-container {
+                        justify-content: center !important;
+                    }
                 }
             `}</style>
 

@@ -253,7 +253,7 @@ function WeightCamera({ horse, onWeightEstimated, onClose }) {
                     }}>
                         <Loader size={48} className="animate-spin" style={{ marginBottom: '1rem' }} />
                         <p style={{ fontSize: '1.2rem' }}>Analyse en cours...</p>
-                        <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Calcul des mesures morphométriques</p>
+                        <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Analyse haute précision (BodyPix) en cours...</p>
                     </div>
                 )}
 
