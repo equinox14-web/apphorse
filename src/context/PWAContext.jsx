@@ -74,13 +74,8 @@ export const PWAProvider = ({ children }) => {
 
     // Open instructions manually (e.g. from a help button)
     const openInstructions = () => {
-        if (deferredPrompt) {
-            install();
-        } else {
-            // Fallback for iOS OR Android without prompt (manual install)
-            // Instead of alert, show the generic instructions modal
-            setShowInstructions(true);
-        }
+        // Always show the modal first (Unified Experience)
+        setShowInstructions(true);
     };
 
     return (
@@ -93,7 +88,8 @@ export const PWAProvider = ({ children }) => {
             showInstallPrompt,
             showInstructions, // Renamed from showIOSInstructions
             closeInstructions, // Renamed from closeIOSInstructions
-            openInstructions
+            openInstructions,
+            deferredPrompt // Expose for UI logic
         }}>
             {children}
         </PWAContext.Provider>

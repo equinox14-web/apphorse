@@ -11,7 +11,8 @@ const PWAPrompt = () => {
         install,
         isIOS,
         showInstructions,
-        closeInstructions
+        closeInstructions,
+        deferredPrompt // Get deferredPrompt
     } = usePWA();
 
     const { t } = useTranslation();
@@ -107,64 +108,85 @@ const PWAPrompt = () => {
                         </p>
                     </div>
 
-                    <div style={{
-                        background: '#f3f4f6', borderRadius: '16px', padding: '1.5rem',
-                        display: 'flex', flexDirection: 'column', gap: '1rem'
-                    }}>
-                        {isIOS ? (
-                            // iOS Instructions
-                            <>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>1</div>
-                                    <div style={{ flex: 1, fontSize: '0.95rem' }}>
-                                        Appuyez sur le bouton <strong>Partager</strong> <Share size={16} style={{ display: 'inline', marginTop: '-2px' }} /> dans la barre de navigation.
-                                    </div>
+                    {deferredPrompt ? (
+                        <>
+                            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                                <div style={{ background: '#eff6ff', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1e3a8a', marginBottom: '0.5rem' }}>Prêt à installer</h3>
+                                    <p style={{ color: '#3b82f6', fontSize: '0.95rem' }}>
+                                        Cliquez ci-dessous pour lancer l'installation automatique.
+                                    </p>
                                 </div>
-                                <div style={{ width: '1px', height: '16px', background: '#d1d5db', marginLeft: '16px' }}></div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>2</div>
-                                    <div style={{ flex: 1, fontSize: '0.95rem' }}>
-                                        Faites défiler vers le bas et appuyez sur <strong>Sur l&apos;écran d&apos;accueil</strong> <PlusSquare size={16} style={{ display: 'inline', marginTop: '-2px' }} />.
-                                    </div>
-                                </div>
-                                <div style={{ width: '1px', height: '16px', background: '#d1d5db', marginLeft: '16px' }}></div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>3</div>
-                                    <div style={{ flex: 1, fontSize: '0.95rem' }}>
-                                        Appuyez sur <strong>Ajouter</strong> en haut à droite.
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            // Android / Chrome Instructions
-                            <>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>1</div>
-                                    <div style={{ flex: 1, fontSize: '0.95rem' }}>
-                                        Appuyez sur le menu du navigateur (souvent <strong>3 points</strong> ⋮ en haut à droite).
-                                    </div>
-                                </div>
-                                <div style={{ width: '1px', height: '16px', background: '#d1d5db', marginLeft: '16px' }}></div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>2</div>
-                                    <div style={{ flex: 1, fontSize: '0.95rem' }}>
-                                        Sélectionnez <strong>Installer l'application</strong> ou <strong style={{ whiteSpace: 'nowrap' }}>Ajouter à l'écran d'accueil</strong>.
-                                    </div>
-                                </div>
-                                <div style={{ width: '1px', height: '16px', background: '#d1d5db', marginLeft: '16px' }}></div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>3</div>
-                                    <div style={{ flex: 1, fontSize: '0.95rem' }}>
-                                        Confirmez en appuyant sur <strong>Installer</strong>.
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                                <Button onClick={install} style={{ width: '100%', justifyContent: 'center', height: '50px', fontSize: '1.1rem' }}>
+                                    <Download size={20} style={{ marginRight: '0.5rem' }} /> Installer maintenant
+                                </Button>
+                                <button onClick={closeInstructions} style={{ marginTop: '1rem', background: 'none', border: 'none', color: '#9ca3af', textDecoration: 'underline', cursor: 'pointer' }}>
+                                    Non merci
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div style={{
+                                background: '#f3f4f6', borderRadius: '16px', padding: '1.5rem',
+                                display: 'flex', flexDirection: 'column', gap: '1rem'
+                            }}>
+                                {isIOS ? (
+                                    // iOS Instructions
+                                    <>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>1</div>
+                                            <div style={{ flex: 1, fontSize: '0.95rem' }}>
+                                                Appuyez sur le bouton <strong>Partager</strong> <Share size={16} style={{ display: 'inline', marginTop: '-2px' }} /> dans la barre de navigation.
+                                            </div>
+                                        </div>
+                                        <div style={{ width: '1px', height: '16px', background: '#d1d5db', marginLeft: '16px' }}></div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>2</div>
+                                            <div style={{ flex: 1, fontSize: '0.95rem' }}>
+                                                Faites défiler vers le bas et appuyez sur <strong>Sur l&apos;écran d&apos;accueil</strong> <PlusSquare size={16} style={{ display: 'inline', marginTop: '-2px' }} />.
+                                            </div>
+                                        </div>
+                                        <div style={{ width: '1px', height: '16px', background: '#d1d5db', marginLeft: '16px' }}></div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>3</div>
+                                            <div style={{ flex: 1, fontSize: '0.95rem' }}>
+                                                Appuyez sur <strong>Ajouter</strong> en haut à droite.
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    // Android / Chrome Manual Instructions
+                                    <>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>1</div>
+                                            <div style={{ flex: 1, fontSize: '0.95rem' }}>
+                                                Appuyez sur le menu du navigateur (souvent <strong>3 points</strong> ⋮ en haut à droite).
+                                            </div>
+                                        </div>
+                                        <div style={{ width: '1px', height: '16px', background: '#d1d5db', marginLeft: '16px' }}></div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>2</div>
+                                            <div style={{ flex: 1, fontSize: '0.95rem' }}>
+                                                Sélectionnez <strong>Installer l'application</strong> ou <strong style={{ whiteSpace: 'nowrap' }}>Ajouter à l'écran d'accueil</strong>.
+                                            </div>
+                                        </div>
+                                        <div style={{ width: '1px', height: '16px', background: '#d1d5db', marginLeft: '16px' }}></div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>3</div>
+                                            <div style={{ flex: 1, fontSize: '0.95rem' }}>
+                                                Confirmez en appuyant sur <strong>Installer</strong>.
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
-                    <Button onClick={closeInstructions} style={{ width: '100%', marginTop: '1.5rem', justifyContent: 'center' }}>
-                        J'ai compris
-                    </Button>
+                            <Button onClick={closeInstructions} style={{ width: '100%', marginTop: '1.5rem', justifyContent: 'center' }}>
+                                J'ai compris
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
         );

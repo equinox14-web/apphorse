@@ -1,34 +1,41 @@
 import React from 'react';
 import Card from './Card';
 import Button from './Button';
-import { Download, Share, Smartphone } from 'lucide-react';
+import { Download, Share, Smartphone, X } from 'lucide-react';
 import { usePWA } from '../context/PWAContext';
 
 const InstallAppCard = () => {
     const { isInstalled, openInstructions, canInstall, isIOS } = usePWA();
+    const [isVisible, setIsVisible] = React.useState(true);
 
-    // Do not show if already installed
-    if (isInstalled) return null;
+    // Debug: We removed the strict 'isInstalled' check to ensure visibility for your test.
+    // Instead, we allow the user to dismiss it manually.
+    if (!isVisible) return null;
 
-    // Do not show if we can't install AND it's not iOS (e.g. desktop Firefox or Safari where we can't prompt easily, unless we want to show generic help)
-    // Actually, spreading awareness is good. Let's show it if:
-    // 1. We have a prompt captured (canInstall)
-    // 2. OR we are on iOS (manual steps)
-    // 3. OR we are on Desktop Chrome/Edge (usually captured by canInstall)
-
-    // If we have neither prompt nor iOS, maybe hide it to avoid confusion or just disable? 
-    // Let's hide it if we literally can't do anything (no deferredPrompt and not iOS).
-    // Always show if not installed to allow manual instructions or waiting for prompt
-    // if (!canInstall && !isIOS) return null; // Removed to ensure visibility on mobile
+    // Optional: Auto-hide if installed, but user says it doesn't show up when it should.
+    // if (isInstalled) return null;
 
     return (
         <Card
             accent={true}
             style={{
                 background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                color: 'white'
+                color: 'white',
+                position: 'relative'
             }}
         >
+            <button
+                onClick={(e) => { e.stopPropagation(); setIsVisible(false); }}
+                style={{
+                    position: 'absolute', top: '10px', right: '10px',
+                    background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%',
+                    width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', color: 'white'
+                }}
+            >
+                <X size={14} />
+            </button>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{
                     minWidth: '48px', height: '48px',

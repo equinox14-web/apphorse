@@ -13,9 +13,14 @@ export default function UpdateNotification({
         setLoading(true);
         try {
             await onUpdate();
+            // If onUpdate finishes and page hasn't reloaded yet:
+            setLoading(false);
+            onDismiss();
+            window.location.reload(); // Force reload if not handled by SW helper
         } catch (e) {
             console.error("Update failed", e);
             setLoading(false);
+            onDismiss(); // Hide on error to avoid sticking
         }
     };
 
