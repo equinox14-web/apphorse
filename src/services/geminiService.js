@@ -49,6 +49,161 @@ async function callGeminiAPI(modelName, prompt, config = {}) {
 }
 
 /**
+ * Appel à l'API Gemini avec image (Vision multimodal)
+ * @param {string} modelName - Nom du modèle
+ * @param {string} prompt - Texte du prompt
+ * @param {string} imageBase64 - Image en base64
+ * @param {string} mimeType - Type MIME de l'image (image/jpeg, image/png, etc.)
+ * @returns {Promise<string>} Réponse générée
+ */
+async function callGeminiVisionAPI(modelName, prompt, imageBase64, mimeType = 'image/jpeg', config = {}) {
+    const url = `${API_ENDPOINT}/${modelName}:generateContent?key=${API_KEY}`;
+
+    const requestBody = {
+        contents: [{
+            parts: [
+                { text: prompt },
+                {
+                    inline_data: {
+                        mime_type: mimeType,
+                        data: imageBase64
+                    }
+                }
+            ]
+        }],
+        generationConfig: {
+            temperature: config.temperature || 0.4, // Plus bas pour analyse objective
+            topP: config.topP || 0.8,
+            maxOutputTokens: config.maxOutputTokens || 2048,
+        }
+    };
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API Error ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+        throw new Error('Réponse invalide de l\'API');
+    }
+
+    return data.candidates[0].content.parts[0].text;
+}
+
+/**
+ * Estime le poids d'un cheval à partir d'une photo et de sa taille
+ * @param {Object} params - Paramètres d'estimation
+ * @param {string} params.imageBase64 - Image en base64 (sans préfixe data:image/...)
+ * @param {string} params.mimeType - Type MIME de l'image
+ * @param {number} params.heightCm - Taille au garrot en cm
+ * @param {string} params.breed - Race du cheval (optionnel)
+ * @returns {Promise<Object>} Estimation du poids
+ */
+export async function estimateWeightFromImage(params) {
+    try {
+        const { imageBase64, mimeType = 'image/jpeg', heightCm, breed = 'Non précisée' } = params;
+
+        if (!imageBase64 || !heightCm) {
+            throw new Error('Image et taille au garrot requises');
+        }
+
+        // Construction du prompt expert
+        const prompt = `Tu es un expert en biomécanique équine.
+Ta tâche : Estimer le poids du cheval à partir de sa PHOTO et de sa TAILLE connue.
+
+INPUTS :
+1. Image : Photo du cheval de profil.
+2. Donnée : Taille au garrot = ${heightCm} cm.
+3. Race déclarée : ${breed}
+
+RÈGLE DE CALCUL OBLIGATOIRE :
+Tu ne dois pas "deviner" le poids au hasard. Tu dois appliquer cette logique déductive :
+1. Observe la morphologie (Lourd, Sport, Fin).
+2. Estime la "Note d'État Corporel" (Body Condition Score) de 1 à 5.
+3. Utilise la TAILLE FOURNIE (${heightCm} cm) comme étalon d'échelle.
+   - Si Taille = 165cm et type Sport (Selle Français) -> Poids de base environ 500-550kg.
+   - Ajuste ensuite selon si le cheval est maigre (-50kg) ou gros (+50kg) sur la photo.
+
+INTERDICTIONS :
+- Interdit de donner un poids inférieur à 350kg si la taille est > 150cm.
+- Interdit de donner un poids > 800kg si ce n'est pas un cheval de Trait.
+
+FORMAT DE RÉPONSE OBLIGATOIRE (JSON STRICT) :
+{
+  "estimatedWeight": 500,
+  "morphologyType": "Sport/Lourd/Fin",
+  "bodyConditionScore": 3,
+  "confidence": "Haute/Moyenne/Faible",
+  "reasoning": "Explication courte du calcul (2-3 phrases)",
+  "recommendations": "Conseils si surpoids ou sous-poids détecté"
+}
+
+Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
+
+        console.log('🤖 Estimation du poids avec Gemini Vision...');
+        const text = await callGeminiVisionAPI('gemini-2.0-flash', prompt, imageBase64, mimeType, {
+            temperature: 0.4,
+            maxOutputTokens: 1024
+        });
+
+        console.log('✅ Réponse brute de Gemini Vision:', text.substring(0, 200) + '...');
+
+        // Nettoyage du texte
+        let cleanedText = text.trim();
+        if (cleanedText.startsWith('```')) {
+            cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
+
+        // Parser le JSON
+        const estimation = JSON.parse(cleanedText);
+
+        // Validation des données
+        if (!estimation.estimatedWeight || estimation.estimatedWeight < 50 || estimation.estimatedWeight > 1500) {
+            throw new Error('Poids estimé invalide');
+        }
+
+        console.log('✅ Estimation réussie:', estimation.estimatedWeight, 'kg');
+        return {
+            success: true,
+            data: estimation,
+            generatedAt: new Date().toISOString()
+        };
+
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'estimation du poids:', error);
+
+        const errMsg = error?.message || error?.error || JSON.stringify(error);
+        let errorMessage = 'Erreur inconnue';
+
+        if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key')) {
+            errorMessage = 'Clé API Gemini invalide';
+        } else if (errMsg.includes('quota') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+            errorMessage = 'Quota Gemini épuisé. Réessayez plus tard.';
+        } else if (errMsg.includes('SAFETY')) {
+            errorMessage = 'Image bloquée par les filtres de sécurité';
+        } else {
+            errorMessage = `Erreur: ${errMsg.substring(0, 100)}`;
+        }
+
+        return {
+            success: false,
+            error: errorMessage,
+            data: null
+        };
+    }
+}
+
+/**
  * Génère un planning d'entraînement personnalisé avec Gemini
  * @param {Object} params - Paramètres du planning
  * @param {Object} params.horse - Données du cheval
@@ -333,5 +488,6 @@ export default {
     generateQuickTips,
     analyzeProgress,
     testGeminiConnection,
-    chatWithAssistant
+    chatWithAssistant,
+    estimateWeightFromImage
 };
