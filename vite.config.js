@@ -105,7 +105,7 @@ export default defineConfig({
 
         // Ignorer les erreurs lors du build
         skipWaiting: false, // Important: ne pas auto-activer le nouveau SW
-        clientsClaim: false // Important: ne pas prendre le contrôle immédiatement
+        clientsClaim: true // Important: prendre le contrôle immédiatement après activation
       },
 
       devOptions: {

@@ -9,6 +9,7 @@ import { getMaxHorses, getUserPlanIds, canManageHorses } from '../utils/permissi
 import { startCheckoutSession } from '../utils/stripePayment';
 import { useAuth } from '../context/AuthContext';
 import { syncHorsesToFirestore, fetchHorsesFromFirestore } from '../services/dataSyncService';
+import { scheduleSyncToFirestore } from '../services/firestoreSync';
 import { useTranslation, Trans } from 'react-i18next';
 
 // Helper to resize images
@@ -312,6 +313,7 @@ const Horses = () => {
                 }
             });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUser]); // Run once on user load
 
     const [showModal, setShowModal] = useState(false);
@@ -326,7 +328,6 @@ const Horses = () => {
     const [preview, setPreview] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [horseToDelete, setHorseToDelete] = useState(null);
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showExtraSlotModal, setShowExtraSlotModal] = useState(false);
     const [upgradeType, setUpgradeType] = useState('passion');
@@ -374,7 +375,7 @@ const Horses = () => {
             // Reload to reflect permissions update
             window.location.reload();
         }
-    }, []);
+    }, [t]);
 
     const handleUpdateImage = (id, newImage) => {
         const updatedHorses = horses.map(h =>
@@ -424,6 +425,11 @@ const Horses = () => {
             };
             const existingMovements = JSON.parse(localStorage.getItem('appHorse_register_movements') || '[]');
             localStorage.setItem('appHorse_register_movements', JSON.stringify([newMovement, ...existingMovements]));
+
+            // Sync movements to Firestore
+            if (currentUser) {
+                scheduleSyncToFirestore(currentUser.uid);
+            }
         }
 
         // Auto-add to Breeding (Gyneco) if Mare and User is Breeder

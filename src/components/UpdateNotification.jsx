@@ -1,5 +1,5 @@
-import React from 'react';
-import { RefreshCw, X, Wifi, WifiOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { RefreshCw, X, Wifi, WifiOff, Loader2 } from 'lucide-react';
 
 export default function UpdateNotification({
     needRefresh,
@@ -7,8 +7,21 @@ export default function UpdateNotification({
     onUpdate,
     onDismiss
 }) {
-    // Ne rien afficher si aucune notification n'est nécessaire
-    if (!needRefresh && !offlineReady) {
+    const [loading, setLoading] = useState(false);
+
+    const handleUpdate = async () => {
+        setLoading(true);
+        try {
+            await onUpdate();
+        } catch (e) {
+            console.error("Update failed", e);
+            setLoading(false);
+        }
+    };
+
+    // Ne rien afficher si aucune mise à jour n'est disponible
+    // On masque la notification "Mode hors ligne prêt" pour ne garder que "Nouvelle version"
+    if (!needRefresh) {
         return null;
     }
 
@@ -29,7 +42,7 @@ export default function UpdateNotification({
                     <div className="flex-shrink-0">
                         {needRefresh ? (
                             <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center animate-pulse-slow">
-                                <RefreshCw className="w-6 h-6 text-white" />
+                                <RefreshCw className={`w-6 h-6 text-white ${loading ? 'animate-spin' : ''}`} />
                             </div>
                         ) : (
                             <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -55,16 +68,22 @@ export default function UpdateNotification({
                         {needRefresh ? (
                             <>
                                 <button
-                                    onClick={onUpdate}
-                                    className="px-4 py-2 bg-white text-violet-600 rounded-lg font-medium text-sm hover:bg-violet-50 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 whitespace-nowrap"
+                                    onClick={handleUpdate}
+                                    disabled={loading}
+                                    className="px-4 py-2 bg-white text-violet-600 rounded-lg font-medium text-sm hover:bg-violet-50 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed"
                                     aria-label="Recharger l'application"
                                 >
-                                    <RefreshCw className="w-4 h-4" />
-                                    Recharger
+                                    {loading ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="w-4 h-4" />
+                                    )}
+                                    {loading ? 'Mise à jour...' : 'Recharger'}
                                 </button>
                                 <button
                                     onClick={onDismiss}
-                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200"
+                                    disabled={loading}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 disabled:opacity-50"
                                     aria-label="Fermer la notification"
                                 >
                                     <X className="w-5 h-5 text-white" />

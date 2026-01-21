@@ -8,6 +8,7 @@ import { canAccess, getMaxHorses } from '../utils/permissions';
 import AdBanner from '../components/AdBanner';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import InstallAppCard from '../components/InstallAppCard';
 
 // Custom Horse Icon
 const HorseIcon = ({ size = 24, ...props }) => (
@@ -262,6 +263,9 @@ const Dashboard = () => {
                     {weatherData ? getWeatherIcon(weatherData.weathercode) : <CloudSun size={48} style={{ opacity: 0.5 }} />}
                 </Card>
             </div>
+
+            {/* Install App Banner (Visible on Mobile & Desktop if not installed) */}
+            <InstallAppCard />
 
             <div className="dashboard-grid">
                 {/* Main Content Column */}

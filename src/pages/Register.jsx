@@ -4,6 +4,8 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import { FileText, Printer, ArrowLeft, TriangleAlert, Building, ShieldCheck, Calendar, Activity, Syringe, MapPin, User, Stethoscope, FileClock, Filter, Layers, Edit2, Save, Search } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { scheduleSyncToFirestore } from '../services/firestoreSync';
 import { useTranslation } from 'react-i18next';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -46,25 +48,10 @@ const Register = () => {
     const navigate = useNavigate();
     const { isDark } = useTheme();
     const { t, i18n } = useTranslation();
+    const { currentUser } = useAuth();
 
     // --- DATA LOADING ---
-    const [movements, setMovements] = useState([]);
-    const [interventions, setInterventions] = useState([]);
-    const [establishment, setEstablishment] = useState({
-        name: 'Mon Écurie',
-        owner: 'Cavalier',
-        vet: 'Dr. Vétérinaire (Non renseigné)',
-        address: 'Adresse (Non renseignée)',
-        logo: null
-    });
-
-    const [activeTab, setActiveTab] = useState('sanitaire'); // 'sanitaire' | 'mouvements' | 'general'
-    const [groupByHorse, setGroupByHorse] = useState(false); // New Toggle
-    const [isEditing, setIsEditing] = useState(false); // Edit Mode for Identification
-    const [searchTerm, setSearchTerm] = useState(''); // Search Filter
-
-    useEffect(() => {
-        // 1. Load Horses for Movements (Simulated from creation dates/presence)
+    const [movements, setMovements] = useState(() => {
         const horses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
         const mares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
 
@@ -88,9 +75,17 @@ const Register = () => {
 
         // Combine and Sort by Date (Newest first usually, but register often chronological)
         // Let's sort Newest First for UI
-        const combinedMovements = [...storedMovements, ...simulatedMovements].sort((a, b) => new Date(b.date) - new Date(a.date));
+        return [...storedMovements, ...simulatedMovements].sort((a, b) => new Date(b.date) - new Date(a.date));
+    });
 
-        setMovements(combinedMovements);
+    const [interventions, setInterventions] = useState(() => {
+        const horses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+        const mares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+
+        const allHorses = [
+            ...horses.map(h => ({ ...h, type: 'Cheval Sport/Loisir' })),
+            ...mares.map(m => ({ ...m, type: 'Élevage' }))
+        ];
 
         // 2. Load Sanitary Interventions (Vaccines, Deworming, Care)
         const careItems = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
@@ -111,7 +106,7 @@ const Register = () => {
             return pIdOrName; // Fallback to original string if it was just a name or not found
         };
 
-        const formattedInterventions = careItems.map(item => ({
+        return careItems.map(item => ({
             id: item.id,
             date: item.nextDate || item.date || new Date().toISOString(),
             type: item.type,
@@ -119,32 +114,39 @@ const Register = () => {
             details: item.product || item.notes || 'Soins courants',
             practitioner: getPractitionerName(item.practitioner) // Resolve Name
         })).sort((a, b) => new Date(b.date) - new Date(a.date));
+    });
 
-        setInterventions(formattedInterventions);
-
-        // Load Saved Establishment Details & Sync with Profile Data
-        const savedEst = JSON.parse(localStorage.getItem('appHorse_register_establishment'));
+    const [establishment, setEstablishment] = useState(() => {
+        const defaultEst = {
+            name: 'Mon Écurie',
+            owner: 'Cavalier',
+            vet: 'Dr. Vétérinaire (Non renseigné)',
+            address: 'Adresse (Non renseignée)',
+            logo: null
+        };
+        const savedEst = JSON.parse(localStorage.getItem('appHorse_register_establishment') || 'null');
         const profileName = localStorage.getItem('user_name'); // From Profile
         const profileLogo = localStorage.getItem('user_logo'); // From Profile
-
         const savedCompany = JSON.parse(localStorage.getItem('appHorse_company_details_v1') || '{}');
 
-        setEstablishment(prev => ({
-            ...prev,
-            ...savedEst, // Load saved address/vet from register
-            owner: profileName || (savedEst && savedEst.owner) || prev.owner, // Prefer Profile Name
-            name: (savedEst && savedEst.name) || prev.name,
-            address: (savedCompany && savedCompany.address) || (savedEst && savedEst.address) || prev.address, // Prefer Company Settings Address
+        return {
+            ...defaultEst,
+            ...(savedEst || {}), // Load saved address/vet from register
+            owner: profileName || (savedEst && savedEst.owner) || defaultEst.owner, // Prefer Profile Name
+            name: (savedEst && savedEst.name) || defaultEst.name,
+            address: (savedCompany && savedCompany.address) || (savedEst && savedEst.address) || defaultEst.address, // Prefer Company Settings Address
             siret: (savedCompany && savedCompany.siret) || (savedEst && savedEst.siret) || '', // Load SIRET from Company Settings
             logo: profileLogo || (savedEst && savedEst.logo) || null // Prefer Profile Logo
-        }));
-
-    }, []);
+        };
+    });
 
     const handleSaveEstablishment = () => {
         // We save the EXTRA details (address, vet, custom name) specific to register
         // But we don't overwrite the Profile Name/Logo back to Profile from here for now, just local overrides.
         localStorage.setItem('appHorse_register_establishment', JSON.stringify(establishment));
+        if (currentUser) {
+            scheduleSyncToFirestore(currentUser.uid);
+        }
         setIsEditing(false);
     };
 

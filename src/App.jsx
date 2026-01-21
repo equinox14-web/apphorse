@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PWAProvider } from './context/PWAContext';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import SignUp from './pages/SignUp';
@@ -97,6 +98,8 @@ function AppContent() {
         onDismiss={dismissUpdate}
       />
 
+      <PWAPrompt />
+
       <Routes>
         {/* Public Routes (Redirect to dashboard if already logged in) */}
         <Route path="/signup" element={
@@ -179,7 +182,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <PWAProvider>
+        <AppContent />
+      </PWAProvider>
     </AuthProvider>
   );
 }

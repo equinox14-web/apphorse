@@ -20,7 +20,9 @@ const SYNC_KEYS = [
     'appHorse_budget',
     'appHorse_stock_v1',
     'ai_training_plans',
-    'weather_coords'
+    'weather_coords',
+    'appHorse_register_movements',
+    'appHorse_register_establishment'
 ];
 
 /**

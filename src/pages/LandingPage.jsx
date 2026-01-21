@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import { ChevronRight, Check, Shield, Zap, Heart, FileText, MessageCircle, XCircle, CreditCard, Smartphone, Clock, Calendar, Search, Bell, Sun, Globe, Download } from 'lucide-react';
 import { useTranslation, Trans } from 'react-i18next';
 import SEO from '../components/SEO';
+import { usePWA } from '../context/PWAContext';
 
 const LandingPage = () => {
     const navigate = useNavigate();
@@ -21,34 +22,12 @@ const LandingPage = () => {
     const [showComingSoon, setShowComingSoon] = useState(false);
 
     // PWA Install Logic
-    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const { openInstructions } = usePWA();
 
-    useEffect(() => {
-        const handleBeforeInstallPrompt = (e) => {
-            e.preventDefault();
-            setDeferredPrompt(e);
-        };
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    }, []);
+    // Legacy effect removed - handled by PWAContext
 
-    const handleInstallClick = async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                setDeferredPrompt(null);
-            }
-        } else {
-            // Fallback for iOS or if already installed
-            // Detect iOS
-            const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-            if (isIOS) {
-                alert(t('pwa_ios_step1') + " " + t('pwa_ios_step2_strong'));
-            } else {
-                alert("Pour installer l'application, utilisez l'option 'Ajouter à l'écran d'accueil' ou 'Installer' dans le menu de votre navigateur.");
-            }
-        }
+    const handleInstallClick = () => {
+        openInstructions();
     };
 
     const handleAction = () => {
