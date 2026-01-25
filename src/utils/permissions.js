@@ -107,8 +107,8 @@ export const getMaxMares = () => {
 export const isWhitelistedTester = (email) => {
     if (!email) return false;
     const normalizedEmail = email.toLowerCase().trim();
-    // Accept all @equinox.app emails as testers
-    return normalizedEmail.endsWith('@equinox.app');
+    // Accept all @equinox.app emails as testers and specific whitelist
+    return normalizedEmail.endsWith('@equinox.app') || normalizedEmail === 'aurelie.jossic@gmail.com';
 };
 
 export const getUserPlanIds = () => {

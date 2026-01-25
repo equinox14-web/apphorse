@@ -4,44 +4,47 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PWAProvider } from './context/PWAContext';
 import MainLayout from './layouts/MainLayout';
+
+// Pages - Main
 import Dashboard from './pages/Dashboard';
-import SignUp from './pages/SignUp';
-import Login from './pages/Login';
-import LoginCode from './pages/LoginCode';
 import DemoStart from './pages/DemoStart';
-import Profile from './pages/Profile';
+import LandingPage from './pages/LandingPage';
 import Weather from './pages/Weather';
-import Care from './pages/Care';
 import TrainingDetail from './pages/TrainingDetail';
-import Horses from './pages/Horses';
-import HorseProfile from './pages/HorseProfile';
 import Calendar from './pages/Calendar';
-import Team from './pages/Team';
-import Billing from './pages/Billing';
-import ClientsManagement from './pages/ClientsManagement';
-import Onboarding from './pages/Onboarding';
-import Breeding from './pages/Breeding';
-import BreedingDetail from './pages/BreedingDetail';
-import BreedingAdvice from './pages/BreedingAdvice';
 import HalfLease from './pages/HalfLease';
 import Messaging from './pages/Messaging';
-import Stock from './pages/Stock';
-import Nutrition from './pages/Nutrition';
 import Competition from './pages/Competition';
-import Settings from './pages/Settings';
-import Register from './pages/Register';
-import MediaGallery from './pages/MediaGallery';
-import Budget from './pages/Budget';
 import Support from './pages/Support';
 import Payment from './pages/Payment';
-import SwitchAccount from './pages/SwitchAccount';
-import LandingPage from './pages/LandingPage';
 import Assistant from './pages/Assistant';
-import WeightTracking from './pages/WeightTracking';
-import NutritionCalculator from './pages/NutritionCalculator';
 import AITrainingCoach from './pages/AITrainingCoach';
-import PWAPrompt from './components/PWAPrompt';
-import UpdateNotification from './components/UpdateNotification';
+
+// Pages - Auth
+import { SignUp, Login, LoginCode, Onboarding, Register } from './pages/auth';
+
+// Pages - Horse
+import {
+  Horses,
+  HorseProfile,
+  WeightTracking,
+  Nutrition,
+  NutritionCalculator,
+  Care,
+  Breeding,
+  BreedingDetail,
+  BreedingAdvice,
+  MediaGallery
+} from './pages/horse';
+
+// Pages - Management
+import { Team, Billing, ClientsManagement, Stock, Budget } from './pages/management';
+
+// Pages - Profile
+import { Settings, Profile, SwitchAccount } from './pages/profile';
+
+// Components
+import { PWAPrompt, UpdateNotification } from './components/pwa';
 import { useServiceWorker } from './hooks/useServiceWorker';
 import { canAccess } from './utils/permissions';
 

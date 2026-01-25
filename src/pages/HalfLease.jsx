@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import Card from '../components/Card';
-import Button from '../components/Button';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import { Users, Calendar, DollarSign, Plus, UserCheck, CalendarCheck, Stethoscope, Edit2, ArrowRight, Upload, Camera, Trash2, Key, Mail, Lock, Unlock, CheckSquare, X } from 'lucide-react';
 
 const HalfLease = () => {

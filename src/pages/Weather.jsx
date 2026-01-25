@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../components/Card';
+import Card from '../components/common/Card';
 
 const Weather = () => {
     // Initialize with saved coords or default (Paris)

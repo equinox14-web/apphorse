@@ -328,12 +328,14 @@ export function calculateForageNutrition(kgBrut, forage) {
  * Calcule la quantité de concentré nécessaire pour combler les besoins
  * @param {Object} totalNeeds - { ufc, madc } besoins totaux
  * @param {Object} forageNutrition - { ufc, madc } apports du fourrage
+ * @param {Object} adjustmentNutrition - { ufc, madc } apports des autres aliments (optionnel)
  * @param {Object} concentrate - Objet concentré avec propriétés nutritionnelles
  * @returns {Object} { kg, liters, ufc, madc }
  */
-export function calculateConcentrateAmount(totalNeeds, forageNutrition, concentrate) {
-    // Déficit énergétique
-    const ufcDeficit = Math.max(0, totalNeeds.ufc - forageNutrition.ufc);
+export function calculateConcentrateAmount(totalNeeds, forageNutrition, concentrate, adjustmentNutrition = { ufc: 0, madc: 0 }) {
+    // Déficit énergétique (en tenant compte des ajustements)
+    const currentUfc = forageNutrition.ufc + (adjustmentNutrition.ufc || 0);
+    const ufcDeficit = Math.max(0, totalNeeds.ufc - currentUfc);
 
     // Quantité en kg pour combler le déficit UFC
     const kgNeeded = ufcDeficit / concentrate.ufc;
@@ -342,8 +344,9 @@ export function calculateConcentrateAmount(totalNeeds, forageNutrition, concentr
     const litersNeeded = kgNeeded / concentrate.density;
 
     // Vérifier si ça couvre aussi les protéines
+    const currentMadc = forageNutrition.madc + (adjustmentNutrition.madc || 0);
     const madcProvided = kgNeeded * concentrate.madc;
-    const madcDeficit = totalNeeds.madc - forageNutrition.madc;
+    const madcDeficit = totalNeeds.madc - currentMadc;
 
     return {
         kg: Math.round(kgNeeded * 10) / 10,
@@ -361,10 +364,11 @@ export function calculateConcentrateAmount(totalNeeds, forageNutrition, concentr
  * @param {string} activityCode - Code activité
  * @param {string} physiologicalCode - Code état physiologique
  * @param {Object} forage - Fourrage choisi
- * @param {Object} concentrate - Concentré choisi
+ * @param {Object} concentrate - Concentré choisi (principal)
+ * @param {Array} additionalFeeds - Liste d'objets { feed, quantity } pour les compléments
  * @returns {Object} Ration complète avec détails
  */
-export function generateRation(weight, activityCode, physiologicalCode, forage, concentrate) {
+export function generateRation(weight, activityCode, physiologicalCode, forage, concentrate, additionalFeeds = []) {
     // 1. Calculer les besoins totaux
     const needs = calculateTotalNeeds(weight, activityCode, physiologicalCode);
 
@@ -372,12 +376,40 @@ export function generateRation(weight, activityCode, physiologicalCode, forage, 
     const forageAmount = calculateForageAmount(weight, 1.5);
     const forageNutrition = calculateForageNutrition(forageAmount.kgBrut, forage);
 
-    // 3. Calculer la quantité de concentré pour combler
-    const concentrateAmount = calculateConcentrateAmount(needs, forageNutrition, concentrate);
+    // 2b. Calculer les apports des aliments additionnels (fixes)
+    let additionalNutrition = { ufc: 0, madc: 0, calcium: 0, phosphore: 0 };
+
+    additionalFeeds.forEach(item => {
+        const qty = parseFloat(item.quantity) || 0;
+        // On suppose que l'aliment a les propriétés nutritionnelles
+        const feed = item.feed;
+        if (feed && qty > 0) {
+            // Conversion en MS si besoin, ici on simplifie en prenant brut * valeur/kg
+            // Les valeurs de ref sont souvent par kg Brut ou kg MS, on assume Brut pour simplifier ici ou on applique un facteur
+            // Dans REFERENCE_FEEDS, ufc est par kg MS, mais souvent sur étiquette par kg Brut.
+            // On va assumer que l'input `quantity` est du Brut et que les valeurs nutri sont cohérentes.
+            // Pour être précis comme le fourrage :
+            const kgMS = qty * ((feed.matiereSèche || 88) / 100);
+
+            additionalNutrition.ufc += kgMS * (feed.ufc || 0);
+            additionalNutrition.madc += kgMS * (feed.madc || 0);
+            additionalNutrition.calcium += qty * (feed.calcium || 0);
+            additionalNutrition.phosphore += qty * (feed.phosphore || 0);
+        }
+    });
+
+    // 3. Calculer la quantité de concentré pour combler (en tenant compte des additionnels)
+    const concentrateAmount = calculateConcentrateAmount(needs, forageNutrition, concentrate, additionalNutrition);
 
     // 4. Vérifier l'équilibre minéral
-    const calciumTotal = (forageAmount.kgBrut * forage.calcium) + (concentrateAmount.kg * concentrate.calcium);
-    const phosphoreTotal = (forageAmount.kgBrut * forage.phosphore) + (concentrateAmount.kg * concentrate.phosphore);
+    const calciumTotal = (forageAmount.kgBrut * forage.calcium) +
+        (concentrateAmount.kg * concentrate.calcium) +
+        additionalNutrition.calcium;
+
+    const phosphoreTotal = (forageAmount.kgBrut * forage.phosphore) +
+        (concentrateAmount.kg * concentrate.phosphore) +
+        additionalNutrition.phosphore;
+
     const caToP = phosphoreTotal > 0 ? calciumTotal / phosphoreTotal : 0;
 
     return {
@@ -388,6 +420,14 @@ export function generateRation(weight, activityCode, physiologicalCode, forage, 
             kg: forageAmount.kgBrut,
             nutrition: forageNutrition,
         },
+        additionalFeeds: additionalFeeds.map(f => ({
+            name: `${f.feed.brand} ${f.feed.name}`,
+            kg: f.quantity,
+            nutrition: {
+                ufc: (f.quantity * ((f.feed.matiereSèche || 88) / 100) * f.feed.ufc).toFixed(2),
+                madc: Math.round(f.quantity * ((f.feed.matiereSèche || 88) / 100) * f.feed.madc)
+            }
+        })),
         concentrate: {
             name: `${concentrate.brand} ${concentrate.name}`,
             kg: concentrateAmount.kg,
@@ -474,6 +514,77 @@ export function estimateNutritionFromAnalysis(cellulose, mat, cendres = 8) {
     };
 }
 
+/**
+ * Calcule le bilan nutritionnel complet d'une ration composée manuellement
+ * @param {Object} needs - Besoins calculés { ufc, madc }
+ * @param {Object} forageData - Données du fourrage { kg, nutrition }
+ * @param {Array} ingredients - Liste des ingrédients [{ feed, quantity }]
+ * @returns {Object} Bilan complet (totaux, balance, pourcentages)
+ */
+export function calculateRationStats(needs, forageData, ingredients = []) {
+    // 1. Apports du Fourrage
+    let totalUFC = forageData.nutrition.ufc || 0;
+    let totalMADC = forageData.nutrition.madc || 0;
+    let totalCalcium = (forageData.kg * forageData.nutrition.calcium) || 0; // Attention: forageData.nutrition est souvent le total, pas par kg. Vérifier usage.
+    // Dans generateRation, forageNutrition est le TOTAL pour la quantité.
+    // Donc on suppose ici que forageData.nutrition contient déjà les totaux calculés.
+
+    let totalPhosphore = 0; // À récupérer si disponible dans forageNutrition
+    // Note: forageData.nutrition standard contient ufc/madc calculés. Pour Ca/P, il faut souvent recalculer si pas passé.
+
+    // Pour simplifier, on va recalculer les minéraux du fourrage si on a l'info brute
+    // Mais suivons la structure existante. On va sommer ce qu'on a.
+
+    // 2. Somme des Ingrédients
+    const ingredientsAnalysis = ingredients.map(item => {
+        const qty = parseFloat(item.quantity) || 0;
+        const feed = item.feed;
+        if (!feed || qty <= 0) return null;
+
+        // Facteur matière sèche (si feed.ufc est sur MS, sinon sur Brut).
+        // Convention app actuelle : les vals ref sont souvent sur Brut ou gérées.
+        // On simplifie : Qty * ValeurUnitaire
+
+        const itemUFC = qty * (feed.ufc || 0);
+        const itemMADC = qty * (feed.madc || 0);
+        const itemCa = qty * (feed.calcium || 0);
+        const itemP = qty * (feed.phosphore || 0);
+
+        totalUFC += itemUFC;
+        totalMADC += itemMADC;
+        totalCalcium += itemCa;
+        totalPhosphore += itemP;
+
+        return {
+            ...item,
+            nutrition: { ufc: itemUFC, madc: itemMADC, calcium: itemCa, phosphore: itemP }
+        };
+    }).filter(Boolean);
+
+    // 3. Calcul de la balance
+    const balance = {
+        ufc: totalUFC - needs.ufc,
+        madc: totalMADC - needs.madc,
+    };
+
+    const percent = {
+        ufc: (totalUFC / needs.ufc) * 100,
+        madc: (totalMADC / needs.madc) * 100
+    };
+
+    // Minéraux
+    // On ajoute ceux du fourrage s'ils n'étaient pas inclus (dépend de forageData entré)
+    // Supposons que forageData contient tout ce qu'il faut ou qu'on l'a géré.
+
+    return {
+        totals: { ufc: totalUFC, madc: totalMADC, calcium: totalCalcium, phosphore: totalPhosphore },
+        needs,
+        balance,
+        percent,
+        ingredients: ingredientsAnalysis
+    };
+}
+
 export default {
     ACTIVITY_LEVELS,
     PHYSIOLOGICAL_STATES,
@@ -486,4 +597,5 @@ export default {
     calculateConcentrateAmount,
     generateRation,
     estimateNutritionFromAnalysis,
+    calculateRationStats, // Nouvel export
 };

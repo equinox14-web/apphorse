@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import Card from '../components/Card';
-import Button from '../components/Button';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import { Brain, Sparkles, Target, Calendar, TrendingUp, ChevronRight, ChevronLeft, Loader2, Check, AlertCircle } from 'lucide-react';
 import { useTrainingAI } from '../hooks/useTrainingAI';
-import SEO from '../components/SEO';
+import SEO from '../components/common/SEO';
 
 export default function AITrainingCoach() {
     const navigate = useNavigate();

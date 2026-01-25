@@ -483,11 +483,89 @@ export async function chatWithAssistant(prompt) {
     }
 }
 
+/**
+ * Extrait les valeurs nutritionnelles d'une étiquette d'aliment via Gemini Vision
+ * @param {Object} params - Paramètres d'analyse
+ * @param {string} params.imageBase64 - Image en base64
+ * @param {string} params.mimeType - Type MIME
+ * @returns {Promise<Object>} Données nutritionnelles extraites
+ */
+export async function extractNutritionFromImage(params) {
+    try {
+        const { imageBase64, mimeType = 'image/jpeg' } = params;
+
+        if (!imageBase64) {
+            throw new Error('Image requise pour l\'analyse');
+        }
+
+        const systemPrompt = `Tu es un expert en nutrition équine et en extraction de données.
+Ta mission est d'analyser la photo d'une étiquette d'aliment pour chevaux (sac ou fiche technique) et d'extraire les valeurs nutritionnelles précises normalisées pour le marché français (système INRA).
+
+1. IDENTIFICATION : Trouve la Marque et le Nom du produit.
+2. VALEURS NUTRITIONNELLES (par kg brut) :
+   - Cherche spécifiquement les "UFC" (Unités Fourragères Cheval). Si absent, cherche l'Énergie Digestible (DE) et convertis-la (1 UFC ≈ 2200 kcal DE).
+   - Cherche les "MADC" (Matières Azotées Digestibles Cheval). Si absent, cherche la "Protéine Brute" (Crude Protein) et estime les MADC (environ 70-80% de la PB pour des granulés standards).
+   - Cherche le Calcium (Ca), le Phosphore (P), le Sodium (Na) et l'Amidon (si disponible).
+3. DOSAGE RECOMMANDÉ : Extrait les instructions du fabricant (ex: "300g pour 100kg de poids vif").
+
+FORMAT DE SORTIE (JSON strict uniquement) :
+{
+  "product_info": {
+    "brand": "String (ex: Reverdy, Dynavena)",
+    "name": "String (ex: Adult Specific)",
+    "type": "Concentré"
+  },
+  "nutrition_per_kg": {
+    "UFC": Number (ex: 0.85),
+    "MADC_g": Number (ex: 95),
+    "Amidon_pct": Number (ou null),
+    "Calcium_g": Number,
+    "Phosphore_g": Number
+  },
+  "manufacturer_dosage": {
+    "min_kg_per_100kg_bodyweight": Number,
+    "instructions": "String courte résumant le dosage"
+  },
+  "analysis_confidence": "High"
+}
+
+Si une valeur clé (UFC ou MADC) est introuvable mais qu'il y a la composition analytique (Protéines brutes, Matières grasses, Cellulose), fais une estimation prudente et indique-le dans un champ "note".
+Réponds UNIQUEMENT avec le JSON.`;
+
+        console.log('🥦 Analyse nutritionnelle avec Gemini Vision...');
+        const text = await callGeminiVisionAPI('gemini-2.0-flash', systemPrompt, imageBase64, mimeType, {
+            temperature: 0.2, // Très bas pour être précis et factuel
+            maxOutputTokens: 2048
+        });
+
+        console.log('✅ Réponse brute nutrition:', text.substring(0, 100) + '...');
+
+        let cleanedText = text.trim();
+        if (cleanedText.startsWith('```')) {
+            cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
+
+        const data = JSON.parse(cleanedText);
+        return {
+            success: true,
+            data: data
+        };
+
+    } catch (error) {
+        console.error('❌ Erreur analyse nutrition:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
 export default {
     generateTrainingPlan,
     generateQuickTips,
     analyzeProgress,
     testGeminiConnection,
     chatWithAssistant,
-    estimateWeightFromImage
+    estimateWeightFromImage,
+    extractNutritionFromImage
 };

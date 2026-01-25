@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import Card from '../components/Card';
-import Button from '../components/Button';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import { Send, User, Bot, Mail, X } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';

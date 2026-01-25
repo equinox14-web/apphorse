@@ -4,10 +4,10 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getToken } from 'firebase/messaging';
 import { db, auth, storage, messaging } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import Card from '../components/Card';
-import Button from '../components/Button';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import { Send, User, Image as ImageIcon, Phone, Video, MoreVertical, Bell, ArrowLeft, Plus, X } from 'lucide-react';
-import CallInterface from '../components/CallInterface'; // Import Call Interface
+import CallInterface from '../components/features/CallInterface'; // Import Call Interface
 import { useTranslation } from 'react-i18next';
 
 const Messaging = () => {

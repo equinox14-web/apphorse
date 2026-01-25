@@ -3,10 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { signInAnonymously } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import Card from '../components/Card';
-import Button from '../components/Button';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import { Crown, Clock, CheckCircle } from 'lucide-react';
-import SEO from '../components/SEO';
+import SEO from '../components/common/SEO';
 
 const DemoStart = () => {
     const navigate = useNavigate();

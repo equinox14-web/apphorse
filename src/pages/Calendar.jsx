@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import Card from '../components/Card';
-import Button from '../components/Button';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, MapPin, Activity, Plus, User, Box, Trash2, ArrowLeft, CheckCircle } from 'lucide-react';
 import { canAccess, isExternalUser } from '../utils/permissions';
 import { useAuth } from '../context/AuthContext';

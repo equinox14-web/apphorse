@@ -6,12 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { LayoutDashboard, Calendar, LayoutList, Activity, Utensils, Trophy, Heart, Brain, Sparkles, MessageCircle, Users, FileText, Package, ClipboardList, Handshake, Repeat, Headphones, Settings, Menu, LogOut, Eye, PieChart, UserCheck } from 'lucide-react';
 import { canAccess, getMaxHorses, isExternalUser } from '../utils/permissions';
 import { useTheme } from '../context/ThemeContext';
-import NotificationManager from '../components/NotificationManager';
-import LanguageSwitcher from '../components/LanguageSwitcher';
-import AdBanner from '../components/AdBanner';
-import Button from '../components/Button';
+import NotificationManager from '../components/features/NotificationManager';
+import LanguageSwitcher from '../components/common/LanguageSwitcher';
+import AdBanner from '../components/features/AdBanner';
+import Button from '../components/common/Button';
 
-import SEO from '../components/SEO';
+import SEO from '../components/common/SEO';
 
 const SidebarItem = ({ to, icon: Icon, label }) => (
     <NavLink

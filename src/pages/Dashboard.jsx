@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../components/Card';
-import Button from '../components/Button';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import { CloudSun, Activity, Plus, MapPin, Heart, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import SEO from '../components/SEO';
+import SEO from '../components/common/SEO';
 import { canAccess, getMaxHorses } from '../utils/permissions';
-import AdBanner from '../components/AdBanner';
+import AdBanner from '../components/features/AdBanner';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import InstallAppCard from '../components/InstallAppCard';
+import InstallAppCard from '../components/pwa/InstallAppCard';
 
 // Custom Horse Icon
 const HorseIcon = ({ size = 24, ...props }) => (

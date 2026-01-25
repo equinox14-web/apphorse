@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Card from '../components/Card';
-import Button from '../components/Button';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import { ArrowLeft, Clock, MapPin, User, Package, Trophy } from 'lucide-react';
 
 const TrainingDetail = () => {

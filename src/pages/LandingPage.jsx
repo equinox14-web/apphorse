@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Button from '../components/Button';
+import Button from '../components/common/Button';
 import { ChevronRight, Check, Shield, Zap, Heart, FileText, MessageCircle, XCircle, CreditCard, Smartphone, Clock, Calendar, Search, Bell, Sun, Globe, Download } from 'lucide-react';
 import { useTranslation, Trans } from 'react-i18next';
-import SEO from '../components/SEO';
+import SEO from '../components/common/SEO';
 import { usePWA } from '../context/PWAContext';
 
 const LandingPage = () => {
