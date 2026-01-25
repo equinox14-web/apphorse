@@ -101,14 +101,15 @@ export const getMaxMares = () => {
     return max + extraMares;
 };
 
+
 // 0. Export Whitelist for usage in SignUp
-export const WHITELISTED_TESTERS = [
-    'tester1@equinox.app',
-    'tester2@equinox.app',
-    'tester3@equinox.app',
-    'tester4@equinox.app',
-    // Add other tester emails here
-];
+// Updated to use domain-based check instead of static list
+export const isWhitelistedTester = (email) => {
+    if (!email) return false;
+    const normalizedEmail = email.toLowerCase().trim();
+    // Accept all @equinox.app emails as testers
+    return normalizedEmail.endsWith('@equinox.app');
+};
 
 export const getUserPlanIds = () => {
     // Admin Override (Superuser)
@@ -116,7 +117,7 @@ export const getUserPlanIds = () => {
 
     // 1. TESTER WHITELIST (Backdoor for Elite Access - Priority over LocalStorage)
     const userEmail = localStorage.getItem('user_email');
-    if (userEmail && WHITELISTED_TESTERS.includes(userEmail.toLowerCase())) {
+    if (userEmail && isWhitelistedTester(userEmail)) {
         return ['elite'];
     }
 

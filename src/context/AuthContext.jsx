@@ -71,11 +71,15 @@ export const AuthProvider = ({ children }) => {
                     if (data.name) localStorage.setItem('user_name', data.name);
                     if (data.role) localStorage.setItem('user_role', data.role);
                     if (data.role) localStorage.setItem('userType', data.role);
-                    // Plans are usually stable property, so we might keep them or sync them.
-                    // But if simulating, we probably want to keep the simulated state if we set it.
-                    // However, Team simulation doesn't set plans. So we keep syncing plans or leave them alone?
-                    // Safe to sync plans for now as Team members share the stable's plan capabilities mostly.
-                    if (data.plans) localStorage.setItem('subscriptionPlan', JSON.stringify(data.plans));
+
+                    // CRITICAL: Preserve Elite plan for testers with isAdminBypass
+                    // This prevents the subscription listener from overwriting it with 'decouverte'
+                    if (data.isAdminBypass === true && data.plans) {
+                        console.log("[Auth] 🔓 Admin Bypass detected in sync - preserving plan:", data.plans);
+                        localStorage.setItem('subscriptionPlan', JSON.stringify(data.plans));
+                    } else if (data.plans) {
+                        localStorage.setItem('subscriptionPlan', JSON.stringify(data.plans));
+                    }
                 } else {
                     // In simulation, we DON'T overwrite name/role.
                     // But we might want to ensure subscriptionPlan is correct?
@@ -170,7 +174,7 @@ export const AuthProvider = ({ children }) => {
                     const subsRef = collection(db, 'customers', user.uid, 'subscriptions');
                     const q = query(subsRef, where('status', 'in', ['active', 'trialing']));
 
-                    unsubscribeSubs = onSnapshot(q, (snapshot) => {
+                    unsubscribeSubs = onSnapshot(q, async (snapshot) => {
                         // Default to 'decouverte' unless active sub found
                         // Preserve 'admin' if it was already set by syncUserProfile (special case)
                         let activePlan = ['decouverte'];
@@ -186,12 +190,26 @@ export const AuthProvider = ({ children }) => {
                             }
                         }
 
-                        // Check if we need to preserve Admin status from static profile
-                        // (We can't easily access the latest userProfile state inside this callback without refs or deps, 
-                        // but we can check the localStorage or previous logic. 
-                        // Let's rely on a check: if the user is authorized as Admin via email in syncUserProfile, 
-                        // we shouldn't downgrade them just because they lack a stripe sub.
-                        // However, strictly following the Stripe spec for "Pro" features:
+                        // CRITICAL: Check Firestore for isAdminBypass (Tester Whitelist)
+                        // We MUST fetch from Firestore to ensure we have the latest data
+                        let shouldBypassStripe = false;
+                        try {
+                            const userDocRef = doc(db, 'users', user.uid);
+                            const userDocSnap = await getDoc(userDocRef);
+                            if (userDocSnap.exists()) {
+                                const userData = userDocSnap.data();
+                                shouldBypassStripe = userData.isAdminBypass === true || userData.role === 'Admin';
+
+                                if (shouldBypassStripe) {
+                                    console.log("[Auth] 🔓 Tester/Admin Bypass detected - preserving Elite/Admin plan");
+                                    // Use the plan from Firestore instead of Stripe
+                                    activePlan = userData.plans || ['elite'];
+                                    activeRole = userData.role || 'Pro';
+                                }
+                            }
+                        } catch (error) {
+                            console.error("[Auth] Error fetching user bypass status:", error);
+                        }
 
                         // Update State
                         setUserProfile(prev => {
@@ -200,11 +218,11 @@ export const AuthProvider = ({ children }) => {
 
                             // PROTECTION: If user is in "Simulated" mode (Dev test) or has Admin Bypass, 
                             // DO NOT overwrite their plan with 'decouverte' just because they have no Stripe sub.
-                            const isSimulated = prev?.simulated || prev?.isAdminBypass || localStorage.getItem('user_simulated') === 'true';
+                            const isSimulated = shouldBypassStripe || prev?.simulated || localStorage.getItem('user_simulated') === 'true';
 
                             if (snapshot.empty && isSimulated) {
-                                console.log("[Auth] Keeping simulated/bypass plan:", prev?.plans);
-                                return prev || { ...prev, plans: JSON.parse(localStorage.getItem('subscriptionPlan') || "['decouverte']") };
+                                console.log("[Auth] Keeping simulated/bypass plan:", activePlan);
+                                return { ...prev, plans: activePlan, role: activeRole };
                             }
 
                             const newProfile = {
