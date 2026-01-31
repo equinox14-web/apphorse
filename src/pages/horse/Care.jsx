@@ -338,7 +338,7 @@ const Care = () => {
     return (
         <div className="animate-fade-in">
 
-            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     {id && (
                         <Button variant="secondary" onClick={() => navigate(-1)} style={{ padding: '0.5rem' }}>
@@ -347,7 +347,7 @@ const Care = () => {
                     )}
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0 }}>{title}</h2>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <input
                         type="file"
                         accept="image/*"
@@ -361,11 +361,13 @@ const Care = () => {
                         disabled={isScanning}
                     >
                         {isScanning ? <Loader2 className="animate-spin" size={18} /> : <Camera size={18} />}
-                        {isScanning ? 'Analyse...' : 'Scanner Ordonnance'}
+                        <span className="hide-on-mobile">{isScanning ? 'Analyse...' : 'Scanner Ordonnance'}</span>
+                        <span className="mobile-only" style={{ display: 'none' }}>Scan</span>
                     </Button>
                     <Button onClick={openAddModal}>
                         <Plus size={18} />
-                        {t('care_page.add_button')}
+                        <span className="hide-on-mobile">{t('care_page.add_button')}</span>
+                        <span className="mobile-only" style={{ display: 'none' }}>Ajout</span>
                     </Button>
                 </div>
             </div>
@@ -386,14 +388,7 @@ const Care = () => {
             )}
 
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }} className="care-layout">
-                <style>{`
-                    @media (min-width: 768px) {
-                        .care-layout {
-                            grid-template-columns: 1fr 2fr !important;
-                        }
-                    }
-                `}</style>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
 
                 {/* Sidebar Navigation */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -460,7 +455,7 @@ const Care = () => {
                     )}
 
                     {filteredItems.length > 0 ? filteredItems.map(item => (
-                        <Card key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Card key={item.id} style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                 <div style={{
                                     width: '48px', height: '48px', borderRadius: '50%',

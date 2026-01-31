@@ -45,7 +45,17 @@ export const AuthProvider = ({ children }) => {
             'admin@equinox.com',
             'dev@equinox.com'
         ];
+
+        const BETA_TESTERS = [
+            'aurelie.jossic@gmail.com',
+            'papy.gamers14@gmail.com',
+            'horse-equinox@outlook.com',
+            'tester5@equinox.app',
+            'tester1@equinox.app'
+        ];
+
         const isAdmin = ADMIN_EMAILS.includes(user.email);
+        const isBetaTester = BETA_TESTERS.includes(user.email);
 
         try {
             const userDocRef = doc(db, 'users', user.uid);
@@ -59,6 +69,18 @@ export const AuthProvider = ({ children }) => {
                     console.log("[Auth] Upgrading user to Admin based on email whitelist...");
                     data = { ...data, role: 'Admin', plans: ['admin'] };
                     // Update Firestore silently to persist this change
+                    await setDoc(userDocRef, data, { merge: true });
+                }
+
+                // Force Elite Plan for Beta Testers
+                if (isBetaTester && (!data.plans?.includes('elite') || data.isAdminBypass !== true)) {
+                    console.log("[Auth] 🧪 Beta Tester detected - Granting Elite Access...");
+                    data = {
+                        ...data,
+                        role: 'elite', // Assign 'elite' role to unlock all features
+                        plans: ['elite'],
+                        isAdminBypass: true // Bypass Stripe checks
+                    };
                     await setDoc(userDocRef, data, { merge: true });
                 }
 

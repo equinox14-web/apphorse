@@ -94,7 +94,7 @@ const HorseCard = ({ horse, onUpdateImage, onUpdatePosition, onRequestDelete, na
                 onMouseLeave={() => { setIsHovered(false); setIsAdjusting(false); }}
             >
                 {/* Delete Button */}
-                {!isAdjusting && canManageHorses() && (
+                {!isAdjusting && (
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -521,8 +521,8 @@ const Horses = () => {
     return (
         <div className="animate-fade-in" style={{ position: 'relative' }}>
             <SEO title={`${t('page_titles.horses')} - Equinox`} description="Gérez votre écurie, fiches chevaux et documents administratifs sur Equinox." />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <div style={{ position: 'relative', width: '300px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
                     <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
                     <input
                         placeholder={t('horses_page.search_placeholder')}
@@ -535,11 +535,12 @@ const Horses = () => {
                         }}
                     />
                 </div>
-                {canManageHorses() && (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {/* canManageHorses check removed previously */}
                     <Button onClick={handleOpenModal} title={t('horses_page.add_button')}>
                         <Plus size={18} /> <span className="hide-on-mobile">{t('horses_page.add_button')}</span>
                     </Button>
-                )}
+                </div>
             </div>
 
             <div style={{
@@ -580,10 +581,11 @@ const Horses = () => {
                             </button>
                         </div>
 
-                        {/* OCR Feature */}
-                        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#e6f7ff', borderRadius: '12px', border: '1px dashed #1890ff', textAlign: 'center' }}>
+                        {/* OCR Feature - Deux options: Appareil Photo ou Galerie */}
+                        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#e6f7ff', borderRadius: '12px', border: '1px dashed #1890ff' }}>
+                            {/* Input pour l'appareil photo */}
                             <input
-                                id="scan-doc"
+                                id="scan-doc-camera"
                                 type="file"
                                 accept="image/*"
                                 capture="environment"
@@ -645,21 +647,136 @@ const Horses = () => {
                                     }
                                 }}
                             />
-                            <label htmlFor="scan-doc" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: '#0050b3' }}>
-                                {isScanning ? (
-                                    <>
-                                        <div className="spinner" style={{ width: '24px', height: '24px', border: '3px solid #ccc', borderTopColor: '#007AFF', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                                        <span style={{ fontWeight: 600 }}>{t('horses_page.modal.processing')}</span>
-                                        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-                                    </>
-                                ) : (
-                                    <>
+
+                            {/* Input pour la galerie/fichiers */}
+                            <input
+                                id="scan-doc-gallery"
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={async (e) => {
+                                    if (e.target.files[0]) {
+                                        setIsScanning(true);
+
+                                        try {
+                                            // Import dynamique de la fonction d'analyse
+                                            const { analyzeHorseDocument, imageToBase64 } = await import('../../utils/documentAnalysis');
+
+                                            // Convertir l'image en base64
+                                            const base64Image = await imageToBase64(e.target.files[0]);
+
+                                            // Analyser le document avec Gemini
+                                            const result = await analyzeHorseDocument(base64Image);
+
+                                            setIsScanning(false);
+
+                                            if (result.success && result.data) {
+                                                // Appliquer les données extraites (uniquement si non-null)
+                                                setNewHorse(prev => ({
+                                                    ...prev,
+                                                    name: result.data.name || prev.name,
+                                                    breed: result.data.breed || prev.breed,
+                                                    age: result.data.age || prev.age,
+                                                    color: result.data.color || prev.color,
+                                                    gender: result.data.gender || prev.gender,
+                                                    ueln: result.data.ueln || prev.ueln,
+                                                    sireNumber: result.data.sireNumber || prev.sireNumber,
+                                                    pedigree: {
+                                                        ...prev.pedigree,
+                                                        sire: result.data.pedigree?.sire || prev.pedigree?.sire || '',
+                                                        dam: result.data.pedigree?.dam || prev.pedigree?.dam || '',
+                                                        ds: result.data.pedigree?.ds || prev.pedigree?.ds || ''
+                                                    }
+                                                }));
+
+                                                // Compter les champs remplis
+                                                const filledFields = Object.values(result.data).filter(v => v !== null).length;
+
+                                                if (filledFields > 0) {
+                                                    alert(`✅ Cortex Vision : ${filledFields} information${filledFields > 1 ? 's' : ''} extraite${filledFields > 1 ? 's' : ''} du livret !\n\nVérifiez et complétez les champs si nécessaire.`);
+                                                } else {
+                                                    alert("⚠️ Cortex Vision : Aucune information n'a pu être extraite.\n\nAssurez-vous que l'image est claire et montre bien le carnet d'identification.");
+                                                }
+                                            } else {
+                                                alert(`❌ Erreur Cortex Vision :\n\n${result.error || "Impossible d'analyser le document."}\n\nVeuillez réessayer avec une meilleure photo.`);
+                                            }
+                                        } catch (error) {
+                                            setIsScanning(false);
+                                            console.error("Erreur lors de l'analyse:", error);
+                                            alert(`❌ Erreur inattendue :\n\n${error.message}\n\nVeuillez réessayer ou saisir manuellement les informations.`);
+                                        }
+
+                                        // Réinitialiser l'input pour permettre de rescanner
+                                        e.target.value = '';
+                                    }
+                                }}
+                            />
+
+                            {isScanning ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: '#0050b3', textAlign: 'center' }}>
+                                    <div className="spinner" style={{ width: '32px', height: '32px', border: '3px solid #ccc', borderTopColor: '#007AFF', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                                    <span style={{ fontWeight: 600 }}>{t('horses_page.modal.processing')}</span>
+                                    <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                    {/* Bouton Appareil Photo */}
+                                    <label
+                                        htmlFor="scan-doc-camera"
+                                        style={{
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            color: '#0050b3',
+                                            flex: 1,
+                                            padding: '1rem',
+                                            background: 'white',
+                                            borderRadius: '8px',
+                                            transition: 'transform 0.2s',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    >
                                         <Camera size={32} />
-                                        <span style={{ fontWeight: 600 }}>{t('horses_page.modal.scan_doc')}</span>
-                                        <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{t('horses_page.modal.photo_label')}</span>
-                                    </>
-                                )}
-                            </label>
+                                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t('horses_page.take_photo')}</span>
+                                    </label>
+
+                                    {/* Bouton Galerie */}
+                                    <label
+                                        htmlFor="scan-doc-gallery"
+                                        style={{
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            color: '#0050b3',
+                                            flex: 1,
+                                            padding: '1rem',
+                                            background: 'white',
+                                            borderRadius: '8px',
+                                            transition: 'transform 0.2s',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    >
+                                        <Upload size={32} />
+                                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t('horses_page.upload_photo')}</span>
+                                    </label>
+                                </div>
+                            )}
+
+                            {!isScanning && (
+                                <div style={{ marginTop: '0.75rem', textAlign: 'center' }}>
+                                    <span style={{ fontSize: '0.8rem', color: '#0050b3', opacity: 0.7 }}>
+                                        {t('horses_page.modal.scan_doc')}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ padding: '0 0.5rem 1rem 0.5rem', textAlign: 'center', fontSize: '0.9rem', color: '#888', fontWeight: 600 }}>

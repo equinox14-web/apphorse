@@ -13,14 +13,13 @@ export default function UpdateNotification({
         setLoading(true);
         try {
             await onUpdate();
-            // If onUpdate finishes and page hasn't reloaded yet:
-            setLoading(false);
-            onDismiss();
-            window.location.reload(); // Force reload if not handled by SW helper
+            // onUpdate inside useServiceWorker triggers a reload after activation.
+            // We do NOT manually reload here to prevent double reload race conditions.
+            // We also do not dismiss immediately, let the reload happen.
         } catch (e) {
             console.error("Update failed", e);
             setLoading(false);
-            onDismiss(); // Hide on error to avoid sticking
+            window.location.reload(); // Fallback reload
         }
     };
 

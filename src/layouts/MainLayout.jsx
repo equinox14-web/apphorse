@@ -484,7 +484,7 @@ const MainLayout = () => {
             {/* Mobile Bottom Navigation */}
             <nav className="bottom-nav no-print">
                 <BottomNavItem to="/dashboard" icon={LayoutDashboard} label={t('home')} />
-                <BottomNavItem to="/calendar" icon={Calendar} label={t('planning')} />
+                <BottomNavItem to="/planning" icon={Calendar} label={t('planning')} />
                 {(getMaxHorses() > 0 || isExternalUser()) && (
                     <BottomNavItem to="/horses" icon={LayoutList} label={isBreederOnly ? t('my_breeding') : t('my_stable')} />
                 )}

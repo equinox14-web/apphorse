@@ -37,8 +37,10 @@ import {
   MediaGallery
 } from './pages/horse';
 
+
 // Pages - Management
 import { Team, Billing, ClientsManagement, Stock, Budget } from './pages/management';
+import LegalRegister from './pages/management/LegalRegister';
 
 // Pages - Profile
 import { Settings, Profile, SwitchAccount } from './pages/profile';
@@ -64,9 +66,37 @@ const FeatureGuard = ({ feature, children }) => {
   return children;
 };
 
+import { scheduleSyncToFirestore } from './services/firestoreSync';
+
 function AppContent() {
   const { currentUser } = useAuth();
   const { needRefresh, offlineReady, updateApp, dismissUpdate } = useServiceWorker();
+
+  // --- AUTO SAVE SYSTEM ---
+  useEffect(() => {
+    if (currentUser?.uid) {
+      // Initial sync on mount if needed, or rely on AuthContext load.
+      // We set up an interval to save pending changes every 60s
+      const saveInterval = setInterval(() => {
+        console.log("☁️ Auto-Saving User Data...");
+        scheduleSyncToFirestore(currentUser.uid);
+      }, 60 * 1000); // 60 seconds
+
+      // Also save when visibility changes (user leaves tab)
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+          console.log("🙈 Tab hidden - Triggering Save...");
+          scheduleSyncToFirestore(currentUser.uid);
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        clearInterval(saveInterval);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     // Force Purge of Old Data (One-time - Run V3)
@@ -161,7 +191,7 @@ function AppContent() {
 
           <Route path="sharing" element={<FeatureGuard feature="leases"><HalfLease /></FeatureGuard>} />
           <Route path="messages" element={<FeatureGuard feature="messaging"><Messaging /></FeatureGuard>} />
-          <Route path="legal-register" element={<FeatureGuard feature="register"><Register /></FeatureGuard>} />
+          <Route path="legal-register" element={<FeatureGuard feature="register"><LegalRegister /></FeatureGuard>} />
           <Route path="support" element={<FeatureGuard feature="support"><Support /></FeatureGuard>} />
           <Route path="settings" element={<Settings />} />
           <Route path="ai-coach" element={<AITrainingCoach />} />

@@ -311,12 +311,13 @@ ${userMsg}`;
 
     return (
         <div className="animate-fade-in" style={{
-            height: 'calc(100vh - 140px)',
+            height: 'calc(100vh - 100px)', // Adjusted for mobile nav
             display: 'flex',
             flexDirection: 'column',
             maxWidth: '1000px',
             margin: '0 auto',
-            position: 'relative'
+            position: 'relative',
+            paddingBottom: '0' // Remove extra padding that might cause scroll issues
         }}>
 
 

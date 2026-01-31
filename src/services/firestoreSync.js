@@ -22,7 +22,12 @@ const SYNC_KEYS = [
     'ai_training_plans',
     'weather_coords',
     'appHorse_register_movements',
-    'appHorse_register_establishment'
+    'appHorse_register_establishment',
+    'equinox_assistant_history', // Chat History
+    'user_name', // Profile data backup
+    'user_logo',
+    'user_role',
+    'subscriptionPlan'
 ];
 
 /**

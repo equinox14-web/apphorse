@@ -144,9 +144,10 @@ export const canAccess = (feature) => {
     // This overrides any other logic to prevent accidental leaks (e.g. via External/Team complex logic)
     const sensitiveFeatures = ['register', 'budget', 'billing', 'leases', 'clients', 'competition', 'accounting'];
     // Default Owner Roles
-    // Check for "Propriétaire" (Owner) or "Admin" or "Pro" OR explicit "user_is_admin" flag (from Team delegation)
+    // Check for "Propriétaire" (Owner) or "Admin" or "Pro" OR "Elite" OR explicit "user_is_admin" flag
     const normalizedRole = role ? role.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
-    const isOwnerRole = !role || normalizedRole.includes('proprietaire') || normalizedRole.includes('admin') || normalizedRole.includes('pro');
+    // Added 'elite' (Beta/Full Access) to Owner roles
+    const isOwnerRole = !role || normalizedRole.includes('proprietaire') || normalizedRole.includes('admin') || normalizedRole.includes('pro') || normalizedRole.includes('elite');
     const isDelegatedAdmin = localStorage.getItem('user_is_admin') === 'true';
 
     const isOwner = isOwnerRole || isDelegatedAdmin;
@@ -186,8 +187,8 @@ export const canAccess = (feature) => {
 
     const planIds = getUserPlanIds();
 
-    // Admin Bypass: Full Access
-    if (planIds.includes('admin')) return true;
+    // Admin OR Elite Bypass: Full Access
+    if (planIds.includes('admin') || planIds.includes('elite')) return true;
 
     // Check Activities for Overrides
     const userActivitiesStr = localStorage.getItem('userActivities');
@@ -245,10 +246,18 @@ export const canManageHorses = () => {
     // External users cannot manage horses
     if (isExternalUser()) return false;
 
-    // Only Owner/Propriétaire can manage horses (add/delete)
+    // Only Owner/Propriétaire/Admin/Pro/Elite/Rider can manage horses
     const role = localStorage.getItem('user_role');
+
     // If role is undefined/null, assume Owner (legacy/default state)
-    if (!isDelegatedAdmin && role && !['Propriétaire', 'Admin', 'Pro'].includes(role)) return false;
+    if (!role) return true;
+
+    if (!isDelegatedAdmin) {
+        const normalized = role.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        // Updated list to include 'elite' (Beta), 'rider' (Default), 'cavalier'
+        const allowed = ['proprietaire', 'admin', 'pro', 'elite', 'rider', 'cavalier'];
+        if (!allowed.some(r => normalized.includes(r))) return false;
+    }
 
     return true;
 };
@@ -261,10 +270,18 @@ export const canManageTeam = () => {
     // External users cannot manage team
     if (isExternalUser()) return false;
 
-    // Only Owner/Propriétaire can manage team
+    // Only Owner/Propriétaire/Admin/Pro/Elite can manage team
     const role = localStorage.getItem('user_role');
+
     // If role is undefined/null, assume Owner (legacy/default state)
-    if (!isDelegatedAdmin && role && !['Propriétaire', 'Admin', 'Pro'].includes(role)) return false;
+    if (!role) return true;
+
+    if (!isDelegatedAdmin) {
+        const normalized = role.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        // Rider/Cavalier usually don't have team unless they upgrade, but we allow access (limited by quota)
+        const allowed = ['proprietaire', 'admin', 'pro', 'elite', 'rider', 'cavalier'];
+        if (!allowed.some(r => normalized.includes(r))) return false;
+    }
 
     return true;
 };
