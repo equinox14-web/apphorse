@@ -68,25 +68,34 @@ function NutritionCalculator() {
         if (!isLoaded || !horse) return;
 
         const saveDraft = () => {
-            const horses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
-            const updatedHorses = horses.map(h => {
-                if (h.id.toString() === id.toString()) {
-                    return {
-                        ...h,
-                        savedRation: {
-                            ...h.savedRation,
-                            forageId: selectedForageId,
-                            ingredients: rationIngredients,
-                            activityLevel: activityLevel,
-                            physiologicalState: physiologicalState,
-                            lastUpdated: new Date().toISOString()
-                        }
-                    };
-                }
-                return h;
-            });
-            localStorage.setItem('my_horses_v4', JSON.stringify(updatedHorses));
-            // console.log("Auto-saved draft");
+            const rationData = {
+                forageId: selectedForageId,
+                ingredients: rationIngredients,
+                activityLevel: activityLevel,
+                physiologicalState: physiologicalState,
+                lastUpdated: new Date().toISOString()
+            };
+
+            if (horse.source === 'breeding') {
+                const mares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+                const updatedMares = mares.map(m => m.id.toString() === id.toString() ? { ...m, savedRation: { ...(m.savedRation || {}), ...rationData } } : m);
+                localStorage.setItem('appHorse_breeding_v2', JSON.stringify(updatedMares));
+            } else {
+                const horses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+                const updatedHorses = horses.map(h => {
+                    if (h.id.toString() === id.toString()) {
+                        return {
+                            ...h,
+                            savedRation: {
+                                ...(h.savedRation || {}),
+                                ...rationData
+                            }
+                        };
+                    }
+                    return h;
+                });
+                localStorage.setItem('my_horses_v4', JSON.stringify(updatedHorses));
+            }
         };
 
         const timeoutId = setTimeout(saveDraft, 1000); // Debounce 1s
@@ -96,11 +105,22 @@ function NutritionCalculator() {
 
 
     function loadHorseData() {
+        const idStr = id.toString();
+
+        // 1. Try Main Stable
         const horses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
-        const currentHorse = horses.find(h => h.id.toString() === id.toString());
+        let currentHorse = horses.find(h => h.id.toString() === idStr);
+        let source = 'stable';
+
+        // 2. Try Breeding List if not found
+        if (!currentHorse) {
+            const mares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+            currentHorse = mares.find(m => m.id.toString() === idStr);
+            if (currentHorse) source = 'breeding';
+        }
 
         if (currentHorse) {
-            setHorse(currentHorse);
+            setHorse({ ...currentHorse, source });
             const weight = getCurrentWeight(id);
             setCurrentWeight(weight);
 
@@ -536,8 +556,8 @@ function NutritionCalculator() {
             <Card style={{ marginBottom: '1.5rem', background: '#f8fafc' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     {/* Stade Physiologique Selector */}
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem', minHeight: '20px' }}>
                             Stade Physiologique
                         </label>
                         <select
@@ -546,7 +566,8 @@ function NutritionCalculator() {
                             style={{
                                 width: '100%', padding: '0.6rem', borderRadius: '8px',
                                 border: '1px solid #cbd5e1', background: 'white',
-                                color: '#1e293b' // Force dark text
+                                color: '#1e293b', // Force dark text
+                                marginTop: 'auto'
                             }}
                         >
                             {Object.values(PHYSIOLOGICAL_STATES).map(state => (
@@ -556,8 +577,8 @@ function NutritionCalculator() {
                     </div>
 
                     {/* Activity/Discipline Selector */}
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem', minHeight: '20px' }}>
                             Discipline / Travail
                         </label>
                         <select
@@ -566,7 +587,8 @@ function NutritionCalculator() {
                             style={{
                                 width: '100%', padding: '0.6rem', borderRadius: '8px',
                                 border: '1px solid #cbd5e1', background: 'white',
-                                color: '#1e293b' // Force dark text
+                                color: '#1e293b', // Force dark text
+                                marginTop: 'auto'
                             }}
                         >
                             {Object.values(ACTIVITY_LEVELS).map(level => (

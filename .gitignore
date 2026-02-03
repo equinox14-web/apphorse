@@ -29,7 +29,6 @@ coverage
 
 # Build
 build
-.vercel
 
 # Environment variables
 .env

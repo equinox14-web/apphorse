@@ -556,3 +556,18 @@ button {
   font-size: 0.9em;
   font-family: monospace;
 }
+
+/* --- Generic Grid Utilities --- */
+.responsive-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .responsive-card-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}

@@ -71,23 +71,75 @@ const Support = () => {
     };
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto', height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 className="text-gradient">{t('support_page.title')}</h2>
-                <Button variant="secondary" onClick={handleSendMail} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+
+        <div className="animate-fade-in support-container">
+            <style>{`
+                .support-container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    height: calc(100vh - 120px);
+                    display: flex;
+                    flex-direction: column;
+                }
+                .support-header {
+                    margin-bottom: 1rem;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .support-chat-area {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 1.5rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                    background: rgba(255,255,255,0.5);
+                }
+                .support-input-area {
+                    padding: 1rem;
+                    background: white;
+                    border-top: 1px solid #e5e7eb;
+                    display: flex;
+                    gap: 1rem;
+                }
+                
+                @media (max-width: 768px) {
+                    .support-container {
+                        height: calc(100dvh - 84px);
+                        margin: 0;
+                        max-width: 100%;
+                    }
+                    .support-header {
+                        padding: 0 1rem;
+                        margin-bottom: 0.5rem;
+                    }
+                    .support-chat-area {
+                        padding: 1rem;
+                    }
+                    .support-input-area {
+                        padding: 0.75rem;
+                        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+                    }
+                }
+            `}</style>
+
+            <div className="support-header">
+                <h2 className="text-gradient" style={{ margin: 0 }}>{t('support_page.title')}</h2>
+                <Button variant="secondary" onClick={handleSendMail} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.9rem' }}>
                     <Mail size={18} /> {t('support_page.contact_btn')}
                 </Button>
             </div>
 
             <Card style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
                 {/* Chat Area */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: 'rgba(255,255,255,0.5)' }}>
+                <div className="support-chat-area">
                     {messages.map((msg) => (
                         <div
                             key={msg.id}
                             style={{
                                 alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                                maxWidth: '80%',
+                                maxWidth: '85%',
                                 display: 'flex',
                                 gap: '0.5rem',
                                 flexDirection: msg.sender === 'user' ? 'row-reverse' : 'row'
@@ -98,9 +150,10 @@ const Support = () => {
                                 background: msg.sender === 'user' ? 'var(--color-primary)' : '#e5e7eb',
                                 color: msg.sender === 'user' ? 'white' : '#4b5563',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                flexShrink: 0
+                                flexShrink: 0,
+                                fontSize: '0.8rem'
                             }}>
-                                {msg.sender === 'user' ? <User size={18} /> : <Bot size={18} />}
+                                {msg.sender === 'user' ? <User size={16} /> : <Bot size={16} />}
                             </div>
                             <div style={{
                                 background: msg.sender === 'user' ? 'var(--color-primary)' : 'white',
@@ -110,7 +163,9 @@ const Support = () => {
                                 borderTopLeftRadius: msg.sender === 'bot' ? '2px' : '12px',
                                 borderTopRightRadius: msg.sender === 'user' ? '2px' : '12px',
                                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                whiteSpace: 'pre-wrap'
+                                whiteSpace: 'pre-wrap',
+                                fontSize: '0.95rem',
+                                wordBreak: 'break-word'
                             }}>
                                 {msg.text}
                             </div>
@@ -125,7 +180,7 @@ const Support = () => {
                 </div>
 
                 {/* Input Area */}
-                <form onSubmit={handleSendMessage} style={{ padding: '1rem', background: 'white', borderTop: '1px solid #e5e7eb', display: 'flex', gap: '1rem' }}>
+                <form onSubmit={handleSendMessage} className="support-input-area">
                     <input
                         type="text"
                         value={inputText}
@@ -139,10 +194,11 @@ const Support = () => {
                             fontSize: '1rem',
                             outline: 'none',
                             color: '#333',
-                            backgroundColor: '#fff'
+                            backgroundColor: '#fff',
+                            minWidth: 0
                         }}
                     />
-                    <Button type="submit" disabled={!inputText.trim()} style={{ aspectRatio: '1/1', padding: 0, width: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Button type="submit" disabled={!inputText.trim()} style={{ aspectRatio: '1/1', padding: 0, width: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <Send size={20} />
                     </Button>
                 </form>

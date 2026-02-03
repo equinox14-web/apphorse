@@ -592,9 +592,21 @@ const Calendar = () => {
         ];
 
         return (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem' }}>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                gap: '0.25rem',
+                width: '100%',
+                overflow: 'hidden'
+            }}>
                 {weekDays.map(d => (
-                    <div key={d} style={{ textAlign: 'center', fontWeight: 600, padding: '0.5rem', opacity: 0.7 }}>{d}</div>
+                    <div key={d} style={{
+                        textAlign: 'center',
+                        fontWeight: 600,
+                        padding: '0.25rem',
+                        fontSize: 'clamp(0.6rem, 2vw, 0.875rem)',
+                        opacity: 0.7
+                    }}>{d}</div>
                 ))}
 
                 {allSlots.map((day, idx) => {
@@ -610,31 +622,45 @@ const Calendar = () => {
                     return (
                         <div key={idx} style={{
                             background: 'rgba(255,255,255,0.5)',
-                            borderRadius: '12px',
-                            minHeight: '100px',
-                            padding: '0.5rem',
+                            borderRadius: '8px',
+                            minHeight: 'clamp(60px, 15vw, 100px)',
+                            padding: 'clamp(0.25rem, 1vw, 0.5rem)',
                             border: isToday(dayDate) ? '2px solid var(--color-primary)' : '1px solid transparent',
                             cursor: 'pointer',
-                            display: 'flex', flexDirection: 'column', gap: '4px'
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            overflow: 'hidden'
                         }}
                             onClick={() => { setCurrentDate(dayDate); setView('day'); }}
                         >
-                            <div style={{ fontWeight: 600, color: '#333', marginBottom: '4px' }}>{day}</div>
-                            {dayEvents.slice(0, 3).map((e, i) => (
+                            <div style={{
+                                fontWeight: 600,
+                                color: '#333',
+                                marginBottom: '2px',
+                                fontSize: 'clamp(0.7rem, 2.5vw, 1rem)'
+                            }}>{day}</div>
+                            {dayEvents.slice(0, 2).map((e, i) => (
                                 <div key={i}
                                     onClick={(event) => { event.stopPropagation(); setSelectedEvent(e); }}
                                     style={{
-                                        fontSize: '0.7rem',
-                                        padding: '2px 6px',
-                                        borderRadius: '4px',
+                                        fontSize: 'clamp(0.5rem, 1.5vw, 0.7rem)',
+                                        padding: '1px 4px',
+                                        borderRadius: '3px',
                                         background: e.color + '33', // 20% opacity
                                         color: e.color,
-                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        lineHeight: 1.2
                                     }}>
                                     {e.title}
                                 </div>
                             ))}
-                            {dayEvents.length > 3 && <div style={{ fontSize: '0.7rem', color: '#666' }}>+{dayEvents.length - 3} {t('calendar_page.event_details.others')}</div>}
+                            {dayEvents.length > 2 && <div style={{
+                                fontSize: 'clamp(0.5rem, 1.5vw, 0.65rem)',
+                                color: '#666'
+                            }}>+{dayEvents.length - 2}</div>}
                         </div>
                     );
                 })}

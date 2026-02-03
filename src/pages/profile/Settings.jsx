@@ -1149,7 +1149,7 @@ const Settings = () => {
             {
                 showChangePlanModal && targetPlan && createPortal(
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in border border-gray-100 dark:border-gray-800">
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-fade-in border border-gray-100 dark:border-gray-800">
                             <div className="absolute top-4 right-4 group">
                                 <button
                                     onClick={() => setShowChangePlanModal(false)}
@@ -1193,7 +1193,7 @@ const Settings = () => {
             {
                 showEditProfileModal && createPortal(
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in border border-gray-100 dark:border-gray-800">
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-fade-in border border-gray-100 dark:border-gray-800">
                             <div className="absolute top-4 right-4">
                                 <button
                                     onClick={() => setShowEditProfileModal(false)}
@@ -1252,7 +1252,7 @@ const Settings = () => {
             {
                 showChangePasswordModal && createPortal(
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in border border-gray-100 dark:border-gray-800">
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-fade-in border border-gray-100 dark:border-gray-800">
                             <div className="absolute top-4 right-4 group">
                                 <button
                                     onClick={() => setShowChangePasswordModal(false)}
@@ -1415,7 +1415,7 @@ const Settings = () => {
             {
                 showDeleteAccountModal && createPortal(
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm bg-black/60">
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in text-center p-8 border border-gray-100 dark:border-gray-800 relative">
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-fade-in text-center p-8 border border-gray-100 dark:border-gray-800 relative">
                             <div className="absolute top-4 right-4">
                                 <button
                                     onClick={() => setShowDeleteAccountModal(false)}

@@ -668,6 +668,18 @@ const Billing = () => {
 
     return (
         <div className="animate-fade-in">
+            <style>{`
+                .resp-line { display: flex; gap: 0.5rem; }
+                .resp-dual { display: flex; gap: 1rem; }
+                .resp-total { display: flex; gap: 1rem; align-items: center; background: #f9fafb; padding: 1rem; border-radius: 8px; }
+                
+                @media (max-width: 600px) {
+                    .resp-line { flex-wrap: wrap; }
+                    .resp-line > input:first-child { min-width: 100%; }
+                    .resp-dual { flex-direction: column; gap: 0.5rem; }
+                    .resp-total { flex-direction: column; align-items: stretch; }
+                }
+            `}</style>
             {/* Dashboard Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                 <Card style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -982,9 +994,10 @@ const Billing = () => {
                         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                         background: 'rgba(0,0,0,0.5)', zIndex: 9999, // Darker overlay & High Z-Index
                         display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-                        paddingTop: '10vh' // Higher position
+                        padding: '2rem 1rem',
+                        overflowY: 'auto'
                     }}>
-                        <Card style={{ width: '95%', maxWidth: '600px' }}>
+                        <Card style={{ width: '100%', maxWidth: '600px', marginBottom: '2rem' }}>
                             <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>{editingId ? t('billing_modals.invoice.edit_title') : t('billing_modals.invoice.new_title')}</h3>
                             <form onSubmit={handleSaveInvoice} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 <div><label style={{ display: 'block', marginBottom: '0.5rem' }}>{t('billing_modals.invoice.client_label')}</label><input required placeholder="Ex: Jean Dupont" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', color: '#333', backgroundColor: '#fff' }} value={newInvoice.client} onChange={e => setNewInvoice({ ...newInvoice, client: e.target.value })} /></div>
@@ -995,7 +1008,7 @@ const Billing = () => {
                                     <label style={{ display: 'block', marginBottom: '0.5rem' }}>{t('billing_modals.invoice.lines_title')}</label>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                         {newInvoice.lines.map((line, index) => (
-                                            <div key={index} style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <div key={index} className="resp-line">
                                                 <input
                                                     placeholder={t('billing_modals.invoice.desc_placeholder')}
                                                     required
@@ -1024,12 +1037,12 @@ const Billing = () => {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                <div className="resp-dual">
                                     <div style={{ flex: 1 }}><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Du</label><input type="date" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', color: '#333', backgroundColor: '#fff' }} value={newInvoice.startDate} onChange={e => setNewInvoice({ ...newInvoice, startDate: e.target.value })} /></div>
                                     <div style={{ flex: 1 }}><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Au</label><input type="date" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', color: '#333', backgroundColor: '#fff' }} value={newInvoice.endDate} onChange={e => setNewInvoice({ ...newInvoice, endDate: e.target.value })} /></div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}>
+                                <div className="resp-total">
                                     <div style={{ flex: 1, fontWeight: 'bold', color: '#333' }}>{t('billing_modals.invoice.total_label')} {calculateTotal().toFixed(2)} €</div>
                                     <div style={{ flex: 1 }}><label style={{ display: 'block', marginBottom: '0.5rem' }}>{t('billing_modals.invoice.date_label')}</label><input type="date" required style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', color: '#333', backgroundColor: '#fff' }} value={newInvoice.date} onChange={e => setNewInvoice({ ...newInvoice, date: e.target.value })} /></div>
                                 </div>
@@ -1057,9 +1070,10 @@ const Billing = () => {
                         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                         background: 'rgba(0,0,0,0.5)', zIndex: 9999,
                         display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-                        paddingTop: '10vh'
+                        padding: '2rem 1rem',
+                        overflowY: 'auto'
                     }}>
-                        <Card style={{ width: '95%', maxWidth: '500px' }}>
+                        <Card style={{ width: '100%', maxWidth: '500px', marginBottom: '2rem' }}>
                             <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>{t('billing_modals.expense.title')}</h3>
                             <form onSubmit={handleSaveExpense} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 

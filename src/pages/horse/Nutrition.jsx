@@ -20,11 +20,23 @@ const Nutrition = () => {
     });
 
     useEffect(() => {
-        // Load Horses
-        const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
-        setHorses(savedHorses);
-        if (savedHorses.length > 0) {
-            const firstHorse = savedHorses[0];
+        // Load Horses from Stable and Breeding
+        const savedStable = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+        const savedBreeding = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+
+        const stableHorses = savedStable.map(h => ({ ...h, source: 'stable' }));
+        const breedingHorses = savedBreeding.map(m => ({
+            ...m,
+            source: 'breeding',
+            // Map fields if necessary or rely on generic display
+            ration: m.ration || { morning: '', noon: '', evening: '', supplements: '', hay: '' }
+        }));
+
+        const allHorses = [...stableHorses, ...breedingHorses];
+        setHorses(allHorses);
+
+        if (allHorses.length > 0) {
+            const firstHorse = allHorses[0];
             setSelectedHorseId(firstHorse.id);
             // Initialize form with first horse's data
             if (firstHorse.ration) {
@@ -41,8 +53,11 @@ const Nutrition = () => {
     }, []);
 
     const handleHorseSelect = (id) => {
-        setSelectedHorseId(id);
-        const horse = horses.find(h => h.id === id);
+        // Convertir en nombre si nécessaire pour la comparaison
+        const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+
+        setSelectedHorseId(numericId);
+        const horse = horses.find(h => h.id == numericId); // == pour comparaison flexible
         if (horse && horse.ration) {
             setRationForm(horse.ration);
         } else {
@@ -52,21 +67,34 @@ const Nutrition = () => {
     };
 
     const handleSaveRation = () => {
-        const updatedHorses = horses.map(h => {
-            if (h.id === selectedHorseId) {
+        const horseToUpdate = horses.find(h => h.id == selectedHorseId);
+        if (!horseToUpdate) return;
+
+        // Update Local State for immediate UI feedback
+        const updatedAllHorses = horses.map(h => {
+            if (h.id == selectedHorseId) {
                 return { ...h, ration: rationForm };
             }
             return h;
         });
+        setHorses(updatedAllHorses);
 
-        setHorses(updatedHorses);
-        localStorage.setItem('my_horses_v4', JSON.stringify(updatedHorses));
+        // Conditional Persistent Save
+        if (horseToUpdate.source === 'breeding') {
+            const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+            const updatedMares = savedMares.map(m => m.id == selectedHorseId ? { ...m, ration: rationForm } : m);
+            localStorage.setItem('appHorse_breeding_v2', JSON.stringify(updatedMares));
+        } else {
+            const savedStable = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+            const updatedStable = savedStable.map(h => h.id == selectedHorseId ? { ...h, ration: rationForm } : h);
+            localStorage.setItem('my_horses_v4', JSON.stringify(updatedStable));
+        }
+
         setEditMode(false);
-        // alert(t('nutrition_page.ration_card.save_alert')); // Optional feedback
     };
 
     const handleCancel = () => {
-        const horse = horses.find(h => h.id === selectedHorseId);
+        const horse = horses.find(h => h.id == selectedHorseId); // == pour comparaison flexible
         if (horse && horse.ration) {
             setRationForm(horse.ration);
         } else {
@@ -91,7 +119,7 @@ const Nutrition = () => {
         return (totalLiters * 7).toFixed(1);
     };
 
-    const selectedHorse = horses.find(h => h.id === selectedHorseId);
+    const selectedHorse = horses.find(h => h.id == selectedHorseId); // == pour comparaison flexible
 
     if (horses.length === 0) return <div className="p-8 text-center text-gray-500">{t('nutrition_page.no_horses')}</div>;
 
@@ -138,116 +166,190 @@ const Nutrition = () => {
             <div>
                 {selectedHorse ? (
                     <div className="animate-fade-in">
-                        <div className="responsive-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                            <h3 style={{ fontSize: '1.5rem', margin: 0 }}>{t('nutrition_page.ration_card.title')} <span style={{ color: '#2563eb' }}>{selectedHorse.name}</span></h3>
+                        {/* Vérifier si le cheval a une ration définie OU si on est en mode édition */}
+                        {(selectedHorse.ration && Object.values(selectedHorse.ration).some(val => val && val.length > 0)) || editMode ? (
+                            <>
+                                <div className="responsive-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                                    <h3 style={{ fontSize: '1.5rem', margin: 0 }}>{t('nutrition_page.ration_card.title')} <span style={{ color: '#2563eb' }}>{selectedHorse.name}</span></h3>
 
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                {(!editMode) && (
-                                    <>
-                                        <Button variant="secondary" onClick={() => navigate(`/horses/${selectedHorseId}/nutrition`)}>
-                                            <Calculator size={18} style={{ marginRight: '6px' }} />
-                                            Calculateur
-                                        </Button>
-                                        <Button onClick={() => setEditMode(true)}>{t('nutrition_page.ration_card.edit_btn')}</Button>
-                                    </>
-                                )}
-                                {editMode && (
-                                    <>
-                                        <Button variant="secondary" onClick={handleCancel}>{t('nutrition_page.ration_card.cancel_btn')}</Button>
-                                        <Button onClick={handleSaveRation} style={{ background: '#10b981' }}><Save size={18} style={{ marginRight: '6px' }} /> {t('nutrition_page.ration_card.save_btn')}</Button>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        <Card>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem' }}>
-                                {[
-                                    { key: 'morning', label: t('nutrition_page.meals.morning'), color: '#fef3c7', iconColor: '#d97706' },
-                                    { key: 'noon', label: t('nutrition_page.meals.noon'), color: '#fff7ed', iconColor: '#c2410c' },
-                                    { key: 'evening', label: t('nutrition_page.meals.evening'), color: '#f0f9ff', iconColor: '#0284c7' },
-                                    { key: 'supplements', label: t('nutrition_page.meals.supplements'), color: '#f3e8ff', iconColor: '#7e22ce' },
-                                    { key: 'hay', label: t('nutrition_page.meals.hay'), color: '#ecfdf5', iconColor: '#059669', fullWidth: true }
-                                ].map((meal) => (
-                                    <div key={meal.key} style={{ gridColumn: meal.fullWidth ? '1 / -1' : 'auto' }}>
-                                        <div style={{ marginBottom: '0.5rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: meal.iconColor }}></div>
-                                            {meal.label}
-                                        </div>
-                                        {editMode ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                {(Array.isArray(rationForm[meal.key]) ? rationForm[meal.key] : (rationForm[meal.key] ? [rationForm[meal.key]] : []))
-                                                    .map((item, idx) => (
-                                                        <div key={idx} style={{ display: 'flex', gap: '6px' }}>
-                                                            <input
-                                                                style={{
-                                                                    width: '100%', padding: '0.8rem', borderRadius: '8px',
-                                                                    border: '1px solid #cbd5e1', fontSize: '0.95rem',
-                                                                    color: '#333', backgroundColor: '#fff'
-                                                                }}
-                                                                placeholder={t('nutrition_page.placeholders.ration_input', { meal: meal.label.toLowerCase() })}
-                                                                value={item}
-                                                                onChange={(e) => {
-                                                                    const oldVal = Array.isArray(rationForm[meal.key]) ? rationForm[meal.key] : (rationForm[meal.key] ? [rationForm[meal.key]] : []);
-                                                                    const newVal = [...oldVal];
-                                                                    newVal[idx] = e.target.value;
-                                                                    setRationForm({ ...rationForm, [meal.key]: newVal });
-                                                                }}
-                                                            />
-                                                            <button
-                                                                onClick={() => {
-                                                                    const oldVal = Array.isArray(rationForm[meal.key]) ? rationForm[meal.key] : (rationForm[meal.key] ? [rationForm[meal.key]] : []);
-                                                                    const newVal = oldVal.filter((_, i) => i !== idx);
-                                                                    setRationForm({ ...rationForm, [meal.key]: newVal });
-                                                                }}
-                                                                style={{ padding: '0 10px', color: '#ef4444', border: '1px solid #fee2e2', background: '#fff', borderRadius: '8px', cursor: 'pointer' }}
-                                                            >
-                                                                <Trash2 size={16} />
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                <button
-                                                    onClick={() => {
-                                                        const oldVal = Array.isArray(rationForm[meal.key]) ? rationForm[meal.key] : (rationForm[meal.key] ? [rationForm[meal.key]] : []);
-                                                        setRationForm({ ...rationForm, [meal.key]: [...oldVal, ''] });
-                                                    }}
-                                                    style={{ fontSize: '0.85rem', color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: '4px' }}
-                                                >
-                                                    <Plus size={16} /> {t('nutrition_page.placeholders.add_product_btn')}
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div style={{
-                                                padding: '1.5rem', background: meal.color, borderRadius: '12px',
-                                                fontSize: '1.1rem', fontWeight: 500, color: '#334155', minHeight: '80px',
-                                                display: 'flex', flexDirection: 'column', justifyContent: 'center'
-                                            }}>
-                                                {(Array.isArray(rationForm[meal.key]) ? rationForm[meal.key] : (rationForm[meal.key] ? [rationForm[meal.key]] : []))
-                                                    .map((line, i) => (
-                                                        <div key={i} style={{ marginBottom: '4px' }}>{line}</div>
-                                                    ))}
-                                                {(!rationForm[meal.key] || rationForm[meal.key].length === 0) && <span style={{ opacity: 0.5, fontStyle: 'italic' }}>{t('nutrition_page.placeholders.undefined')}</span>}
-                                            </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                        {(!editMode) && (
+                                            <>
+                                                <Button variant="secondary" onClick={() => navigate(`/horses/${selectedHorseId}/nutrition`)}>
+                                                    <Calculator size={18} style={{ marginRight: '6px' }} />
+                                                    Calculateur
+                                                </Button>
+                                                <Button onClick={() => setEditMode(true)}>{t('nutrition_page.ration_card.edit_btn')}</Button>
+                                            </>
+                                        )}
+                                        {editMode && (
+                                            <>
+                                                <Button variant="secondary" onClick={handleCancel}>{t('nutrition_page.ration_card.cancel_btn')}</Button>
+                                                <Button onClick={handleSaveRation} style={{ background: '#10b981' }}><Save size={18} style={{ marginRight: '6px' }} /> {t('nutrition_page.ration_card.save_btn')}</Button>
+                                            </>
                                         )}
                                     </div>
-                                ))}
-                            </div>
-                        </Card>
+                                </div>
 
-                        <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#fffbeb', borderRadius: '12px', border: '1px solid #fcd34d' }}>
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <Info style={{ color: '#d97706', flexShrink: 0 }} />
-                                <div>
-                                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#92400e' }}>{t('nutrition_page.needs_estimation.title')}</h4>
-                                    <p style={{ margin: 0, color: '#b45309', fontSize: '0.95rem' }}>
-                                        {t('nutrition_page.needs_estimation.description_part1')}
-                                        <strong> {calculateWeeklyNeeds()} {t('nutrition_page.needs_estimation.description_part2')}</strong> {t('nutrition_page.needs_estimation.description_part3')}
-                                        <br />
-                                        {t('nutrition_page.needs_estimation.check_stock')}
+                                <Card>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem' }}>
+                                        {[
+                                            { key: 'morning', label: t('nutrition_page.meals.morning'), color: '#fef3c7', iconColor: '#d97706' },
+                                            { key: 'noon', label: t('nutrition_page.meals.noon'), color: '#fff7ed', iconColor: '#c2410c' },
+                                            { key: 'evening', label: t('nutrition_page.meals.evening'), color: '#f0f9ff', iconColor: '#0284c7' },
+                                            { key: 'supplements', label: t('nutrition_page.meals.supplements'), color: '#f3e8ff', iconColor: '#7e22ce' },
+                                            { key: 'hay', label: t('nutrition_page.meals.hay'), color: '#ecfdf5', iconColor: '#059669', fullWidth: true }
+                                        ].map((meal) => (
+                                            <div key={meal.key} style={{ gridColumn: meal.fullWidth ? '1 / -1' : 'auto' }}>
+                                                <div style={{ marginBottom: '0.5rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: meal.iconColor }}></div>
+                                                    {meal.label}
+                                                </div>
+                                                {editMode ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                        {(Array.isArray(rationForm[meal.key]) ? rationForm[meal.key] : (rationForm[meal.key] ? [rationForm[meal.key]] : []))
+                                                            .map((item, idx) => (
+                                                                <div key={idx} style={{ display: 'flex', gap: '6px' }}>
+                                                                    <input
+                                                                        style={{
+                                                                            width: '100%', padding: '0.8rem', borderRadius: '8px',
+                                                                            border: '1px solid #cbd5e1', fontSize: '0.95rem',
+                                                                            color: '#333', backgroundColor: '#fff'
+                                                                        }}
+                                                                        placeholder={t('nutrition_page.placeholders.ration_input', { meal: meal.label.toLowerCase() })}
+                                                                        value={item}
+                                                                        onChange={(e) => {
+                                                                            const oldVal = Array.isArray(rationForm[meal.key]) ? rationForm[meal.key] : (rationForm[meal.key] ? [rationForm[meal.key]] : []);
+                                                                            const newVal = [...oldVal];
+                                                                            newVal[idx] = e.target.value;
+                                                                            setRationForm({ ...rationForm, [meal.key]: newVal });
+                                                                        }}
+                                                                    />
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const oldVal = Array.isArray(rationForm[meal.key]) ? rationForm[meal.key] : (rationForm[meal.key] ? [rationForm[meal.key]] : []);
+                                                                            const newVal = oldVal.filter((_, i) => i !== idx);
+                                                                            setRationForm({ ...rationForm, [meal.key]: newVal });
+                                                                        }}
+                                                                        style={{ padding: '0 10px', color: '#ef4444', border: '1px solid #fee2e2', background: '#fff', borderRadius: '8px', cursor: 'pointer' }}
+                                                                    >
+                                                                        <Trash2 size={16} />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        <button
+                                                            onClick={() => {
+                                                                const oldVal = Array.isArray(rationForm[meal.key]) ? rationForm[meal.key] : (rationForm[meal.key] ? [rationForm[meal.key]] : []);
+                                                                setRationForm({ ...rationForm, [meal.key]: [...oldVal, ''] });
+                                                            }}
+                                                            style={{ fontSize: '0.85rem', color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: '4px' }}
+                                                        >
+                                                            <Plus size={16} /> {t('nutrition_page.placeholders.add_product_btn')}
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{
+                                                        padding: '1.5rem', background: meal.color, borderRadius: '12px',
+                                                        fontSize: '1.1rem', fontWeight: 500, color: '#334155', minHeight: '80px',
+                                                        display: 'flex', flexDirection: 'column', justifyContent: 'center'
+                                                    }}>
+                                                        {(Array.isArray(rationForm[meal.key]) ? rationForm[meal.key] : (rationForm[meal.key] ? [rationForm[meal.key]] : []))
+                                                            .map((line, i) => (
+                                                                <div key={i} style={{ marginBottom: '4px' }}>{line}</div>
+                                                            ))}
+                                                        {(!rationForm[meal.key] || rationForm[meal.key].length === 0) && <span style={{ opacity: 0.5, fontStyle: 'italic' }}>{t('nutrition_page.placeholders.undefined')}</span>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </Card>
+
+                                <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#fffbeb', borderRadius: '12px', border: '1px solid #fcd34d' }}>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <Info style={{ color: '#d97706', flexShrink: 0 }} />
+                                        <div>
+                                            <h4 style={{ margin: '0 0 0.5rem 0', color: '#92400e' }}>{t('nutrition_page.needs_estimation.title')}</h4>
+                                            <p style={{ margin: 0, color: '#b45309', fontSize: '0.95rem' }}>
+                                                {t('nutrition_page.needs_estimation.description_part1')}
+                                                <strong> {calculateWeeklyNeeds()} {t('nutrition_page.needs_estimation.description_part2')}</strong> {t('nutrition_page.needs_estimation.description_part3')}
+                                                <br />
+                                                {t('nutrition_page.needs_estimation.check_stock')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            /* État vide : Aucune ration configurée */
+                            <Card>
+                                <div style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '4rem 2rem',
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{
+                                        padding: '1.5rem',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        borderRadius: '50%',
+                                        marginBottom: '2rem'
+                                    }}>
+                                        <Calculator size={48} color="white" />
+                                    </div>
+
+                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>
+                                        Aucune ration configurée pour {selectedHorse.name}
+                                    </h3>
+
+                                    <p style={{ color: '#64748b', fontSize: '1rem', marginBottom: '2rem', maxWidth: '500px' }}>
+                                        Utilisez notre calculateur intelligent ou créez une ration manuellement.
+                                    </p>
+
+                                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                        <Button
+                                            onClick={() => navigate(`/horses/${selectedHorseId}/nutrition`)}
+                                            style={{
+                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                fontSize: '1.05rem',
+                                                padding: '0.9rem 1.8rem'
+                                            }}
+                                        >
+                                            <Calculator size={20} style={{ marginRight: '8px' }} />
+                                            Calculateur IA
+                                        </Button>
+
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() => {
+                                                // Initialiser une ration vide et passer en mode édition
+                                                setRationForm({
+                                                    morning: [''],
+                                                    noon: [''],
+                                                    evening: [''],
+                                                    supplements: [''],
+                                                    hay: ['']
+                                                });
+                                                setEditMode(true);
+                                            }}
+                                            style={{
+                                                fontSize: '1.05rem',
+                                                padding: '0.9rem 1.8rem'
+                                            }}
+                                        >
+                                            <Plus size={20} style={{ marginRight: '8px' }} />
+                                            Créer Manuellement
+                                        </Button>
+                                    </div>
+
+                                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '1.5rem' }}>
+                                        Le calculateur génère une ration optimisée que vous pourrez modifier par la suite
                                     </p>
                                 </div>
-                            </div>
-                        </div>
+                            </Card>
+                        )}
 
                     </div>
                 ) : (

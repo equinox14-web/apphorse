@@ -64,15 +64,19 @@ export const AuthProvider = ({ children }) => {
             if (userDoc.exists()) {
                 let data = userDoc.data();
 
-                // Force Admin privileges if email matches whitelist AND not explicitly disabled for testing
+                // Force Admin privileges - DISABLED TO ALLOW PLAN TESTING
+                // Admins can manually test plans via /debug-plans
+                /*
                 if (isAdmin && data.isAdminBypass !== false && (!data.role || data.role !== 'Admin' || !data.plans?.includes('admin'))) {
                     console.log("[Auth] Upgrading user to Admin based on email whitelist...");
                     data = { ...data, role: 'Admin', plans: ['admin'] };
-                    // Update Firestore silently to persist this change
                     await setDoc(userDocRef, data, { merge: true });
                 }
+                */
 
-                // Force Elite Plan for Beta Testers
+                // Force Elite Plan for Beta Testers - DISABLED TO ALLOW PLAN TESTING
+                // Admins can manually set their plan via simulation
+                /*
                 if (isBetaTester && (!data.plans?.includes('elite') || data.isAdminBypass !== true)) {
                     console.log("[Auth] 🧪 Beta Tester detected - Granting Elite Access...");
                     data = {
@@ -83,6 +87,7 @@ export const AuthProvider = ({ children }) => {
                     };
                     await setDoc(userDocRef, data, { merge: true });
                 }
+                */
 
                 setUserProfile(data);
 
@@ -94,12 +99,9 @@ export const AuthProvider = ({ children }) => {
                     if (data.role) localStorage.setItem('user_role', data.role);
                     if (data.role) localStorage.setItem('userType', data.role);
 
-                    // CRITICAL: Preserve Elite plan for testers with isAdminBypass
-                    // This prevents the subscription listener from overwriting it with 'decouverte'
-                    if (data.isAdminBypass === true && data.plans) {
-                        console.log("[Auth] 🔓 Admin Bypass detected in sync - preserving plan:", data.plans);
-                        localStorage.setItem('subscriptionPlan', JSON.stringify(data.plans));
-                    } else if (data.plans) {
+                    // Sync subscription plan from Firestore to localStorage
+                    // Respect whatever plan is set in Firestore
+                    if (data.plans) {
                         localStorage.setItem('subscriptionPlan', JSON.stringify(data.plans));
                     }
                 } else {
@@ -223,10 +225,17 @@ export const AuthProvider = ({ children }) => {
                                 shouldBypassStripe = userData.isAdminBypass === true || userData.role === 'Admin';
 
                                 if (shouldBypassStripe) {
-                                    console.log("[Auth] 🔓 Tester/Admin Bypass detected - preserving Elite/Admin plan");
-                                    // Use the plan from Firestore instead of Stripe
-                                    activePlan = userData.plans || ['elite'];
-                                    activeRole = userData.role || 'Pro';
+                                    // MODIFIED: Respect simulated plans for testing
+                                    // Only override with Elite if NO valid plan is set
+                                    if (userData.plans && userData.plans.length > 0 && userData.plans[0] !== 'decouverte') {
+                                        console.log("[Auth] 🔓 Admin Bypass - Using simulated plan:", userData.plans);
+                                        activePlan = userData.plans;
+                                        activeRole = userData.role || 'Propriétaire';
+                                    } else {
+                                        console.log("[Auth] 🔓 Admin Bypass - Fallback to Elite");
+                                        activePlan = ['elite'];
+                                        activeRole = 'Pro';
+                                    }
                                 }
                             }
                         } catch (error) {

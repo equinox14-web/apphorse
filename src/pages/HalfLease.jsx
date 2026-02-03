@@ -255,7 +255,7 @@ const HalfLease = () => {
                 </Button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
                 {horses.map(horse => (
                     <div key={horse.id} style={{
                         background: 'white', borderRadius: '16px', overflow: 'hidden',
@@ -461,11 +461,11 @@ const HalfLease = () => {
             {showModal && createPortal(
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.5)', zIndex: 9999, // Dark overlay & High Z-Index
+                    background: 'rgba(0,0,0,0.5)', zIndex: 9999,
                     display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-                    paddingTop: '10vh' // Positioned higher up
+                    padding: '2rem 1rem', overflowY: 'auto'
                 }}>
-                    <Card style={{ width: '90%', maxWidth: '400px' }}>
+                    <Card style={{ width: '100%', maxWidth: '400px', marginBottom: '2rem' }}>
                         <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>{t('half_lease_page.modal.title')}</h3>
                         <form onSubmit={handleAddLease} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
@@ -549,9 +549,9 @@ const HalfLease = () => {
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                     background: 'rgba(0,0,0,0)', zIndex: 1000,
                     display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-                    paddingTop: '5vh'
+                    padding: '2rem 1rem', overflowY: 'auto'
                 }}>
-                    <Card style={{ width: '90%', maxWidth: '400px' }}>
+                    <Card style={{ width: '90%', maxWidth: '400px', marginBottom: '2rem' }}>
                         <h3 style={{ fontSize: '1.2rem', marginBottom: '1.5rem' }}>{t('half_lease_page.edit_modal.title', { rider: editingContract.contract.rider })}</h3>
 
                         <div style={{ marginBottom: '2rem' }}>
@@ -598,9 +598,10 @@ const HalfLease = () => {
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                     background: 'rgba(0,0,0,0)', zIndex: 1100,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '1rem', overflowY: 'auto'
                 }}>
-                    <Card style={{ width: '90%', maxWidth: '450px' }}>
+                    <Card style={{ width: '100%', maxWidth: '450px', maxHeight: '100%', overflowY: 'auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
                             <div style={{ width: '60px', height: '60px', background: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
                                 <CheckSquare size={32} color="#16a34a" />

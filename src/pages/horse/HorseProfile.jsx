@@ -49,29 +49,44 @@ const HorseProfile = () => {
     const [isHoveringImage, setIsHoveringImage] = useState(false);
 
     useEffect(() => {
-        const savedHorses = localStorage.getItem('my_horses_v4');
-        if (savedHorses) {
-            const horses = JSON.parse(savedHorses);
-            const found = horses.find(h => h.id.toString() === id);
-            if (found) {
-                // Use stored data only
-                setHorse({
-                    ...found,
-                    // Provide empty defaults if missing
-                    sire: found.sire || '-',
-                    ueln: found.ueln || '-',
-                    microchip: found.microchip || '-',
-                    breeder: found.breeder || '-',
-                    location: found.location || 'Écurie Principale',
-                    owner: localStorage.getItem('user_name') || 'Cavalier',
-                    birthDate: found.birthDate || '-',
-                    height: found.height || '-',
-                    pedigree: found.pedigree || { sire: '-', dam: '-', ss: '-', sd: '-', ds: '-', dd: '-' },
-                    ration: found.ration || { morning: '', noon: '', evening: '', supplements: '', hay: '' }
-                });
-                return;
-            }
+        const idStr = id.toString();
+
+        // 1. Try Main Horses List
+        const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+        let found = savedHorses.find(h => h.id.toString() === idStr);
+        let source = 'stable';
+
+        // 2. Try Breeding List if not found
+        if (!found) {
+            const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+            found = savedMares.find(m => m.id.toString() === idStr);
+            if (found) source = 'breeding';
         }
+
+        if (found) {
+            // Use stored data
+            setHorse({
+                ...found,
+                source, // Keep track of source for saving
+                // Provide empty defaults if missing
+                sire: found.sire || '-',
+                ueln: found.ueln || (found.internalNumber ? `Int: ${found.internalNumber}` : '-'),
+                microchip: found.microchip || '-',
+                breeder: found.breeder || '-',
+                location: found.location || 'Écurie Principale',
+                owner: found.owner || localStorage.getItem('user_name') || 'Cavalier',
+                birthDate: found.birthDate || '-',
+                height: found.height || '-',
+                pedigree: found.pedigree || { sire: found.sire || '-', dam: found.geneticDam || '-', ss: '-', sd: '-', ds: '-', dd: '-' },
+                ration: found.ration || { morning: '', noon: '', evening: '', supplements: '', hay: '' },
+                // Breeding Specific Defaults
+                breed: found.breed || 'Cheval de Selle',
+                gender: found.gender || (source === 'breeding' ? 'F' : '?'), // F for Mare
+                color: found.color || '-'
+            });
+            return;
+        }
+
         // Fallback or mock if not found in list (e.g. direct url access to mock id 999)
         setHorse({
             id: id,
@@ -161,12 +176,18 @@ const HorseProfile = () => {
                 setHorse(updatedHorse);
                 setEditForm(prev => ({ ...prev, image: newImage }));
 
-                // Update Local Storage Global List
-                const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
-                const updatedHorses = savedHorses.map(h =>
-                    h.id.toString() === id ? updatedHorse : h
-                );
-                localStorage.setItem('my_horses_v4', JSON.stringify(updatedHorses));
+                // Update Local Storage based on source
+                if (horse.source === 'breeding') {
+                    const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+                    const updatedMares = savedMares.map(m => m.id.toString() === id ? updatedHorse : m);
+                    localStorage.setItem('appHorse_breeding_v2', JSON.stringify(updatedMares));
+                } else {
+                    const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+                    const updatedHorses = savedHorses.map(h =>
+                        h.id.toString() === id ? updatedHorse : h
+                    );
+                    localStorage.setItem('my_horses_v4', JSON.stringify(updatedHorses));
+                }
             });
         }
     };
@@ -193,18 +214,26 @@ const HorseProfile = () => {
         setHorse(editForm);
 
         // Save to LocalStorage
-        const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
-        const exists = savedHorses.find(h => h.id.toString() === id);
-
-        let updatedHorses;
-        if (exists) {
-            updatedHorses = savedHorses.map(h => h.id.toString() === id ? editForm : h);
+        // Save to LocalStorage based on Source
+        if (horse.source === 'breeding') {
+            const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+            const updatedMares = savedMares.map(m => m.id.toString() === id ? { ...m, ...editForm } : m);
+            localStorage.setItem('appHorse_breeding_v2', JSON.stringify(updatedMares));
         } else {
-            // Create new if not exists (unlikely in this flow but good for robustness)
-            updatedHorses = [...savedHorses, editForm];
+            // Main Stable Save
+            const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+            const exists = savedHorses.find(h => h.id.toString() === id);
+
+            let updatedHorses;
+            if (exists) {
+                updatedHorses = savedHorses.map(h => h.id.toString() === id ? editForm : h);
+            } else {
+                // Create new if not exists (unlikely in this flow but good for robustness)
+                updatedHorses = [...savedHorses, editForm];
+            }
+            localStorage.setItem('my_horses_v4', JSON.stringify(updatedHorses));
         }
 
-        localStorage.setItem('my_horses_v4', JSON.stringify(updatedHorses));
         setIsEditing(false);
         // Toast/Feedback could go here
     };

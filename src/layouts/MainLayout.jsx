@@ -92,7 +92,7 @@ const MainLayout = () => {
     // Check strict equality if we want "only" or just containment. The prompt says "pack élevage uniquement"
     // referencing the single choice we just enforced. So checking includes is safe enough for the pro plan context.
     const isBreederOnly = userPlans.includes('eleveur') || userPlans.includes('eleveur_amateur_paid');
-    const showAds = !isExternalUser() && userPlans.includes('decouverte');
+    const showAds = !isExternalUser() && userPlans.includes('decouverte') && !userPlans.includes('passion');
 
     // Simulation Mode Check
     const isSimulation = localStorage.getItem('is_simulation') === 'true';
@@ -202,25 +202,25 @@ const MainLayout = () => {
                     <SidebarItem to="/horses" icon={LayoutList} label="Mon Écurie" /> {/* HorseHead not available */}
                     <SidebarItem to="/health" icon={Activity} label="Santé & Soins" />
                     <SidebarItem to="/rations" icon={Utensils} label="Rations" />
-                    <SidebarItem to="/competition" icon={Trophy} label="Compétition" />
-                    <SidebarItem to="/breeding" icon={Heart} label="Élevage" />
+                    {canAccess('competition') && <SidebarItem to="/competition" icon={Trophy} label="Compétition" />}
+                    {canAccess('breeding') && <SidebarItem to="/breeding" icon={Heart} label="Élevage" />}
 
                     {/* 3. SECTION : INTELLIGENCE (IA) */}
                     <SidebarSectionTitle title="INTELLIGENCE (IA)" />
 
-                    <SidebarItem to="/ai-coach" icon={Brain} label="AI Training Coach" />
-                    <SidebarItem to="/ai-assistant" icon={Sparkles} label="Assistant IA" />
+                    {canAccess('ai_coach') && <SidebarItem to="/ai-coach" icon={Brain} label="AI Training Coach" />}
+                    {canAccess('ai_assistant') && <SidebarItem to="/ai-assistant" icon={Sparkles} label="Assistant IA" />}
 
                     {/* 4. SECTION : GESTION & ADMIN */}
                     <SidebarSectionTitle title="GESTION & ADMIN" />
 
-                    <SidebarItem to="/messages" icon={MessageCircle} label="Messagerie" />
-                    <SidebarItem to="/clients" icon={Users} label="Clients" />
-                    <SidebarItem to="/team" icon={UserCheck} label="Mon Équipe" />
-                    <SidebarItem to="/billing" icon={FileText} label="Facturation" />
-                    <SidebarItem to="/stocks" icon={Package} label="Stocks" />
-                    <SidebarItem to="/legal-register" icon={ClipboardList} label="Registre Légal" />
-                    <SidebarItem to="/sharing" icon={Handshake} label="Demi-Pensions" />
+                    {canAccess('messaging') && <SidebarItem to="/messages" icon={MessageCircle} label="Messagerie" />}
+                    {canAccess('clients') && <SidebarItem to="/clients" icon={Users} label="Clients" />}
+                    {canAccess('team') && <SidebarItem to="/team" icon={UserCheck} label="Mon Équipe" />}
+                    {canAccess('billing') && <SidebarItem to="/billing" icon={FileText} label="Facturation" />}
+                    {canAccess('stock') && <SidebarItem to="/stocks" icon={Package} label="Stocks" />}
+                    {canAccess('register') && <SidebarItem to="/legal-register" icon={ClipboardList} label="Registre Légal" />}
+                    {canAccess('leases') && <SidebarItem to="/sharing" icon={Handshake} label="Demi-Pensions" />}
 
                     {/* FOOTER */}
                     <div className="my-4 border-t border-gray-100 dark:border-gray-700"></div>

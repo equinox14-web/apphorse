@@ -218,21 +218,31 @@ const BreedingDetail = () => {
 
     return (
         <div className="animate-fade-in">
-            <div className="responsive-row" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="responsive-row" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                     <Button variant="secondary" onClick={() => navigate(-1)} style={{ padding: '0.5rem' }} className="no-print">
                         <ArrowLeft size={20} />
                     </Button>
                     <div className="no-print">
-                        <h2 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0 }}>Suivi : {mare.name}</h2>
-                        <span style={{ color: mare.status === 'Gestante' ? '#52c41a' : '#666', fontWeight: mare.status === 'Gestante' ? 600 : 400 }}>
-                            <span style={{ background: '#eee', color: '#333', padding: '2px 6px', borderRadius: '4px', marginRight: '8px', fontSize: '0.8em' }}>{mare.role || 'Poulinière'}</span>
-                            {mare.status === 'Gestante' ? `Pleine (Terme : ${new Date(mare.termDate).toLocaleDateString()})` : mare.status}
-                        </span>
+                        <h2 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0, lineHeight: 1.2 }}>Suivi : {mare.name}</h2>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' }}>
+                            <span style={{
+                                display: 'inline-block',
+                                background: '#eee', color: '#333', padding: '2px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 600
+                            }}>
+                                {mare.role || 'Poulinière'}
+                            </span>
+                            <span style={{
+                                display: 'inline-block',
+                                color: mare.status === 'Gestante' ? '#52c41a' : '#666', fontWeight: mare.status === 'Gestante' ? 700 : 400
+                            }}>
+                                {mare.status === 'Gestante' ? `Pleine (Terme : ${new Date(mare.termDate).toLocaleDateString()})` : mare.status}
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <Button variant="secondary" onClick={() => window.print()} className="no-print">
-                    <Printer size={18} /> Exporter / Imprimer
+                    <Printer size={18} /> <span style={{ marginLeft: '6px' }}>Exporter / Imprimer</span>
                 </Button>
             </div>
 
@@ -342,18 +352,28 @@ const BreedingDetail = () => {
             </div>
 
             {/* SCREEN LAYOUT */}
-            <div className="screen-only responsive-grid">
+            <div className="screen-only breeding-detail-layout" style={{ display: 'grid', gap: '1.5rem', alignItems: 'start' }}>
+                <style>{`
+                    .breeding-detail-layout {
+                        grid-template-columns: 1fr;
+                    }
+                    @media (min-width: 900px) {
+                        .breeding-detail-layout {
+                            grid-template-columns: 2fr 1fr;
+                        }
+                    }
+                `}</style>
 
                 {/* Main Timeline */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <Card title="Suivi Gynéco & Reproduction">
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }} className="no-print">
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem', marginTop: '0.5rem' }} className="no-print">
                             <Button onClick={() => {
                                 setEditingId(null);
                                 setNewEvent({ type: 'Echographie', date: new Date().toISOString().split('T')[0], note: '' });
                                 setShowModal(true);
-                            }} style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}>
-                                <Plus size={16} /> Ajouter un événement
+                            }} style={{ fontSize: '0.9rem', padding: '0.5rem 1.5rem' }} className="no-print">
+                                <Plus size={16} /> <span style={{ marginLeft: '6px' }}>Ajouter un événement</span>
                             </Button>
                         </div>
 

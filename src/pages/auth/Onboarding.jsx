@@ -321,6 +321,36 @@ const Onboarding = () => {
                     prices: []
                 });
             }
+
+            // Ensure Passion is present
+            if (!filteredProducts.find(p => {
+                const name = (p.name || '').toLowerCase();
+                return name === 'passion' || (name.includes('passion') && !name.includes('élevage') && !name.includes('elevage'));
+            })) {
+                filteredProducts.push({
+                    id: 'passion',
+                    name: 'Passion',
+                    active: true,
+                    prices: [
+                        { id: 'price_1SjKF1P3xLdYUD5QXTpfv2Zx', interval: 'month', unit_amount: 990, currency: 'eur' }
+                    ]
+                });
+            }
+
+            // Ensure Passion Élevage is present
+            if (!filteredProducts.find(p => {
+                const name = (p.name || '').toLowerCase();
+                return name.includes('passion') && (name.includes('élevage') || name.includes('elevage'));
+            })) {
+                filteredProducts.push({
+                    id: 'eleveur_amateur_paid',
+                    name: 'Passion Élevage',
+                    active: true,
+                    prices: [
+                        { id: 'price_1SjKCjP3xLdYUD5QrvDCDCrS', interval: 'month', unit_amount: 490, currency: 'eur' }
+                    ]
+                });
+            }
         } else if (userType === 'pro') {
             const proKeywords = ['start', 'pro', 'elite', 'élite', 'eleveur', 'éleveur'];
             filteredProducts = products.filter(p => {
@@ -517,46 +547,62 @@ const Onboarding = () => {
                                         {isSelected ? t('onboarding.pricing.selected') : t('onboarding.pricing.choose')}
                                     </Button>
 
-                                    {/* DEBUG / TEST BUTTON */}
-                                    <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const idToUse = activePrice?.id || (isFree ? 'free' : 'unknown');
+                                    {/* DEBUG / TEST BUTTON - ONLY IN DEVELOPMENT */}
+                                    {import.meta.env.DEV && (
+                                        <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const idToUse = activePrice?.id || (isFree ? 'free' : 'unknown');
 
-                                                // Map to Internal Key
-                                                const n = (product.name || '').toLowerCase();
-                                                let internalKey = 'decouverte';
-                                                if (n.includes('passion élevage') || n.includes('passion elevage')) internalKey = 'eleveur_amateur_paid';
-                                                else if (n.includes('passion')) internalKey = 'passion';
-                                                else if (n.includes('start')) internalKey = 'start';
-                                                else if (n.includes('spécial') || n.includes('special') || n.includes('éleveur') || n.includes('eleveur')) internalKey = 'eleveur';
-                                                else if (n.includes('élite') || n.includes('elite')) internalKey = 'elite';
-                                                else if (n.includes('pro')) internalKey = 'pro';
+                                                    // Map to Internal Key
+                                                    const n = (product.name || '').toLowerCase();
+                                                    // Normalize accents for better matching
+                                                    const normalized = n.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-                                                if (confirm(`[DEV] Simuler abonnement réussi pour ${product.name} (Key: ${internalKey}) ?`)) {
-                                                    updateDoc(doc(db, "users", auth.currentUser.uid), {
-                                                        plans: [internalKey],
-                                                        role: userType === 'pro' ? 'Pro' : 'Propriétaire',
-                                                        subscriptionStatus: 'active',
-                                                        simulated: true,
-                                                        isAdminBypass: false
-                                                    }).then(() => {
-                                                        localStorage.removeItem('is_simulation');
-                                                        localStorage.setItem('user_role', userType === 'pro' ? 'Pro' : 'Propriétaire');
-                                                        localStorage.setItem('subscriptionPlan', JSON.stringify([internalKey]));
-                                                        localStorage.setItem('user_simulated', 'true');
+                                                    console.log("🔍 DEBUG PLAN SELECTION:");
+                                                    console.log("  Product Name:", product.name);
+                                                    console.log("  Lowercase Name:", n);
+                                                    console.log("  Normalized:", normalized);
 
-                                                        alert("Plan activé (Simulation) ! Redirection...");
-                                                        window.location.href = '/';
-                                                    });
-                                                }
-                                            }}
-                                            style={{ fontSize: '0.7rem', color: '#ccc', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-                                        >
-                                            Simuler Paiement (Dev)
-                                        </button>
-                                    </div>
+                                                    let internalKey = 'decouverte';
+                                                    // Check for "Passion Élevage" first (with or without accents)
+                                                    if (normalized.includes('passion elevage') || normalized.includes('passion breeding')) {
+                                                        internalKey = 'eleveur_amateur_paid';
+                                                    }
+                                                    // Then check for just "Passion" (but not if it already matched Élevage)
+                                                    else if (n.includes('passion')) internalKey = 'passion';
+                                                    else if (n.includes('start')) internalKey = 'start';
+                                                    else if (n.includes('spécial') || n.includes('special') || normalized.includes('eleveur')) internalKey = 'eleveur';
+                                                    else if (n.includes('élite') || n.includes('elite')) internalKey = 'elite';
+                                                    else if (n.includes('pro')) internalKey = 'pro';
+
+                                                    console.log("  ✅ Internal Key Mapped:", internalKey);
+
+                                                    if (confirm(`[DEV] Simuler abonnement réussi pour ${product.name} (Key: ${internalKey}) ?`)) {
+                                                        updateDoc(doc(db, "users", auth.currentUser.uid), {
+                                                            plans: [internalKey],
+                                                            role: userType === 'pro' ? 'Pro' : 'Propriétaire',
+                                                            subscriptionStatus: 'active',
+                                                            simulated: true,
+                                                            isAdminBypass: true
+                                                        }).then(() => {
+                                                            localStorage.removeItem('is_simulation');
+                                                            localStorage.setItem('user_role', userType === 'pro' ? 'Pro' : 'Propriétaire');
+                                                            localStorage.setItem('subscriptionPlan', JSON.stringify([internalKey]));
+                                                            localStorage.setItem('user_simulated', 'true');
+
+                                                            alert("Plan activé (Simulation) ! Redirection...");
+                                                            window.location.href = '/';
+                                                        });
+                                                    }
+                                                }}
+                                                style={{ fontSize: '0.7rem', color: '#ccc', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                                            >
+                                                Simuler Paiement (Dev)
+                                            </button>
+                                        </div>
+                                    )}
                                 </Card>
                             );
                         })}

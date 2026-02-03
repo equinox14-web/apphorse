@@ -380,8 +380,8 @@ const Dashboard = () => {
                         </Card>
                     )}
 
-                    {/* Extra Ad for Free Plans */}
-                    {(userPlans.includes('decouverte') || userPlans.includes('eleveur_amateur_free')) && (
+                    {/* Extra Ad for Free Plans ONLY (Not Passion or any paid plan) */}
+                    {(userPlans.includes('decouverte') && !userPlans.includes('passion')) && (
                         <div style={{ marginTop: '0.5rem' }}>
                             <AdBanner />
                         </div>

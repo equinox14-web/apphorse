@@ -310,26 +310,78 @@ ${userMsg}`;
     };
 
     return (
-        <div className="animate-fade-in" style={{
-            height: 'calc(100vh - 100px)', // Adjusted for mobile nav
-            display: 'flex',
-            flexDirection: 'column',
-            maxWidth: '1000px',
-            margin: '0 auto',
-            position: 'relative',
-            paddingBottom: '0' // Remove extra padding that might cause scroll issues
-        }}>
+        <div className="animate-fade-in assistant-page-wrapper">
+            <style>{`
+                .assistant-page-wrapper {
+                    height: calc(100vh - 100px);
+                    display: flex;
+                    flex-direction: column;
+                    max-width: 1000px;
+                    margin: 0 auto;
+                    position: relative;
+                }
+                
+                .assistant-header {
+                    padding: 1.5rem;
+                    margin-bottom: 1rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    border-radius: var(--radius-lg);
+                }
 
+                .chat-panel {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    border-radius: var(--radius-lg);
+                    overflow: hidden;
+                    position: relative;
+                }
+
+                .messages-list {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 1.5rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1.5rem;
+                }
+
+                .input-section {
+                    padding: 1.5rem;
+                    border-top: 1px solid var(--border-color);
+                }
+
+                @media (max-width: 768px) {
+                    .assistant-page-wrapper {
+                        height: calc(100dvh - 84px); /* Ajustement pour la barre de nav mobile */
+                        max-width: 100%;
+                    }
+
+                    .assistant-header {
+                        padding: 0.75rem 1rem;
+                        margin-bottom: 0.5rem;
+                        border-radius: 0;
+                    }
+                    
+                    .chat-panel {
+                        border-radius: 0;
+                    }
+
+                    .messages-list {
+                        padding: 1rem;
+                        gap: 1rem;
+                    }
+
+                    .input-section {
+                        padding: 0.75rem;
+                    }
+                }
+            `}</style>
 
             {/* Header / Context */}
-            <div className="glass-panel" style={{
-                padding: '1.5rem',
-                marginBottom: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                borderRadius: 'var(--radius-lg)'
-            }}>
+            <div className="glass-panel assistant-header">
                 <div style={{
                     width: '48px',
                     height: '48px',
@@ -339,7 +391,8 @@ ${userMsg}`;
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                    flexShrink: 0
                 }}>
                     <Sparkles size={24} />
                 </div>
@@ -364,7 +417,8 @@ ${userMsg}`;
                             justifyContent: 'center',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            opacity: 0.7
+                            opacity: 0.7,
+                            flexShrink: 0
                         }}
                         onMouseOver={e => { e.target.style.opacity = 1; e.target.style.background = 'rgba(239, 68, 68, 0.1)'; e.target.style.borderColor = '#ef4444'; e.target.style.color = '#ef4444'; }}
                         onMouseOut={e => { e.target.style.opacity = 0.7; e.target.style.background = 'transparent'; e.target.style.borderColor = 'var(--border-color)'; e.target.style.color = 'var(--text-color)'; }}
@@ -375,23 +429,9 @@ ${userMsg}`;
             </div>
 
             {/* Chat Area */}
-            <div className="glass-panel" style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: 'var(--radius-lg)',
-                overflow: 'hidden',
-                position: 'relative'
-            }}>
+            <div className="glass-panel chat-panel">
                 {/* Messages List */}
-                <div style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    padding: '1.5rem',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '1.5rem'
-                }}>
+                <div className="messages-list">
                     {messages.map((msg) => (
                         <div key={msg.id} style={{
                             display: 'flex',
@@ -401,7 +441,7 @@ ${userMsg}`;
                             <div style={{
                                 display: 'flex',
                                 gap: '0.75rem',
-                                maxWidth: '80%',
+                                maxWidth: '85%',
                                 flexDirection: msg.role === 'user' ? 'row-reverse' : 'row'
                             }}>
                                 {/* Avatar */}
@@ -433,8 +473,9 @@ ${userMsg}`;
                                     boxShadow: msg.role === 'assistant' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
                                     border: msg.role === 'assistant' ? '1px solid rgba(0,0,0,0.05)' : 'none',
                                     lineHeight: 1.6,
-                                    // Style spécifique pour le Markdown
-                                    fontSize: '0.95rem'
+                                    fontSize: '0.95rem',
+                                    wordBreak: 'break-word',
+                                    overflowWrap: 'anywhere'
                                 }}>
                                     {msg.role === 'user' ? (
                                         msg.content
@@ -489,10 +530,8 @@ ${userMsg}`;
                 </div>
 
                 {/* Input Area */}
-                <div style={{
-                    padding: '1.5rem',
-                    background: mode === 'dark' ? 'rgba(0,0,0,0.2)' : '#f8fafc',
-                    borderTop: '1px solid var(--border-color)'
+                <div className="input-section" style={{
+                    background: mode === 'dark' ? 'rgba(0,0,0,0.2)' : '#f8fafc'
                 }}>
                     <form onSubmit={handleSendMessage} style={{
                         display: 'flex',

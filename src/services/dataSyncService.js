@@ -81,8 +81,28 @@ export const fetchCalendarFromFirestore = async (userId) => {
 export const syncAIChatToFirestore = async (userId, messages) => {
     if (!userId || !db) return;
     try {
-        // Limiter aux 50 derniers messages pour éviter surcharge
-        const recentMessages = messages.slice(-50);
+        // Limiter aux 50 derniers messages et assainir les dates
+        const recentMessages = messages.slice(-50).map(msg => {
+            let validDate;
+            try {
+                if (msg.timestamp instanceof Date && !isNaN(msg.timestamp)) {
+                    validDate = msg.timestamp;
+                } else if (msg.timestamp) {
+                    const parsed = new Date(msg.timestamp);
+                    validDate = isNaN(parsed) ? new Date() : parsed;
+                } else {
+                    validDate = new Date();
+                }
+            } catch (e) {
+                validDate = new Date();
+            }
+
+            return {
+                ...msg,
+                timestamp: validDate.toISOString()
+            };
+        });
+
         const chatRef = doc(db, 'users', userId, 'user_data', 'ai_chat_history');
         await setDoc(chatRef, {
             messages: recentMessages,

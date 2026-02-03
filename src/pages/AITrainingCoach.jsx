@@ -491,6 +491,16 @@ export default function AITrainingCoach() {
                             </p>
                         </div>
 
+                        {/* Analyse du coach */}
+                        {trainingPlan.coachAnalysis && (
+                            <Card style={{ background: 'rgba(221, 161, 94, 0.1)', marginBottom: '2rem', borderLeft: '4px solid var(--color-secondary)' }}>
+                                <h3 style={{ marginTop: 0, marginBottom: '0.75rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Brain size={20} style={{ color: 'var(--color-secondary)' }} /> Analyse du Directeur de Performance
+                                </h3>
+                                <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.6', fontStyle: 'italic' }}>{trainingPlan.coachAnalysis}</p>
+                            </Card>
+                        )}
+
                         {/* Planning hebdomadaire */}
                         <div style={{ marginBottom: '2rem' }}>
                             <h3 style={{ fontSize: '1.3rem', marginBottom: '1.5rem' }}>📅 Planning hebdomadaire</h3>
@@ -498,11 +508,25 @@ export default function AITrainingCoach() {
                             {trainingPlan.weeklySchedule && trainingPlan.weeklySchedule.map((session, index) => (
                                 <Card key={index} style={{ marginBottom: '1rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                                        <div>
+                                        <div style={{ flex: 1 }}>
                                             <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>{session.day}</h4>
                                             <p style={{ margin: '0.25rem 0 0 0', color: 'var(--color-secondary)', fontWeight: 600 }}>
                                                 {session.sessionName}
                                             </p>
+                                            {session.trainingType && (
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    marginTop: '0.5rem',
+                                                    padding: '0.2rem 0.6rem',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 600,
+                                                    background: '#e0e7ff',
+                                                    color: '#4338ca'
+                                                }}>
+                                                    {session.trainingType}
+                                                </span>
+                                            )}
                                         </div>
                                         <div style={{ textAlign: 'right' }}>
                                             <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>{session.duration}</div>
@@ -522,6 +546,20 @@ export default function AITrainingCoach() {
                                             </span>
                                         </div>
                                     </div>
+
+                                    {/* Objectif du coach pour cette séance */}
+                                    {session.coachObjective && (
+                                        <div style={{
+                                            marginBottom: '1rem',
+                                            padding: '0.75rem',
+                                            background: 'rgba(221, 161, 94, 0.08)',
+                                            borderRadius: '8px',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 500
+                                        }}>
+                                            <strong style={{ color: 'var(--color-secondary)' }}>🎯 Objectif Coach:</strong> {session.coachObjective}
+                                        </div>
+                                    )}
 
                                     {session.phases && session.phases.map((phase, pi) => (
                                         <div key={pi} style={{ marginBottom: '1rem' }}>
@@ -567,9 +605,17 @@ export default function AITrainingCoach() {
                         )}
 
                         {trainingPlan.warnings && (
-                            <Card style={{ background: '#fef3c7', marginBottom: '2rem' }}>
+                            <Card style={{ background: '#fef3c7', marginBottom: '1rem' }}>
                                 <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>⚠️ Points de vigilance</h3>
                                 <p style={{ margin: 0, fontSize: '0.95rem' }}>{trainingPlan.warnings}</p>
+                            </Card>
+                        )}
+
+                        {/* Stratégie d'affûtage */}
+                        {trainingPlan.tapering && (
+                            <Card style={{ background: '#fce7f3', marginBottom: '2rem' }}>
+                                <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>🔥 Stratégie d'Affûtage (Tapering)</h3>
+                                <p style={{ margin: 0, fontSize: '0.95rem' }}>{trainingPlan.tapering}</p>
                             </Card>
                         )}
 

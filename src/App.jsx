@@ -194,8 +194,8 @@ function AppContent() {
           <Route path="legal-register" element={<FeatureGuard feature="register"><LegalRegister /></FeatureGuard>} />
           <Route path="support" element={<FeatureGuard feature="support"><Support /></FeatureGuard>} />
           <Route path="settings" element={<Settings />} />
-          <Route path="ai-coach" element={<AITrainingCoach />} />
-          <Route path="ai-assistant" element={<Assistant />} />
+          <Route path="ai-coach" element={<FeatureGuard feature="ai_coach"><AITrainingCoach /></FeatureGuard>} />
+          <Route path="ai-assistant" element={<FeatureGuard feature="ai_assistant"><Assistant /></FeatureGuard>} />
         </Route>
 
         {/* Protected Standalone Routes (Not part of MainLayout but require Auth) */}

@@ -145,7 +145,34 @@ const Competition = () => {
 
     return (
         <div className="animate-fade-in">
-            {/* Header / Dashboard */}
+            {/* Actions Toolbar */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                <a
+                    href={isGaloppeur ? "https://www.france-galop.com/" : (isTrotteur ? "https://infonet.letrot.com" : "https://ffecompet.ffe.com/")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                        textDecoration: 'none',
+                        color: 'var(--color-primary)',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        borderRadius: 'var(--radius-full)',
+                        background: 'white',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                    }}
+                >
+                    {isGaloppeur ? "France Galop ↗" : (isTrotteur ? "Infonet ↗" : "FFE Compet ↗")}
+                </a>
+
+                <Button onClick={() => setShowModal(true)}>
+                    <Plus size={18} /> {t('competition_page.add_competition_btn')}
+                </Button>
+            </div>
+
+            {/* Header / Dashboard Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                 <Card style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <div style={{ background: '#fef3c7', padding: '12px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -173,35 +200,6 @@ const Competition = () => {
                     </div>
                     <div><div style={{ fontSize: '0.9rem', color: '#666' }}>{isRacing ? t('competition_page.stats.races') : t('competition_page.stats.competitions')}</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{competitions.length}</div></div>
                 </Card>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                {canManageCompetition() && (
-                    <a
-                        href={isGaloppeur ? "https://www.france-galop.com/" : (isTrotteur ? "https://infonet.letrot.com" : "https://ffecompet.ffe.com/")}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                            textDecoration: 'none',
-                            color: 'var(--color-primary)',
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.5rem 1rem',
-                            borderRadius: 'var(--radius-full)',
-                            background: 'white',
-                            boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-                        }}
-                    >
-                        {isGaloppeur ? "France Galop ↗" : (isTrotteur ? "Infonet ↗" : "FFE Compet ↗")}
-                    </a>
-                )}
-                {canManageCompetition() && (
-                    <Button onClick={() => setShowModal(true)}>
-                        <Plus size={18} /> {t('competition_page.add_competition_btn')}
-                    </Button>
-                )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>

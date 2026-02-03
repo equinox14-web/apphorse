@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Plus, TrendingUp, TrendingDown, Minus, Edit2, Trash2, Scale } from 'lucide-react';
 import { Card, Button } from '../../components/common';
-import WeightCamera from '../../components/camera/WeightCamera';
+import BarometricCamera from '../../components/camera/BarometricCamera';
 import { canEdit, isWhitelistedTester } from '../../utils/permissions';
 import { useAuth } from '../../context/AuthContext';
 import {
     calculateWeightStats,
-    validateCalibration,
-    MORPHOTYPES,
     BODY_CONDITION_SCORES,
 } from '../../utils/weightEstimation';
 
@@ -19,9 +17,8 @@ function WeightTracking() {
     const [horse, setHorse] = useState(null);
     const { currentUser } = useAuth();
     const [weightEntries, setWeightEntries] = useState([]);
-    const [showCamera, setShowCamera] = useState(false);
+    const [showBarymetricCamera, setShowBarymetricCamera] = useState(false);
     const [showManualModal, setShowManualModal] = useState(false);
-    const [showCalibrationModal, setShowCalibrationModal] = useState(false);
     const [showDevInfo, setShowDevInfo] = useState(false);
     const [editingEntry, setEditingEntry] = useState(null);
 
@@ -29,11 +26,6 @@ function WeightTracking() {
         date: new Date().toISOString().split('T')[0],
         value: '',
         bodyConditionScore: 3,
-    });
-
-    const [calibrationForm, setCalibrationForm] = useState({
-        height: '',
-        morphotype: 'SPORT',
     });
 
     // Permissions
@@ -52,10 +44,6 @@ function WeightTracking() {
 
         if (currentHorse) {
             setHorse(currentHorse);
-            setCalibrationForm({
-                height: currentHorse.height || '',
-                morphotype: currentHorse.morphotype || 'SPORT',
-            });
         } else {
             // Fallback: créer un objet cheval minimal si non trouvé
             setHorse({
@@ -104,28 +92,28 @@ function WeightTracking() {
         localStorage.setItem(`weightHistory_${id}`, JSON.stringify(updated));
     };
 
-    const handleOpenCamera = () => {
-        // Restriction d'accès à la fonctionnalité "Pesée par Photo IA"
-        // Accessible uniquement aux testeurs whitelistés (inclut aurelie.jossic@gmail.com)
+    const handleOpenBarymetricCamera = () => {
+        // Restriction d'accès à la fonctionnalité barymétrique
         if (!isWhitelistedTester(currentUser?.email)) {
             setShowDevInfo(true);
             return;
         }
 
         if (!horse) return;
-
-        const validation = validateCalibration(horse);
-        if (!validation.valid) {
-            setShowCalibrationModal(true);
-            return;
-        }
-
-        setShowCamera(true);
+        setShowBarymetricCamera(true);
     };
 
-    const handleWeightEstimated = (data) => {
-        saveWeightEntry(data);
-        setShowCamera(false);
+    const handleBarymetricMeasurementComplete = (data) => {
+        saveWeightEntry({
+            value: data.weight,
+            weight: data.weight,
+            source: 'BARYMETRIC_AI',
+            confidence: data.confidence,
+            measurements: data.measurements,
+            method: data.method,
+            timestamp: data.timestamp,
+        });
+        setShowBarymetricCamera(false);
     };
 
     const handleManualSubmit = (e) => {
@@ -157,26 +145,7 @@ function WeightTracking() {
         setManualForm({ date: new Date().toISOString().split('T')[0], value: '', bodyConditionScore: 3 });
     };
 
-    const handleCalibrationSubmit = (e) => {
-        e.preventDefault();
 
-        const height = parseInt(calibrationForm.height, 10);
-        if (!height || height < 50 || height > 220) {
-            alert('Taille au garrot invalide (50-220 cm)');
-            return;
-        }
-
-        // Mise à jour du cheval
-        const horses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
-        const updated = horses.map(h =>
-            h.id.toString() === id.toString() ? { ...h, ...calibrationForm, height } : h
-        );
-        localStorage.setItem('my_horses_v4', JSON.stringify(updated));
-
-        setHorse({ ...horse, ...calibrationForm, height });
-        setShowCalibrationModal(false);
-        setShowCamera(true);
-    };
 
     const stats = calculateWeightStats(weightEntries);
 
@@ -189,9 +158,9 @@ function WeightTracking() {
     }
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ padding: '1rem', maxWidth: '1200px', margin: '0 auto' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <button
                     onClick={() => navigate(`/horses/${id}`)}
                     style={{
@@ -205,12 +174,12 @@ function WeightTracking() {
                 >
                     <ArrowLeft size={24} />
                 </button>
-                <div style={{ flex: 1 }}>
-                    <h1 style={{ margin: 0, fontSize: '2rem' }}>
-                        <Scale size={32} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+                <div style={{ flex: 1, minWidth: '250px' }}>
+                    <h1 style={{ margin: 0, fontSize: '1.75rem', lineHeight: '1.2' }}>
+                        <Scale size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
                         Suivi du Poids - {horse.name}
                     </h1>
-                    <p style={{ color: '#666', margin: '0.5rem 0 0 0' }}>
+                    <p style={{ color: '#666', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
                         Historique des pesées et estimation par photo
                     </p>
                 </div>
@@ -272,18 +241,18 @@ function WeightTracking() {
             {canEditWeight && (
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                     <Button
-                        onClick={handleOpenCamera}
+                        onClick={handleOpenBarymetricCamera}
                         variant="primary"
-                        style={{ flex: 1, minWidth: '200px' }}
+                        style={{ flex: '1 1 300px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
                     >
                         <Camera size={20} style={{ marginRight: '0.5rem' }} />
-                        Pesée par Photo (IA)
+                        Mesure Barymétrique (IA) ⭐
                     </Button>
 
                     <Button
                         onClick={() => setShowManualModal(true)}
                         variant="secondary"
-                        style={{ flex: 1, minWidth: '200px' }}
+                        style={{ flex: '1 1 200px' }}
                     >
                         <Plus size={20} style={{ marginRight: '0.5rem' }} />
                         Saisie Manuelle
@@ -293,7 +262,7 @@ function WeightTracking() {
 
             {/* Historique */}
             <Card>
-                <h2 style={{ marginTop: 0 }}>📊 Historique des Pesées</h2>
+                <h2 style={{ marginTop: 0, fontSize: '1.25rem' }}>📊 Historique des Pesées</h2>
 
                 {weightEntries.length === 0 ? (
                     <div style={{
@@ -314,7 +283,9 @@ function WeightTracking() {
                                 key={entry.id}
                                 style={{
                                     display: 'flex',
+                                    flexWrap: 'wrap',
                                     alignItems: 'center',
+                                    justifyContent: 'space-between',
                                     gap: '1rem',
                                     padding: '1rem',
                                     background: 'var(--color-bg-secondary)',
@@ -322,7 +293,7 @@ function WeightTracking() {
                                     border: '1px solid var(--color-border)',
                                 }}
                             >
-                                <div style={{ flex: 1 }}>
+                                <div style={{ minWidth: '120px' }}>
                                     <div style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
                                         {entry.value} kg
                                     </div>
@@ -335,15 +306,26 @@ function WeightTracking() {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
                                     <div style={{
                                         fontSize: '0.75rem',
                                         padding: '0.25rem 0.75rem',
                                         borderRadius: '12px',
-                                        background: entry.source === 'PHOTO_ESTIMATION' ? '#dbeafe' : '#f3f4f6',
-                                        color: entry.source === 'PHOTO_ESTIMATION' ? '#1e40af' : '#6b7280',
+                                        background: entry.source === 'BARYMETRIC_AI'
+                                            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                            : entry.source === 'PHOTO_ESTIMATION'
+                                                ? '#dbeafe'
+                                                : '#f3f4f6',
+                                        color: entry.source === 'BARYMETRIC_AI' || entry.source === 'PHOTO_ESTIMATION'
+                                            ? '#ffffff'
+                                            : '#6b7280',
+                                        whiteSpace: 'nowrap'
                                     }}>
-                                        {entry.source === 'PHOTO_ESTIMATION' ? '📸 Photo IA' : '✏️ Manuel'}
+                                        {entry.source === 'BARYMETRIC_AI'
+                                            ? '🔬 Barymétrie IA'
+                                            : entry.source === 'PHOTO_ESTIMATION'
+                                                ? '📸 Photo IA'
+                                                : '✏️ Manuel'}
                                     </div>
 
                                     <div style={{
@@ -352,12 +334,13 @@ function WeightTracking() {
                                         borderRadius: '12px',
                                         background: '#fef3c7',
                                         color: '#92400e',
+                                        whiteSpace: 'nowrap'
                                     }}>
                                         BCS {entry.bodyConditionScore || 3}
                                     </div>
 
                                     {canEditWeight && (
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <div style={{ display: 'flex', gap: '0.25rem', marginLeft: '0.5rem' }}>
                                             <button
                                                 onClick={() => {
                                                     setEditingEntry(entry);
@@ -369,24 +352,30 @@ function WeightTracking() {
                                                     setShowManualModal(true);
                                                 }}
                                                 style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
+                                                    background: 'white',
+                                                    border: '1px solid #e5e7eb',
+                                                    borderRadius: '6px',
                                                     cursor: 'pointer',
-                                                    padding: '0.25rem',
+                                                    padding: '0.4rem',
                                                     color: 'var(--color-primary)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                 }}
+                                                aria-label="Modifier"
                                             >
                                                 <Edit2 size={16} />
                                             </button>
                                             <button
                                                 onClick={() => deleteWeightEntry(entry.id)}
                                                 style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
+                                                    background: 'white',
+                                                    border: '1px solid #fee2e2',
+                                                    borderRadius: '6px',
                                                     cursor: 'pointer',
-                                                    padding: '0.25rem',
+                                                    padding: '0.4rem',
                                                     color: '#ef4444',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                 }}
+                                                aria-label="Supprimer"
                                             >
                                                 <Trash2 size={16} />
                                             </button>
@@ -399,12 +388,12 @@ function WeightTracking() {
                 )}
             </Card>
 
-            {/* Modal Caméra */}
-            {showCamera && (
-                <WeightCamera
+            {/* Modal Caméra Barymétrique */}
+            {showBarymetricCamera && (
+                <BarometricCamera
                     horse={horse}
-                    onWeightEstimated={handleWeightEstimated}
-                    onClose={() => setShowCamera(false)}
+                    onMeasurementComplete={handleBarymetricMeasurementComplete}
+                    onClose={() => setShowBarymetricCamera(false)}
                 />
             )}
 
@@ -518,88 +507,6 @@ function WeightTracking() {
                 </div>
             )}
 
-            {/* Modal Calibration */}
-            {showCalibrationModal && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                }}>
-                    <Card style={{ maxWidth: '500px', width: '90%' }}>
-                        <h2 style={{ marginTop: 0 }}>⚙️ Calibration Requise</h2>
-                        <p style={{ color: '#666' }}>
-                            Pour utiliser l'estimation par photo, veuillez renseigner ces informations :
-                        </p>
-
-                        <form onSubmit={handleCalibrationSubmit}>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                                    Taille au garrot (cm)
-                                </label>
-                                <input
-                                    type="number"
-                                    value={calibrationForm.height}
-                                    onChange={(e) => setCalibrationForm({ ...calibrationForm, height: e.target.value })}
-                                    min="50"
-                                    max="220"
-                                    placeholder="Ex: 165"
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.75rem',
-                                        borderRadius: '8px',
-                                        border: '1px solid var(--color-border)',
-                                    }}
-                                    required
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                                    Morphotype
-                                </label>
-                                <select
-                                    value={calibrationForm.morphotype}
-                                    onChange={(e) => setCalibrationForm({ ...calibrationForm, morphotype: e.target.value })}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.75rem',
-                                        borderRadius: '8px',
-                                        border: '1px solid var(--color-border)',
-                                    }}
-                                    required
-                                >
-                                    {Object.values(MORPHOTYPES).map((morph) => (
-                                        <option key={morph.code} value={morph.code}>
-                                            {morph.label} - {morph.description}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <Button
-                                    type="button"
-                                    onClick={() => setShowCalibrationModal(false)}
-                                    variant="secondary"
-                                    style={{ flex: 1 }}
-                                >
-                                    Annuler
-                                </Button>
-                                <Button type="submit" variant="primary" style={{ flex: 1 }}>
-                                    Continuer
-                                </Button>
-                            </div>
-                        </form>
-                    </Card>
-                </div>
-            )}
             {/* Modal Info Dév */}
             {showDevInfo && (
                 <div style={{

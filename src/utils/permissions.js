@@ -9,14 +9,14 @@ export const PLANS = {
     passion: {
         maxHorses: 999,
         maxMares: 0,
-        features: ['basic_care', 'calendar', 'budget', 'sharing', 'media', 'leases', 'messaging', 'competition', 'alerts', 'support', 'register']
+        features: ['basic_care', 'calendar', 'budget', 'sharing', 'media', 'leases', 'competition', 'alerts', 'support', 'register', 'my_horses', 'ai_coach', 'ai_assistant']
     },
 
     // AMATEUR BREEDING
     eleveur_amateur_paid: {
         maxHorses: 5,
         maxMares: 5,
-        features: ['breeding', 'care_advanced', 'messaging', 'breeding_advice', 'alerts', 'budget', 'support', 'register']
+        features: ['breeding', 'care_advanced', 'messaging', 'breeding_advice', 'alerts', 'budget', 'support', 'register', 'ai_coach', 'ai_assistant']
     },
 
     // PRO (Bundles)
@@ -24,7 +24,7 @@ export const PLANS = {
         maxHorses: 10,
         maxMares: 15,
         maxTeam: 2,
-        features: ['clients', 'billing', 'team', 'care_advanced', 'messaging', 'alerts', 'support', 'register']
+        features: ['clients', 'billing', 'team', 'care_advanced', 'messaging', 'alerts', 'support', 'register', 'ai_coach', 'ai_assistant']
     },
     pro_trial: {
         maxHorses: 999, // Same as Elite
@@ -36,7 +36,7 @@ export const PLANS = {
         maxHorses: 30,
         maxMares: 30,
         maxTeam: 5,
-        features: ['clients', 'billing', 'billing_recurring', 'team', 'care_advanced', 'competition', 'stock', 'messaging', 'alerts', 'support', 'register']
+        features: ['clients', 'billing', 'billing_recurring', 'team', 'care_advanced', 'competition', 'stock', 'messaging', 'alerts', 'support', 'register', 'ai_coach', 'ai_assistant']
     },
     elite: {
         maxHorses: 999,
@@ -48,7 +48,7 @@ export const PLANS = {
         maxHorses: 30,
         maxMares: 999,
         maxTeam: 5,
-        features: ['clients', 'billing', 'team', 'breeding', 'care_advanced', 'stock', 'pastures', 'messaging', 'breeding_advice', 'alerts', 'support', 'register']
+        features: ['clients', 'billing', 'team', 'breeding', 'care_advanced', 'stock', 'pastures', 'messaging', 'breeding_advice', 'alerts', 'support', 'register', 'ai_coach', 'ai_assistant']
     },
     // ADMIN (Dev/Superuser)
     admin: {
@@ -115,9 +115,15 @@ export const getUserPlanIds = () => {
     // Admin Override (Superuser)
     if (localStorage.getItem('user_role') === 'Admin') return ['admin'];
 
-    // 1. TESTER WHITELIST (Backdoor for Elite Access - Priority over LocalStorage)
-    const userEmail = localStorage.getItem('user_email');
-    if (userEmail && isWhitelistedTester(userEmail)) {
+    // 1. TESTER WHITELIST - DISABLED FOR NOW TO ALLOW PLAN TESTING
+    // Testers can manually enable Elite via localStorage flag
+    // const userEmail = localStorage.getItem('user_email');
+    // if (userEmail && isWhitelistedTester(userEmail)) {
+    //     return ['elite'];
+    // }
+
+    // EXPLICIT ELITE BYPASS (Only if manually set)
+    if (localStorage.getItem('force_elite_access') === 'true') {
         return ['elite'];
     }
 

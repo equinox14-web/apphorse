@@ -4,9 +4,16 @@ import { useTranslation, Trans } from 'react-i18next';
 import SEO from '../../components/common/SEO';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import { Heart, Calendar, Baby, Activity, Plus, ChevronRight, AlertCircle, CheckCircle, GitMerge, Trash2, Edit2, User } from 'lucide-react';
+import { Heart, Calendar, Baby, Activity, Plus, ChevronRight, AlertCircle, CheckCircle, GitMerge, Trash2, Edit2, User, FileText, Stethoscope, Dna } from 'lucide-react';
 import { canAccess, getMaxMares, getUserPlanIds, canManageHorses } from '../../utils/permissions';
 
+// Custom Spermatozoid Icon
+const SpermIcon = ({ size = 24, ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <ellipse cx="7" cy="12" rx="4" ry="3.5" />
+        <path d="M11 12c2 0 4-2 7-2s4 4 4 4" />
+    </svg>
+);
 
 const Breeding = () => {
     const { t, i18n } = useTranslation();
@@ -261,13 +268,13 @@ const Breeding = () => {
                             {/* Actions - Responsive Grid */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.5rem' }}>
                                 <Button variant="secondary" style={{ fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => navigate(`/horses/${mare.id}`)} title={t('breeding_page.actions.profile')}>
-                                    <User size={16} /> <span className="hide-on-mobile">{t('breeding_page.actions.profile')}</span>
+                                    <FileText size={16} /> <span className="hide-on-mobile">{t('breeding_page.actions.profile')}</span>
                                 </Button>
                                 <Button variant="secondary" style={{ fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => navigate(`/horses/${mare.id}/care`)} title={t('breeding_page.actions.health')}>
-                                    <Heart size={16} /> <span className="hide-on-mobile">{t('breeding_page.actions.health')}</span>
+                                    <Stethoscope size={16} /> <span className="hide-on-mobile">{t('breeding_page.actions.health')}</span>
                                 </Button>
                                 <Button style={{ fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => navigate(`/breeding/${mare.id}`)} title={t('breeding_page.actions.tracking')}>
-                                    <Activity size={16} /> <span className="hide-on-mobile">{t('breeding_page.actions.tracking')}</span>
+                                    <SpermIcon size={18} /> <span className="hide-on-mobile">{t('breeding_page.actions.tracking')}</span>
                                 </Button>
                                 {canManageHorses() && (
                                     <Button
