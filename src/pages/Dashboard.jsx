@@ -128,19 +128,26 @@ const Dashboard = () => {
         const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
         const savedCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
 
-        // Filter alerts (Urgent or Warning)
-        let activeAlerts = savedCare.filter(i => i.status === 'urgent' || i.status === 'warning');
+        // Filter upcoming care (next 7 days)
+        const now = new Date();
+        const oneWeekFromNow = new Date();
+        oneWeekFromNow.setDate(now.getDate() + 7);
+
+        let upcomingCare = savedCare.filter(item => {
+            const careDate = new Date(item.date);
+            return careDate >= now && careDate <= oneWeekFromNow;
+        }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
 
         // Respect User Notification Settings
         if (userProfile?.notifications?.careAlerts === false) {
-            activeAlerts = [];
+            upcomingCare = [];
         }
 
         setStats({
             horses: savedHorses.length,
             mares: savedMares.length,
             cares: savedCare.length,
-            activeAlerts: activeAlerts
+            activeAlerts: upcomingCare
         });
     }, [userProfile]); // Refresh when profile loads/updates
 
@@ -323,14 +330,39 @@ const Dashboard = () => {
                         <Card title={t('dashboard_page.alerts.title')} accent={true} onClick={() => navigate('/care')} style={{ cursor: 'pointer' }} className="hover:scale-[1.02]">
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {stats.activeAlerts && stats.activeAlerts.length > 0 ? (
-                                    stats.activeAlerts.slice(0, 3).map((alert, idx) => (
-                                        <div key={idx} style={{ padding: '0.5rem 0', borderBottom: idx < 2 ? '1px solid rgba(0,0,0,0.05)' : 'none' }}>
-                                            <div style={{ fontWeight: '600' }}>{alert.horse}</div>
-                                            <div style={{ fontSize: '0.9rem', color: alert.status === 'urgent' ? '#ff4d4f' : 'var(--color-accent)' }}>
-                                                {alert.name} - {alert.daysLeft < 0 ? t('dashboard_page.alerts.late', { days: Math.abs(alert.daysLeft) }) : t('dashboard_page.alerts.days_left', { days: alert.daysLeft })}
+                                    stats.activeAlerts.slice(0, 3).map((care, idx) => {
+                                        // Format date
+                                        const careDate = new Date(care.date);
+                                        const formattedDate = careDate.toLocaleDateString(i18n.language, {
+                                            weekday: 'short',
+                                            day: 'numeric',
+                                            month: 'short'
+                                        });
+
+                                        // Get type icon/emoji
+                                        const typeIcons = {
+                                            'vaccins': '💉',
+                                            'vermifuges': '💊',
+                                            'marechal': '🔨',
+                                            'dentiste': '🦷',
+                                            'osteo': '🤲',
+                                            'veto': '🩺',
+                                            'default': '📋'
+                                        };
+                                        const icon = typeIcons[care.type] || typeIcons['default'];
+
+                                        return (
+                                            <div key={idx} style={{ padding: '0.5rem 0', borderBottom: idx < 2 ? '1px solid rgba(0,0,0,0.05)' : 'none' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                                    <span style={{ fontSize: '1.2rem' }}>{icon}</span>
+                                                    <div style={{ fontWeight: '600' }}>{care.horse}</div>
+                                                </div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginLeft: '1.7rem' }}>
+                                                    {care.name} • {formattedDate}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 ) : (
                                     <div style={{ padding: '1rem 0', color: 'var(--color-text-muted)', fontStyle: 'italic', textAlign: 'center' }}>
                                         {t('dashboard_page.alerts.empty')}
