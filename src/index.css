@@ -67,27 +67,27 @@
 }
 
 [data-theme='sunset'] {
-  --color-primary: #f97316;
-  /* orange-500 */
-  --color-primary-light: #fdba74;
-  --bg-gradient-1: #c026d3;
-  --bg-gradient-2: #ea580c;
+  --color-primary: #e11d48;
+  /* Rose 600 */
+  --color-primary-light: #fecdd3;
+  --bg-gradient-1: #be185d;
+  --bg-gradient-2: #f97316;
 }
 
 [data-theme='royal'] {
-  --color-primary: #4f46e5;
-  /* indigo-600 */
-  --color-primary-light: #a5b4fc;
-  --bg-gradient-1: #4338ca;
-  --bg-gradient-2: #312e81;
+  --color-primary: #2563eb;
+  /* Blue 600 */
+  --color-primary-light: #bfdbfe;
+  --bg-gradient-1: #1e3a8a;
+  --bg-gradient-2: #2563eb;
 }
 
 [data-theme='lavender'] {
-  --color-primary: #8b5cf6;
-  /* violet-500 */
+  --color-primary: #7c3aed;
+  /* Violet 600 */
   --color-primary-light: #ddd6fe;
-  --bg-gradient-1: #7c3aed;
-  --bg-gradient-2: #6d28d9;
+  --bg-gradient-1: #5b21b6;
+  --bg-gradient-2: #7c3aed;
 }
 
 /* Dark Mode Variables */
