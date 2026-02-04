@@ -846,7 +846,10 @@ const Settings = () => {
                                 { id: 'saddle', color: 'bg-orange-600', label: t('settings_page.appearance.themes.saddle') },
                                 { id: 'forest', color: 'bg-emerald-600', label: t('settings_page.appearance.themes.forest') },
                                 { id: 'ocean', color: 'bg-sky-600', label: t('settings_page.appearance.themes.ocean') },
-                                { id: 'berry', color: 'bg-pink-600', label: t('settings_page.appearance.themes.berry') }
+                                { id: 'berry', color: 'bg-pink-600', label: t('settings_page.appearance.themes.berry') },
+                                { id: 'sunset', color: 'bg-gradient-to-br from-orange-500 to-fuchsia-600', label: 'Sunset' },
+                                { id: 'royal', color: 'bg-indigo-800', label: 'Royal' },
+                                { id: 'lavender', color: 'bg-violet-400', label: 'Lavande' }
                             ].map((t_item) => (
                                 <button
                                     key={t_item.id}

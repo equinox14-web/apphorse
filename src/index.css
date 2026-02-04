@@ -66,6 +66,30 @@
   --bg-gradient-2: #334155;
 }
 
+[data-theme='sunset'] {
+  --color-primary: #f97316;
+  /* orange-500 */
+  --color-primary-light: #fdba74;
+  --bg-gradient-1: #c026d3;
+  --bg-gradient-2: #ea580c;
+}
+
+[data-theme='royal'] {
+  --color-primary: #4f46e5;
+  /* indigo-600 */
+  --color-primary-light: #a5b4fc;
+  --bg-gradient-1: #4338ca;
+  --bg-gradient-2: #312e81;
+}
+
+[data-theme='lavender'] {
+  --color-primary: #8b5cf6;
+  /* violet-500 */
+  --color-primary-light: #ddd6fe;
+  --bg-gradient-1: #7c3aed;
+  --bg-gradient-2: #6d28d9;
+}
+
 /* Dark Mode Variables */
 [data-mode='dark'] {
   --color-bg: #0f172a;
