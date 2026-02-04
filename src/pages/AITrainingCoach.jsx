@@ -3,17 +3,24 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import { Brain, Sparkles, Target, Calendar, TrendingUp, ChevronRight, ChevronLeft, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Brain, Sparkles, Target, Calendar, TrendingUp, ChevronRight, ChevronLeft, Loader2, Check, AlertCircle, User, GraduationCap } from 'lucide-react';
 import { useTrainingAI } from '../hooks/useTrainingAI';
 import SEO from '../components/common/SEO';
+import { useAuth } from '../context/AuthContext';
 
 export default function AITrainingCoach() {
     const navigate = useNavigate();
     const { generatePlan, loading, error, trainingPlan } = useTrainingAI();
+    const { userProfile } = useAuth();
 
-    // État du wizard
+    // État du wizard (1: Cheval, 2: Cavalier, 3: Discipline, 4: Niveau/Freq, 5: Objectifs, 6: Résultat)
     const [step, setStep] = useState(1);
     const [selectedHorse, setSelectedHorse] = useState(null);
+    const [riderName, setRiderName] = useState('');
+    const [riderLevel, setRiderLevel] = useState('Galop 5-7');
+    const [teamMembers, setTeamMembers] = useState([]);
+    const [isCustomRider, setIsCustomRider] = useState(false);
+
     const [formData, setFormData] = useState({
         discipline: '',
         level: '',
@@ -21,17 +28,26 @@ export default function AITrainingCoach() {
         focus: ''
     });
 
+    // Initialiser le nom du cavalier
+    useEffect(() => {
+        if (userProfile?.displayName) {
+            setRiderName(userProfile.displayName);
+        }
+    }, [userProfile]);
+
     // Charger les chevaux depuis localStorage
     const [horses, setHorses] = useState([]);
 
     useEffect(() => {
         // Chargement uniquement des chevaux de l'écurie active
-        // Les juments 'élevage seul' ne doivent pas apparaitre ici
         const stableHorses = JSON.parse(localStorage.getItem('my_horses_v4')) || [];
         setHorses(stableHorses);
+
+        // Chargement de l'équipe
+        const savedTeam = JSON.parse(localStorage.getItem('appHorse_team_v2')) || [];
+        const riders = savedTeam.filter(m => !m.isExternal);
+        setTeamMembers(riders);
     }, []);
-
-
 
     // Disciplines disponibles
     const disciplines = [
@@ -48,7 +64,7 @@ export default function AITrainingCoach() {
         { value: 'Loisir', label: 'Loisir', icon: '🌄' }
     ];
 
-    // Niveaux disponibles
+    // Niveaux CHEVAL disponibles
     const levels = [
         { value: 'Jeune', label: 'Jeune cheval', description: 'Débourrage - 5 ans' },
         { value: 'Intermédiaire', label: 'Intermédiaire', description: '6-10 ans' },
@@ -56,9 +72,17 @@ export default function AITrainingCoach() {
         { value: 'Competition', label: 'Compétition', description: 'Niveau compétition' }
     ];
 
+    // Niveaux CAVALIER disponibles
+    const riderLevels = [
+        { value: 'Débutant', label: 'Débutant' },
+        { value: 'Galop 1-4', label: 'Galop 1 à 4' },
+        { value: 'Galop 5-7', label: 'Galop 5 à 7' },
+        { value: 'Amateur/Pro', label: 'Amateur / Pro' }
+    ];
+
     // Navigation entre étapes
     const nextStep = () => {
-        if (step < 4) setStep(step + 1);
+        if (step < 5) setStep(step + 1);
     };
 
     const prevStep = () => {
@@ -70,11 +94,13 @@ export default function AITrainingCoach() {
         switch (step) {
             case 1:
                 return selectedHorse !== null;
-            case 2:
+            case 2: // Cavalier
+                return riderName.trim() !== '';
+            case 3: // Discipline
                 return formData.discipline !== '';
-            case 3:
+            case 4: // Niveau/Freq
                 return formData.level !== '';
-            case 4:
+            case 5: // Objectifs
                 return true;
             default:
                 return false;
@@ -95,6 +121,10 @@ export default function AITrainingCoach() {
                 breed: selectedHorse.race,
                 estimatedWeight: selectedHorse.estimatedWeight || selectedHorse.weight || 'Non mesuré'
             },
+            rider: {
+                name: riderName,
+                level: riderLevel
+            },
             discipline: formData.discipline,
             level: formData.level,
             frequency: formData.frequency,
@@ -104,7 +134,7 @@ export default function AITrainingCoach() {
         const result = await generatePlan(params);
 
         if (result.success) {
-            setStep(5);
+            setStep(6);
         }
     };
 
@@ -117,6 +147,8 @@ export default function AITrainingCoach() {
             id: Date.now(),
             horseName: selectedHorse.name,
             horseId: selectedHorse.id,
+            riderName: riderName, // Sauvegarde du cavalier
+            riderLevel: riderLevel,
             discipline: formData.discipline,
             level: formData.level,
             plan: trainingPlan,
@@ -134,14 +166,12 @@ export default function AITrainingCoach() {
         <div className="animate-fade-in">
             <SEO title="AI Training Coach - Equinox" description="Générez un planning d'entraînement personnalisé avec l'IA" />
 
-
-
             {/* Stepper */}
             <Card style={{ marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '600px', margin: '0 auto' }}>
-                    {[1, 2, 3, 4].map((s) => (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '800px', margin: '0 auto', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                    {[1, 2, 3, 4, 5].map((s) => (
                         <React.Fragment key={s}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', minWidth: '60px' }}>
                                 <div style={{
                                     width: '40px',
                                     height: '40px',
@@ -157,20 +187,22 @@ export default function AITrainingCoach() {
                                 }}>
                                     {step > s ? <Check size={20} /> : s}
                                 </div>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
                                     {s === 1 && 'Cheval'}
-                                    {s === 2 && 'Discipline'}
-                                    {s === 3 && 'Niveau'}
-                                    {s === 4 && 'Objectif'}
+                                    {s === 2 && 'Cavalier'}
+                                    {s === 3 && 'Discipline'}
+                                    {s === 4 && 'Niveau'}
+                                    {s === 5 && 'Objectif'}
                                 </span>
                             </div>
-                            {s < 4 && (
+                            {s < 5 && (
                                 <div style={{
                                     flex: 1,
                                     height: '2px',
                                     background: step > s ? 'var(--color-primary)' : '#e5e7eb',
                                     margin: '0 0.5rem',
-                                    transition: 'all 0.3s'
+                                    transition: 'all 0.3s',
+                                    minWidth: '20px'
                                 }} />
                             )}
                         </React.Fragment>
@@ -197,7 +229,7 @@ export default function AITrainingCoach() {
                             }}>
                                 <Target size={32} />
                             </div>
-                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
                                 Sélectionnez votre cheval
                             </h2>
                             <p style={{ color: 'var(--color-text-muted)' }}>
@@ -248,18 +280,11 @@ export default function AITrainingCoach() {
                                                 {horse.name.charAt(0)}
                                             </div>
                                             <div style={{ flex: 1 }}>
-                                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
+                                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
                                                     {horse.name}
                                                 </h3>
                                                 <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                                                    {horse.race} • {horse.birthDate ? (() => {
-                                                        const today = new Date();
-                                                        const birth = new Date(horse.birthDate);
-                                                        let age = today.getFullYear() - birth.getFullYear();
-                                                        const m = today.getMonth() - birth.getMonth();
-                                                        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-                                                        return age;
-                                                    })() : (horse.age || '?')} ans
+                                                    {horse.race} • {horse.age || '?'} ans
                                                 </p>
                                             </div>
                                             {selectedHorse?.id === horse.id && (
@@ -273,8 +298,129 @@ export default function AITrainingCoach() {
                     </div>
                 )}
 
-                {/* ÉTAPE 2 : Sélection de la discipline */}
+                {/* ÉTAPE 2 : Sélection du Cavalier (NEW) */}
                 {step === 2 && (
+                    <div>
+                        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                            <div style={{
+                                width: '60px',
+                                height: '60px',
+                                borderRadius: '50%',
+                                background: 'rgba(221, 161, 94, 0.15)',
+                                color: 'var(--color-secondary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 1rem auto'
+                            }}>
+                                <User size={32} />
+                            </div>
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
+                                Qui est le cavalier ?
+                            </h2>
+                            <p style={{ color: 'var(--color-text-muted)' }}>
+                                L'IA adaptera les conseils au niveau du cavalier
+                            </p>
+                        </div>
+
+                        <div style={{ maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div>
+                                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '1rem', color: 'var(--color-text-main)' }}>
+                                    Nom du cavalier
+                                </label>
+
+                                {!isCustomRider ? (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <select
+                                            value={riderName}
+                                            onChange={(e) => {
+                                                if (e.target.value === 'CUSTOM') {
+                                                    setIsCustomRider(true);
+                                                    setRiderName('');
+                                                } else {
+                                                    setRiderName(e.target.value);
+                                                }
+                                            }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '1rem',
+                                                borderRadius: '12px',
+                                                border: '1px solid var(--border-color)',
+                                                fontSize: '1.1rem',
+                                                background: 'var(--color-bg)',
+                                                color: 'var(--color-text-main)',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <option value="">Sélectionner un membre...</option>
+                                            {userProfile?.displayName && (
+                                                <option value={userProfile.displayName}>{userProfile.displayName} (Moi)</option>
+                                            )}
+                                            {teamMembers.map(m => (
+                                                <option key={m.id} value={m.name}>
+                                                    {m.name} ({m.role})
+                                                </option>
+                                            ))}
+                                            <option value="CUSTOM">+ Autre / Invité</option>
+                                        </select>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <input
+                                            type="text"
+                                            value={riderName}
+                                            onChange={(e) => setRiderName(e.target.value)}
+                                            placeholder="Nom du cavalier invité"
+                                            autoFocus
+                                            style={{
+                                                flex: 1,
+                                                padding: '1rem',
+                                                borderRadius: '12px',
+                                                border: '1px solid var(--border-color)',
+                                                fontSize: '1.1rem',
+                                                background: 'var(--color-bg)',
+                                                color: 'var(--color-text-main)'
+                                            }}
+                                        />
+                                        <Button variant="secondary" onClick={() => setIsCustomRider(false)}>
+                                            Liste
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '1rem', color: 'var(--color-text-main)' }}>
+                                    Niveau du cavalier
+                                </label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                                    {riderLevels.map((lvl) => (
+                                        <div
+                                            key={lvl.value}
+                                            onClick={() => setRiderLevel(lvl.value)}
+                                            style={{
+                                                padding: '1rem',
+                                                borderRadius: '12px',
+                                                border: riderLevel === lvl.value ? '2px solid var(--color-primary)' : '1px solid var(--border-color)',
+                                                background: riderLevel === lvl.value ? 'rgba(221, 161, 94, 0.05)' : 'transparent',
+                                                cursor: 'pointer',
+                                                textAlign: 'center',
+                                                fontWeight: 500,
+                                                color: 'var(--color-text-main)',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {lvl.label}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ÉTAPE 3 : Sélection de la discipline */}
+                {step === 3 && (
                     <div>
                         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                             <div style={{
@@ -290,11 +436,11 @@ export default function AITrainingCoach() {
                             }}>
                                 <Target size={32} />
                             </div>
-                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                                Quelle discipline pratiquez-vous ?
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
+                                Quelle discipline ?
                             </h2>
                             <p style={{ color: 'var(--color-text-muted)' }}>
-                                L'IA adaptera les exercices selon votre discipline
+                                L'IA sélectionnera les exercices adaptés
                             </p>
                         </div>
 
@@ -317,15 +463,15 @@ export default function AITrainingCoach() {
                                     onClick={() => setFormData({ ...formData, discipline: disc.value })}
                                 >
                                     <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{disc.icon}</div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{disc.label}</div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-main)' }}>{disc.label}</div>
                                 </Card>
                             ))}
                         </div>
                     </div>
                 )}
 
-                {/* ÉTAPE 3 : Niveau et fréquence */}
-                {step === 3 && (
+                {/* ÉTAPE 4 : Niveau et fréquence */}
+                {step === 4 && (
                     <div>
                         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                             <div style={{
@@ -341,14 +487,14 @@ export default function AITrainingCoach() {
                             }}>
                                 <TrendingUp size={32} />
                             </div>
-                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
                                 Niveau et fréquence
                             </h2>
                         </div>
 
                         {/* Sélection du niveau */}
                         <div style={{ marginBottom: '2rem' }}>
-                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '1rem', fontSize: '1rem' }}>
+                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '1rem', fontSize: '1rem', color: 'var(--color-text-main)' }}>
                                 Niveau du cheval
                             </label>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
@@ -363,7 +509,7 @@ export default function AITrainingCoach() {
                                         }}
                                         onClick={() => setFormData({ ...formData, level: lvl.value })}
                                     >
-                                        <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{lvl.label}</div>
+                                        <div style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--color-text-main)' }}>{lvl.label}</div>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{lvl.description}</div>
                                     </Card>
                                 ))}
@@ -372,7 +518,7 @@ export default function AITrainingCoach() {
 
                         {/* Fréquence */}
                         <div>
-                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '1rem', fontSize: '1rem' }}>
+                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '1rem', fontSize: '1rem', color: 'var(--color-text-main)' }}>
                                 Fréquence : {formData.frequency} séances / semaine
                             </label>
                             <input
@@ -397,8 +543,8 @@ export default function AITrainingCoach() {
                     </div>
                 )}
 
-                {/* ÉTAPE 4 : Objectifs */}
-                {step === 4 && (
+                {/* ÉTAPE 5 : Objectifs */}
+                {step === 5 && (
                     <div>
                         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                             <div style={{
@@ -414,7 +560,7 @@ export default function AITrainingCoach() {
                             }}>
                                 <Calendar size={32} />
                             </div>
-                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
                                 Objectifs spécifiques
                             </h2>
                             <p style={{ color: 'var(--color-text-muted)' }}>
@@ -423,7 +569,7 @@ export default function AITrainingCoach() {
                         </div>
 
                         <div style={{ marginBottom: '2rem' }}>
-                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>
+                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
                                 Focus (Optionnel)
                             </label>
                             <textarea
@@ -435,9 +581,11 @@ export default function AITrainingCoach() {
                                     minHeight: '100px',
                                     padding: '0.75rem',
                                     borderRadius: '8px',
-                                    border: '1px solid #ddd',
+                                    border: '1px solid var(--border-color)',
                                     fontSize: '0.95rem',
-                                    resize: 'vertical'
+                                    resize: 'vertical',
+                                    background: 'var(--color-bg)',
+                                    color: 'var(--color-text-main)'
                                 }}
                                 rows="4"
                             />
@@ -445,11 +593,12 @@ export default function AITrainingCoach() {
 
                         {/* Résumé */}
                         <Card accent={true} style={{ background: 'rgba(221, 161, 94, 0.05)', marginBottom: '2rem' }}>
-                            <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>📋 Résumé</h3>
-                            <div style={{ fontSize: '0.95rem', lineHeight: '1.8' }}>
+                            <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem', color: 'var(--color-text-main)' }}>📋 Résumé du programme</h3>
+                            <div style={{ fontSize: '0.95rem', lineHeight: '1.8', color: 'var(--color-text-main)' }}>
                                 <p><strong>Cheval :</strong> {selectedHorse?.name}</p>
+                                <p><strong>Cavalier :</strong> {riderName} ({riderLevel})</p>
                                 <p><strong>Discipline :</strong> {formData.discipline}</p>
-                                <p><strong>Niveau :</strong> {formData.level}</p>
+                                <p><strong>Niveau cheval :</strong> {formData.level}</p>
                                 <p><strong>Fréquence :</strong> {formData.frequency} séances / semaine</p>
                                 {formData.focus && <p><strong>Focus :</strong> {formData.focus}</p>}
                             </div>
@@ -475,8 +624,8 @@ export default function AITrainingCoach() {
                     </div>
                 )}
 
-                {/* ÉTAPE 5 : Résultats */}
-                {step === 5 && trainingPlan && (
+                {/* ÉTAPE 6 : Résultats */}
+                {step === 6 && trainingPlan && (
                     <div>
                         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                             <div style={{
@@ -492,7 +641,7 @@ export default function AITrainingCoach() {
                             }}>
                                 <Check size={36} />
                             </div>
-                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
                                 {trainingPlan.planningTitle}
                             </h2>
                             <p style={{ color: 'var(--color-text-muted)', fontSize: '1.05rem' }}>
@@ -503,22 +652,22 @@ export default function AITrainingCoach() {
                         {/* Analyse du coach */}
                         {trainingPlan.coachAnalysis && (
                             <Card style={{ background: 'rgba(221, 161, 94, 0.1)', marginBottom: '2rem', borderLeft: '4px solid var(--color-secondary)' }}>
-                                <h3 style={{ marginTop: 0, marginBottom: '0.75rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <h3 style={{ marginTop: 0, marginBottom: '0.75rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-main)' }}>
                                     <Brain size={20} style={{ color: 'var(--color-secondary)' }} /> Analyse du Directeur de Performance
                                 </h3>
-                                <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.6', fontStyle: 'italic' }}>{trainingPlan.coachAnalysis}</p>
+                                <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.6', fontStyle: 'italic', color: 'var(--color-text-main)' }}>{trainingPlan.coachAnalysis}</p>
                             </Card>
                         )}
 
                         {/* Planning hebdomadaire */}
                         <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.3rem', marginBottom: '1.5rem' }}>📅 Planning hebdomadaire</h3>
+                            <h3 style={{ fontSize: '1.3rem', marginBottom: '1.5rem', color: 'var(--color-text-main)' }}>📅 Planning hebdomadaire</h3>
 
                             {trainingPlan.weeklySchedule && trainingPlan.weeklySchedule.map((session, index) => (
                                 <Card key={index} style={{ marginBottom: '1rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
                                         <div style={{ flex: 1 }}>
-                                            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>{session.day}</h4>
+                                            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text-main)' }}>{session.day}</h4>
                                             <p style={{ margin: '0.25rem 0 0 0', color: 'var(--color-secondary)', fontWeight: 600 }}>
                                                 {session.sessionName}
                                             </p>
@@ -566,13 +715,13 @@ export default function AITrainingCoach() {
                                             fontSize: '0.9rem',
                                             fontWeight: 500
                                         }}>
-                                            <strong style={{ color: 'var(--color-secondary)' }}>🎯 Objectif Coach:</strong> {session.coachObjective}
+                                            <strong style={{ color: 'var(--color-secondary)' }}>🎯 Objectif Coach:</strong> <span style={{ color: 'var(--color-text-main)' }}>{session.coachObjective}</span>
                                         </div>
                                     )}
 
                                     {session.phases && session.phases.map((phase, pi) => (
                                         <div key={pi} style={{ marginBottom: '1rem' }}>
-                                            <div style={{ fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text)' }}>
+                                            <div style={{ fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
                                                 • {phase.name} ({phase.duration})
                                             </div>
                                             <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
@@ -586,7 +735,7 @@ export default function AITrainingCoach() {
                                     ))}
 
                                     {session.tips && (
-                                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
                                             💡 {session.tips}
                                         </div>
                                     )}
@@ -597,15 +746,15 @@ export default function AITrainingCoach() {
                         {/* Conseils supplémentaires */}
                         {trainingPlan.nutritionAdvice && (
                             <Card style={{ background: '#d1fae5', marginBottom: '1rem' }}>
-                                <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>🥕 Conseils nutritionnels</h3>
-                                <p style={{ margin: 0, fontSize: '0.95rem' }}>{trainingPlan.nutritionAdvice}</p>
+                                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#065f46' }}>🥕 Conseils nutritionnels</h3>
+                                <p style={{ margin: 0, fontSize: '0.95rem', color: '#064e3b' }}>{trainingPlan.nutritionAdvice}</p>
                             </Card>
                         )}
 
                         {trainingPlan.progressIndicators && (
                             <Card style={{ background: '#dbeafe', marginBottom: '1rem' }}>
-                                <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>📊 Indicateurs de progression</h3>
-                                <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                                <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#1e40af' }}>📊 Indicateurs de progression</h3>
+                                <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#1e3a8a' }}>
                                     {trainingPlan.progressIndicators.map((indicator, index) => (
                                         <li key={index} style={{ marginBottom: '0.5rem' }}>{indicator}</li>
                                     ))}
@@ -615,16 +764,16 @@ export default function AITrainingCoach() {
 
                         {trainingPlan.warnings && (
                             <Card style={{ background: '#fef3c7', marginBottom: '1rem' }}>
-                                <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>⚠️ Points de vigilance</h3>
-                                <p style={{ margin: 0, fontSize: '0.95rem' }}>{trainingPlan.warnings}</p>
+                                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#92400e' }}>⚠️ Points de vigilance</h3>
+                                <p style={{ margin: 0, fontSize: '0.95rem', color: '#78350f' }}>{trainingPlan.warnings}</p>
                             </Card>
                         )}
 
                         {/* Stratégie d'affûtage */}
                         {trainingPlan.tapering && (
                             <Card style={{ background: '#fce7f3', marginBottom: '2rem' }}>
-                                <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>🔥 Stratégie d'Affûtage (Tapering)</h3>
-                                <p style={{ margin: 0, fontSize: '0.95rem' }}>{trainingPlan.tapering}</p>
+                                <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#9d174d' }}>🔥 Stratégie d'Affûtage (Tapering)</h3>
+                                <p style={{ margin: 0, fontSize: '0.95rem', color: '#831843' }}>{trainingPlan.tapering}</p>
                             </Card>
                         )}
 
@@ -650,7 +799,7 @@ export default function AITrainingCoach() {
             </Card>
 
             {/* Navigation */}
-            {step < 5 && (
+            {step < 6 && (
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'space-between' }}>
                     {step > 1 ? (
                         <Button variant="secondary" onClick={prevStep}>
@@ -658,7 +807,7 @@ export default function AITrainingCoach() {
                         </Button>
                     ) : <div />}
 
-                    {step < 4 && (
+                    {step < 5 && (
                         <Button onClick={nextStep} disabled={!canProceed()}>
                             Continuer <ChevronRight size={18} />
                         </Button>

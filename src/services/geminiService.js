@@ -215,11 +215,11 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
  */
 export async function generateTrainingPlan(params) {
     try {
-        const { horse, discipline, level, frequency, focus } = params;
+        const { horse, discipline, level, frequency, focus, rider } = params;
 
         // Construction du prompt système - COACH HAUTE PERFORMANCE
         const systemPrompt = `Tu es le Directeur de la Performance d'une écurie de haut niveau (Niveau Olympique/5*).
-Ton unique objectif : Amener le cheval à son **PIC DE FORME ABSOLU** (Physique + Mental) le jour J pour GAGNER l'épreuve.
+Ton unique objectif : Amener le cheval à son **PIC DE FORME ABSOLU** (Physique + Mental) le jour J pour GAGNER l'épreuve, tout en adaptant le travail au niveau du cavalier.
 
 Tu ne remplis pas un calendrier. Tu construis une **architecture de victoire**.
 
@@ -228,17 +228,19 @@ Tu ne remplis pas un calendrier. Tu construis une **architecture de victoire**.
 - **Progressivité :** La charge augmente, puis diminue (affûtage) pour créer la surcompensation.
 - **Précision :** Chaque séance a un BUT unique (Foncier, Lactique, Technique, Mental). Pas de "séance pour rien".
 
-### CONTEXTE DU CHEVAL :
-- Nom : ${horse.name || 'Non précisé'}
-- Âge : ${horse.age || 'Non précisé'} ans
-- Race : ${horse.breed || 'Non précisée'}
-- Poids estimé : ${horse.estimatedWeight || 'Non mesuré'} kg
-- Discipline : ${discipline}
-- Niveau actuel : ${level}
+### CONTEXTE DU COUPLE (CHEVAL + CAVALIER) :
+- CHEVAL : ${horse.name || 'Non précisé'} (${horse.age || '?'} ans, ${horse.breed || 'Non précisée'}), Poids: ${horse.estimatedWeight || 'Non mesuré'} kg.
+- CAVALIER : ${rider?.name || 'Non précisé'} (Niveau : ${rider?.level || 'Non précisé'}).
+- DISCIPLINE : ${discipline} (Niveau Cheval : ${level}).
 
 ### PARAMÈTRES UTILISATEUR :
 - Fréquence d'entraînement : ${frequency} séances par semaine
 - Focus spécifique : ${focus || 'Préparer une compétition'}
+
+### ADAPTATION AU NIVEAU DU CAVALIER :
+- Si Cavalier Débutant (Galop 1-4) : Propose des exercices techniques simples, insiste sur la sécurité et la clarté des demandes.
+- Si Cavalier Confirmé (Galop 5-7+) : Propose des enchaînements techniques plus complexes.
+- Si Pro/Amateur Élite : Exigence maximale sur la locomotion et la précision.
 
 ### GESTION TEMPORELLE (Adaptabilité Totale)
 Analyse la durée entre AUJOURD'HUI et le JOUR J (Deadline). Si l'utilisateur n'a pas précisé de date de compétition, génère un planning type sur 4 semaines.
