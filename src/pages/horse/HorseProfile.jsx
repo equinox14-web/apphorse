@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import { ArrowLeft, Activity, Dna, Calendar, User, FileText, QrCode, Upload, Camera, Edit2, Save, X, ScanLine, Trash2, Utensils, MapPin, Image as ImageIcon, Scale, Plus as PlusIcon } from 'lucide-react';
+import { ArrowLeft, Activity, Dna, Calendar, User, FileText, QrCode, Upload, Camera, Edit2, Save, X, ScanLine, Trash2, Utensils, MapPin, Image as ImageIcon, Scale, Plus as PlusIcon, CheckCircle2 } from 'lucide-react';
 import { canEdit, canManageHorses } from '../../utils/permissions';
 
 // Helper to resize images
@@ -39,6 +39,18 @@ const resizeImage = (file, callback) => {
     reader.readAsDataURL(file);
 };
 
+const calculateAge = (dateString) => {
+    if (!dateString) return null;
+    const today = new Date();
+    const birthDate = new Date(dateString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age >= 0 ? age : 0;
+};
+
 const HorseProfile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -64,6 +76,9 @@ const HorseProfile = () => {
         }
 
         if (found) {
+            // Recalculate Age to be sure
+            const calculatedAge = calculateAge(found.birthDate);
+
             // Use stored data
             setHorse({
                 ...found,
@@ -82,7 +97,8 @@ const HorseProfile = () => {
                 // Breeding Specific Defaults
                 breed: found.breed || 'Cheval de Selle',
                 gender: found.gender || (source === 'breeding' ? 'F' : '?'), // F for Mare
-                color: found.color || '-'
+                color: found.color || '-',
+                age: calculatedAge !== null ? calculatedAge : (found.age || '?')
             });
             return;
         }
@@ -108,52 +124,109 @@ const HorseProfile = () => {
     const [upcomingEvents, setUpcomingEvents] = useState([]);
     const [pastEvents, setPastEvents] = useState([]);
 
+    // Helper functions for AI planning dates
+    const getDayOfWeekNumber = (dayName) => {
+        const days = {
+            'lundi': 1, 'monday': 1,
+            'mardi': 2, 'tuesday': 2,
+            'mercredi': 3, 'wednesday': 3,
+            'jeudi': 4, 'thursday': 4,
+            'vendredi': 5, 'friday': 5,
+            'samedi': 6, 'saturday': 6,
+            'dimanche': 0, 'sunday': 0
+        };
+        return days[dayName?.toLowerCase()] || 0;
+    };
+
+    const getNextDateForDay = (startDate, targetDay) => {
+        const date = new Date(startDate);
+        const currentDay = date.getDay();
+        let daysToAdd = targetDay - currentDay;
+        if (daysToAdd < 0) daysToAdd += 7;
+        date.setDate(date.getDate() + daysToAdd);
+        return date;
+    };
+
     useEffect(() => {
         if (!id) return;
-
-        // Custom Events
-        const custom = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
-
-        // Care Items (checking v2 as per Calendar)
-        const care = JSON.parse(localStorage.getItem('appHorse_careItems_v2') || '[]');
 
         const now = new Date();
         now.setHours(0, 0, 0, 0);
 
-        // Upcoming
+        // 1. Custom Events
+        const custom = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
         const myEvents = custom
             .filter(e => String(e.horseId) === String(id) && !e.completed)
             .map(e => ({ ...e, source: 'planning', dateObj: new Date(e.dateStr) }));
 
-        // History
         const myHistoryEvents = custom
             .filter(e => String(e.horseId) === String(id) && (e.completed || new Date(e.dateStr) < now))
             .map(e => ({ ...e, source: 'planning', dateObj: new Date(e.dateStr) }));
 
+        // 2. Care Items
+        const care = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
         const myCare = care
-            .filter(c => String(c.horseId) === String(id))
+            .filter(c => {
+                if (c.horseId && String(c.horseId) === String(id)) return true;
+                if (horse && c.horse && c.horse === horse.name) return true;
+                return false;
+            })
             .map(c => ({
                 id: `care-${c.id}`,
                 title: c.name || c.type,
                 dateStr: c.date,
                 dateObj: new Date(c.date),
                 type: 'care',
-                source: 'veterinary'
+                source: 'veterinary',
+                details: c.type
             }));
 
-        // Filter Care into Upcoming vs History
+        // 3. AI Training Plans
+        let myAiEvents = [];
+        try {
+            const savedAIPlans = JSON.parse(localStorage.getItem('ai_training_plans') || '[]');
+            savedAIPlans.forEach((planData, planIndex) => {
+                // Check match by ID or Name
+                const isMatch = (planData.horseId && String(planData.horseId) === String(id)) ||
+                    (horse && planData.horseName === horse.name);
+
+                if (isMatch && planData.plan && planData.plan.weeklySchedule) {
+                    planData.plan.weeklySchedule.forEach((session, sessionIndex) => {
+                        if (session.day && session.sessionName) {
+                            const dayOfWeek = getDayOfWeekNumber(session.day);
+                            const targetDate = getNextDateForDay(now, dayOfWeek);
+
+                            // Only include if date is today or future
+                            if (targetDate >= now) {
+                                myAiEvents.push({
+                                    id: `ai-plan-${planIndex}-${sessionIndex}`,
+                                    title: `🤖 ${session.sessionName}`,
+                                    dateObj: targetDate,
+                                    type: 'training',
+                                    source: 'ai_coach',
+                                    details: `${session.intensity} • ${session.duration}`,
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        } catch (err) {
+            console.error("Error loading AI plans in profile", err);
+        }
+
         const upcomingCare = myCare.filter(c => c.dateObj >= now);
         const historyCare = myCare.filter(c => c.dateObj < now);
 
-        const allUpcoming = [...myEvents.filter(e => e.dateObj >= now), ...upcomingCare]
+        const allUpcoming = [...myEvents.filter(e => e.dateObj >= now), ...upcomingCare, ...myAiEvents]
             .sort((a, b) => a.dateObj - b.dateObj);
 
         const allHistory = [...myHistoryEvents, ...historyCare]
-            .sort((a, b) => b.dateObj - a.dateObj); // Newest first
+            .sort((a, b) => b.dateObj - a.dateObj);
 
         setUpcomingEvents(allUpcoming);
         setPastEvents(allHistory);
-    }, [id]);
+    }, [id, horse]);
 
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({});
@@ -594,7 +667,10 @@ const HorseProfile = () => {
                                             </span>
                                         </div>
                                         <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 600, color: '#374151' }}>{e.title}</div>
+                                            <div style={{ fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                {e.title}
+                                                {e.completed && <CheckCircle2 size={16} color="#10b981" style={{ flexShrink: 0 }} title="Validé" />}
+                                            </div>
                                             <div style={{ fontSize: '0.85rem', color: '#9ca3af', display: 'flex', gap: '10px' }}>
                                                 {e.dateObj.getFullYear() !== new Date().getFullYear() && <span>{e.dateObj.getFullYear()}</span>}
                                                 {e.rider && <span>• {e.rider}</span>}
@@ -808,7 +884,15 @@ const HorseProfile = () => {
                                         onFocus={(e) => { e.target.style.background = 'white'; e.target.style.borderColor = 'var(--color-primary)'; }}
                                         onBlur={(e) => { e.target.style.background = 'rgba(255,255,255,0.5)'; e.target.style.borderColor = 'rgba(0,0,0,0.1)'; }}
                                         value={editForm.birthDate || ''}
-                                        onChange={e => setEditForm({ ...editForm, birthDate: e.target.value })}
+                                        onChange={e => {
+                                            const newDate = e.target.value;
+                                            const newAge = calculateAge(newDate); // Recalculer l'age
+                                            setEditForm({
+                                                ...editForm,
+                                                birthDate: newDate,
+                                                age: newAge // Mettre à jour l'age affiché et sauvegardé
+                                            });
+                                        }}
                                     />
                                 ) : (
                                     <div style={{ fontWeight: 600, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { canAccess } from '../../utils/permissions';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import { Syringe, Stethoscope, Calendar, AlertCircle, CheckCircle, Plus, ArrowLeft, Pencil, Trash2, Camera, Loader2 } from 'lucide-react';
+import { Syringe, Stethoscope, Calendar, AlertCircle, CheckCircle, Plus, ArrowLeft, Pencil, Trash2, Camera, Loader2, ClipboardList } from 'lucide-react';
 import { analyzePrescription } from '../../utils/geminiVision';
 
 import { useTranslation, Trans } from 'react-i18next';
@@ -12,7 +12,8 @@ const Care = () => {
     const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('vaccins');
+    const location = useLocation(); // Pour lire les query params
+    const [activeTab, setActiveTab] = useState('overview'); // Par défaut Vue d'ensemble
     // Scanner State
     const [isScanning, setIsScanning] = useState(false);
     const [scannedData, setScannedData] = useState([]);
@@ -22,6 +23,7 @@ const Care = () => {
 
 
     const tabs = [
+        { id: 'overview', label: "Vue d'ensemble", icon: ClipboardList },
         { id: 'vaccins', label: t('care_page.tabs.vaccines'), icon: Syringe },
         { id: 'vermifuges', label: t('care_page.tabs.wormers'), icon: AlertCircle },
         { id: 'marechal', label: t('care_page.tabs.farrier'), icon: Calendar },
@@ -88,6 +90,14 @@ const Care = () => {
         setExternalContacts(clientData);
     }, []);
 
+    // Handle URL Params for Tabs
+    React.useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        if (tab === 'history') setActiveTab('overview'); // Compatibilité ancien lien
+        else if (tab && tabs.find(t => t.id === tab)) setActiveTab(tab);
+    }, [location]);
+
     // Save to localStorage whenever items change
     React.useEffect(() => {
         localStorage.setItem('appHorse_careItems_v3', JSON.stringify(items));
@@ -99,10 +109,10 @@ const Care = () => {
 
     // Filter Items
     const filteredItems = items.filter(item => {
-        const typeMatch = item.type === activeTab;
+        const typeMatch = activeTab === 'overview' ? true : item.type === activeTab;
         const horseMatch = id ? item.horseId === id : true;
         return typeMatch && horseMatch;
-    });
+    }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Toujours trier par date
     const handleSaveItem = (e) => {
         e.preventDefault();
 
@@ -143,14 +153,14 @@ const Care = () => {
             // Add Mode
             const cleanItems = items.filter(i => {
                 const isSameHorse = i.horseId === (targetHorseId || '99');
-                const isSameType = i.type === activeTab;
+                const isSameType = i.type === (newItem.type || activeTab);
                 const isSameName = i.name === (newItem.subtype || newItem.type);
                 return !(isSameHorse && isSameType && isSameName);
             });
 
             const itemToAdd = {
                 id: Date.now(),
-                type: activeTab,
+                type: newItem.type || activeTab,
                 horse: targetHorseName || 'Cheval Inconnu',
                 horseId: targetHorseId || '99',
                 name: newItem.subtype || newItem.type,
@@ -185,7 +195,11 @@ const Care = () => {
     };
 
     const openAddModal = () => {
-        setNewItem({ id: null, type: activeTab, subtype: '', lastDate: '', date: '', notes: '' });
+        setNewItem({
+            id: null,
+            type: activeTab === 'overview' ? 'vaccins' : activeTab,
+            subtype: '', lastDate: '', date: '', notes: ''
+        });
         setShowModal(true);
     };
 
@@ -527,8 +541,25 @@ const Care = () => {
 
                         <form onSubmit={handleSaveItem} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
-                            {/* Type Selection */}
-                            {activeTab === 'vaccins' ? (
+                            {/* Category Selection (Overview Only) */}
+                            {activeTab === 'overview' && (
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Catégorie</label>
+                                    <select
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white' }}
+                                        value={newItem.type}
+                                        onChange={e => setNewItem({ ...newItem, type: e.target.value, subtype: '' })}
+                                    >
+                                        <option value="vaccins">{t('care_page.tabs.vaccines')}</option>
+                                        <option value="vermifuges">{t('care_page.tabs.wormers')}</option>
+                                        <option value="marechal">{t('care_page.tabs.farrier')}</option>
+                                        <option value="osteo">{t('care_page.tabs.osteo')}</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* Subtype Selection */}
+                            {newItem.type === 'vaccins' ? (
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('care_page.modal.type_label')}</label>
                                     <select
@@ -548,7 +579,7 @@ const Care = () => {
                             ) : (
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                                        {activeTab === 'vermifuges' ? t('care_page.modal.wormer_label') : t('care_page.modal.label_label')}
+                                        {newItem.type === 'vermifuges' ? t('care_page.modal.wormer_label') : t('care_page.modal.label_label')}
                                     </label>
                                     <select
                                         required
@@ -561,9 +592,9 @@ const Care = () => {
                                         }}
                                     >
                                         <option value="">Sélectionner...</option>
-                                        {activeTab === 'marechal' && ["Parage", "Ferrure"].map(v => <option key={v} value={v}>{v}</option>)}
-                                        {activeTab === 'vermifuges' && vermifugeTypes.map(v => <option key={v} value={v}>{v}</option>)}
-                                        {activeTab === 'osteo' && ["Ostéo", "Dentiste"].map(v => <option key={v} value={v}>{v}</option>)}
+                                        {newItem.type === 'marechal' && ["Parage", "Ferrure"].map(v => <option key={v} value={v}>{v}</option>)}
+                                        {newItem.type === 'vermifuges' && vermifugeTypes.map(v => <option key={v} value={v}>{v}</option>)}
+                                        {newItem.type === 'osteo' && ["Ostéo", "Dentiste"].map(v => <option key={v} value={v}>{v}</option>)}
                                     </select>
                                 </div>
                             )}
@@ -596,7 +627,7 @@ const Care = () => {
                                     onChange={e => setNewItem({ ...newItem, date: e.target.value })}
                                 />
                                 <div style={{ fontSize: '0.8rem', color: '#60a5fa', marginTop: '0.3rem' }}>
-                                    {activeTab === 'marechal' ? t('care_page.modal.interval_std', { days: 45 }) : (activeTab === 'vermifuges' ? t('care_page.modal.interval_std', { days: 90 }) : t('care_page.modal.interval_std', { days: 365 }))}
+                                    {newItem.type === 'marechal' ? t('care_page.modal.interval_std', { days: 45 }) : (newItem.type === 'vermifuges' ? t('care_page.modal.interval_std', { days: 90 }) : t('care_page.modal.interval_std', { days: 365 }))}
                                 </div>
                             </div>
 

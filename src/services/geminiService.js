@@ -611,6 +611,81 @@ Réponds UNIQUEMENT avec le JSON.`;
     }
 }
 
+/**
+ * Extrait les informations d'un cheval depuis une photo de document (Carnet, Fiche SIRE)
+ * @param {Object} params - Paramètres d'analyse
+ * @param {string} params.imageBase64 - Image en base64
+ * @param {string} params.mimeType - Type MIME
+ * @returns {Promise<Object>} Données du cheval extraites
+ */
+export async function extractMareDataFromImage(params) {
+    try {
+        const { imageBase64, mimeType = 'image/jpeg' } = params;
+
+        if (!imageBase64) {
+            throw new Error('Image requise pour l\'analyse');
+        }
+
+        const systemPrompt = `Tu es un expert en identification équine et lecture de documents officiels (Carnets SIRE, Fiches Haras Nationaux).
+Ta mission est d'extraire les informations d'identification d'un cheval à partir de la photo de son document.
+
+⚠️ RÈGLES CRITIQUES DE DISTINCTION SIRE/UELN :
+- Le Numéro SIRE est COURT (9 caractères en France). Format habituel : 2 lettres + 6 chiffres + 1 lettre (avant 2002) OU 8 chiffres + 1 lettre.
+- Le Numéro UELN est LONG (15 chiffres). Il commence souvent par "250" pour la France. C'est le "N° d'identification unique".
+
+Champs à extraire :
+1. NOM du cheval
+2. Numéro SIRE (Le numéro COURT à 9 char)
+3. Numéro UELN (Le numéro LONG à 15 char, si présent)
+4. Sexe (Femelle, Jument, Male, Entier, Hongre)
+5. Race (Selle Français, facteur SF, KWPN, etc.)
+6. Père (Sire)
+7. Mère (Dam)
+8. Date de naissance
+
+FORMAT DE SORTIE (JSON strict uniquement) :
+{
+  "name": "String (ex: Noblesse du Val)",
+  "sireNumber": "String (9 caractères max, ex: 12345678X)",
+  "ueln": "String (15 chiffres, ex: 250001123456789)",
+  "sex": "Jument/Etalon/Hongre",
+  "breed": "String",
+  "sire": "String (Nom du père)",
+  "dam": "String (Nom de la mère)",
+  "birthDate": "String (ex: 2012-05-20) ou Année seule"
+}
+
+Si une information est illisible ou absente, mets null.
+Réponds UNIQUEMENT avec le JSON.`;
+
+        console.log('🐴 Analyse document cheval avec Gemini Vision...');
+        const text = await callGeminiVisionAPI('gemini-2.0-flash', systemPrompt, imageBase64, mimeType, {
+            temperature: 0.1, // Très bas pour extraction factuelle
+            maxOutputTokens: 2048
+        });
+
+        console.log('✅ Réponse brute analyse:', text.substring(0, 100) + '...');
+
+        let cleanedText = text.trim();
+        if (cleanedText.startsWith('```')) {
+            cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
+
+        const data = JSON.parse(cleanedText);
+        return {
+            success: true,
+            data: data
+        };
+
+    } catch (error) {
+        console.error('❌ Erreur analyse document:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
 export default {
     callGeminiVisionAPI,
     generateTrainingPlan,
@@ -619,5 +694,6 @@ export default {
     testGeminiConnection,
     chatWithAssistant,
     estimateWeightFromImage,
-    extractNutritionFromImage
+    extractNutritionFromImage,
+    extractMareDataFromImage
 };

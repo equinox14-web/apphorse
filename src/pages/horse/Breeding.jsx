@@ -4,8 +4,9 @@ import { useTranslation, Trans } from 'react-i18next';
 import SEO from '../../components/common/SEO';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import { Heart, Calendar, Baby, Activity, Plus, ChevronRight, AlertCircle, CheckCircle, GitMerge, Trash2, Edit2, User, FileText, Stethoscope, Dna } from 'lucide-react';
+import { Heart, Calendar, Baby, Activity, Plus, ChevronRight, AlertCircle, CheckCircle, GitMerge, Trash2, Edit2, User, FileText, Stethoscope, Dna, ScanLine, Upload, Camera, X } from 'lucide-react';
 import { canAccess, getMaxMares, getUserPlanIds, canManageHorses } from '../../utils/permissions';
+import { extractMareDataFromImage } from '../../services/geminiService';
 
 // Custom Spermatozoid Icon
 const SpermIcon = ({ size = 24, ...props }) => (
@@ -34,6 +35,105 @@ const Breeding = () => {
     const [newMare, setNewMare] = useState({ name: '', internalNumber: '', role: 'Poulinière', status: 'Vide', sire: '', geneticDam: '', termDate: '' });
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentDetails, setPaymentDetails] = useState({ price: '', type: '' });
+
+    // Scanning Logic
+    const [showScanningCamera, setShowScanningCamera] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const videoRef = React.useRef(null);
+
+    const startScanning = () => {
+        setShowScanningCamera(true);
+    };
+
+    const stopScanning = () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+        }
+        setShowScanningCamera(false);
+    };
+
+    useEffect(() => {
+        let stream = null;
+        if (showScanningCamera) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(s => {
+                    stream = s;
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                        videoRef.current.play();
+                    }
+                })
+                .catch(err => {
+                    console.error("Camera Error:", err);
+                    alert("Impossible d'accéder à la caméra. Vérifiez les permissions.");
+                    setShowScanningCamera(false);
+                });
+        }
+        return () => {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+        };
+    }, [showScanningCamera]);
+
+    const processImageWithAI = async (imageBase64) => {
+        setIsAnalyzing(true);
+        try {
+            // Retirer le préfixe data:image/jpeg;base64, si présent
+            const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+            const mimeType = imageBase64.includes(':') ? imageBase64.split(';')[0].split(':')[1] : 'image/jpeg';
+
+            const result = await extractMareDataFromImage({ imageBase64: base64Data, mimeType });
+
+            if (result.success && result.data) {
+                const data = result.data;
+                setNewMare(prev => ({
+                    ...prev,
+                    name: data.name || prev.name,
+                    internalNumber: prev.internalNumber, // Manuel
+                    sire: data.sire || prev.sire, // Père
+                    geneticDam: data.dam || prev.geneticDam, // Mère génétique
+                    dam: data.dam || prev.dam, // Mère (info sup)
+
+                    // Champs d'identification officiels (sauvegardés même si non affichés dans le form court)
+                    sireNumber: data.sireNumber || prev.sireNumber,
+                    ueln: data.ueln || prev.ueln,
+                    birthDate: data.birthDate || prev.birthDate,
+                    sex: data.sex || prev.sex || 'Femelle', // Par défaut Femelle pour une poulinière
+                    breed: data.breed || prev.breed
+                }));
+                alert(`Document analysé ! Jument identifiée : ${data.name || 'Inconnue'}`);
+                stopScanning(); // Close camera if open
+            } else {
+                alert("L'IA n'a pas pu lire les informations. Essayez une photo plus nette.");
+            }
+        } catch (error) {
+            console.error("AI Error:", error);
+            alert("Erreur lors de l'analyse IA.");
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const captureAndProcess = () => {
+        if (videoRef.current) {
+            const canvas = document.createElement("canvas");
+            canvas.width = videoRef.current.videoWidth;
+            canvas.height = videoRef.current.videoHeight;
+            canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+            const imageBase64 = canvas.toDataURL("image/jpeg");
+            processImageWithAI(imageBase64);
+        }
+    };
+
+    const handleFileScan = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                processImageWithAI(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     useEffect(() => {
         localStorage.setItem('appHorse_breeding_v2', JSON.stringify(mares));
@@ -144,7 +244,7 @@ const Breeding = () => {
     }, [mares]);
 
     return (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in" style={{ paddingBottom: '80px', minHeight: '120vh' }}>
             <SEO title={t('breeding_page.seo_title')} description={t('breeding_page.seo_desc')} />
             <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -354,12 +454,67 @@ const Breeding = () => {
             {showModal && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0)', zIndex: 1000,
-                    display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-                    paddingTop: '5vh'
+                    background: 'rgba(255,255,255,0.01)', // Quasi invisible mais présent pour intercepter les clics
+                    backdropFilter: 'none',
+                    zIndex: 1000,
+                    display: 'flex', alignItems: 'flex-start', justifyContent: 'center', // Alignement haut avec marge
+                    paddingTop: '20px' // Descend la pop-up à ~12% du haut de l'écran
                 }}>
-                    <Card style={{ width: '90%', maxWidth: '400px' }}>
+                    <Card style={{
+                        width: '90%', maxWidth: '500px',
+                        maxHeight: 'calc(100vh - 40px)', // Un peu moins haut vue la marge en haut
+                        overflowY: 'auto', // Scroll DANS la fenêtre si nécessaire
+                        margin: '0 auto',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.3)', // Grosse ombre pour bien détacher
+                        border: '1px solid rgba(0,0,0,0.1)'
+                    }}>
                         <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>{editingId ? t('breeding_page.modal.title_edit') : t('breeding_page.modal.title_add')}</h3>
+
+                        {/* Camera Overlay */}
+                        {showScanningCamera && (
+                            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'black', zIndex: 1100, display: 'flex', flexDirection: 'column' }}>
+                                <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover' }} autoPlay playsInline />
+                                <div style={{ position: 'absolute', bottom: '2rem', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '2rem' }}>
+                                    <Button variant="secondary" onClick={stopScanning} disabled={isAnalyzing}>
+                                        <X size={32} />
+                                    </Button>
+                                    <Button onClick={captureAndProcess} disabled={isAnalyzing} style={{ width: '80px', height: '80px', borderRadius: '50%', background: isAnalyzing ? '#ccc' : 'white', border: '4px solid rgba(255,255,255,0.5)', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {isAnalyzing && <Activity className="animate-spin" color="#333" />}
+                                    </Button>
+                                </div>
+                                <div style={{ position: 'absolute', top: '10%', left: '10%', right: '10%', bottom: '20%', border: isAnalyzing ? '2px solid yellow' : '2px dashed rgba(255,255,255,0.7)', borderRadius: '12px', pointerEvents: 'none' }}>
+                                    <div style={{ position: 'absolute', top: '-30px', width: '100%', textAlign: 'center', color: 'white', fontWeight: 600 }}>{isAnalyzing ? "Analyse IA en cours..." : "Cadrer le carnet / page SIRE"}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Loading Overlay Global */}
+                        {isAnalyzing && !showScanningCamera && (
+                            <div style={{
+                                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                                background: 'rgba(255,255,255,0.8)', zIndex: 10,
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                                <Activity className="animate-spin" size={48} color="#4f46e5" />
+                                <div style={{ marginTop: '1rem', fontWeight: 600, color: '#4f46e5' }}>Lecture du document via IA...</div>
+                            </div>
+                        )}
+
+                        {/* Boutons d'ajout rapide par scan - Uniquement en création */}
+                        {!editingId && (
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem', opacity: isAnalyzing ? 0.5 : 1, pointerEvents: isAnalyzing ? 'none' : 'auto' }}>
+                                <Button variant="secondary" onClick={startScanning} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem', gap: '0.5rem', height: 'auto' }}>
+                                    <ScanLine size={32} color="#8b5cf6" />
+                                    <span>Scanner Carnet</span>
+                                </Button>
+                                <label htmlFor="upload-carnet" className="btn-secondary" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem', gap: '0.5rem', height: 'auto', border: '1px solid #e5e7eb', borderRadius: '12px', cursor: 'pointer', background: 'white', justifyContent: 'center' }}>
+                                    <Upload size={32} color="#10b981" />
+                                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Importer Photo</span>
+                                    <input type="file" id="upload-carnet" accept="image/*" style={{ display: 'none' }} onChange={handleFileScan} disabled={isAnalyzing} />
+                                </label>
+                            </div>
+                        )}
+
                         <form onSubmit={handleAddMare} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('breeding_page.modal.role_label')}</label>

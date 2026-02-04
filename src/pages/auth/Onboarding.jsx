@@ -247,15 +247,42 @@ const Onboarding = () => {
 
         // Helper to map Product Name to Internal Key (permissions.js)
         const getInternalPlanId = (name) => {
-            const n = (name || '').toLowerCase();
-            if (n.includes('passion élevage') || n.includes('passion elevage')) return 'eleveur_amateur_paid';
-            if (n.includes('passion')) return 'passion'; // After examing specific 'passion élevage'
-            if (n.includes('start')) return 'start';
-            if (n.includes('spécial') || n.includes('special') || n.includes('éleveur') || n.includes('eleveur')) return 'eleveur';
-            if (n.includes('élite') || n.includes('elite')) return 'elite';
-            if (n.includes('pro')) return 'pro'; // Check 'pro' last as it's short
-            if (n.includes('découverte') || n.includes('decouverte')) return 'decouverte';
-            return 'decouverte'; // Default fallback
+            const n = (name || '').toLowerCase().trim();
+
+            // Normaliser les accents pour une meilleure correspondance
+            const normalized = n.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            // Order matters: specific before generic
+            // Amateur plans first
+            if (n.includes('passion élevage') || n.includes('passion elevage') || normalized.includes('passion elevage')) {
+                return 'eleveur_amateur_paid';
+            }
+            if (n === 'passion' || (n.includes('passion') && !n.includes('élevage') && !n.includes('elevage'))) {
+                return 'passion';
+            }
+            if (n.includes('découverte') || n.includes('decouverte') || normalized.includes('decouverte')) {
+                return 'decouverte';
+            }
+
+            // Professional plans - Check Elite BEFORE Pro to avoid "pro" matching in "proprietaire"
+            if (n.includes('élite') || n.includes('elite') || normalized.includes('elite')) {
+                return 'elite';
+            }
+            if (n.includes('start')) {
+                return 'start';
+            }
+            if (n.includes('spécial') || n.includes('special') ||
+                (normalized.includes('eleveur') && !normalized.includes('passion'))) {
+                return 'eleveur';
+            }
+            // Check 'pro' last as it's short and can match other words
+            if ((n.includes('pro') || n === 'pro') && !n.includes('passion') && !n.includes('proprietaire')) {
+                return 'pro';
+            }
+
+            // Fallback with warning
+            console.warn('⚠️ [getInternalPlanId] Unknown product name:', name, '→ Defaulting to decouverte');
+            return 'decouverte';
         };
 
         if (priceIdToUse) {
@@ -266,12 +293,29 @@ const Onboarding = () => {
             if (userEmail && ADMIN_EMAILS.includes(userEmail)) {
                 // Direct Activation for Admins
                 console.log(`[ADMIN MODE] Activation immédiate.`);
+
+                // 🔍 DEBUG: Log selection data
+                console.log("🔍 [ADMIN ACTIVATION DEBUG]", {
+                    selectedId,
+                    productId: product?.id,
+                    productName: product?.name,
+                    userType,
+                    billingCycle
+                });
+
                 const internalKey = getInternalPlanId(product.name);
+
+                console.log("✅ [ADMIN ACTIVATION] Mapped Plan:", {
+                    productName: product.name,
+                    internalKey,
+                    willSavePlans: [internalKey],
+                    willSaveRole: userType === 'pro' ? 'Pro' : 'Propriétaire'
+                });
 
                 await updateDoc(doc(db, "users", auth.currentUser.uid), {
                     plans: [internalKey],
                     role: userType === 'pro' ? 'Pro' : 'Propriétaire', // Ensure role matches type
-                    isAdminBypass: false // Allow Admins to test specific plans without auto-upgrade
+                    isAdminBypass: true // Keep admin bypass active to allow testing different plans
                 });
 
                 // Force Clean Clean LocalStorage to prevent AuthContext from keeping old Admin Role

@@ -171,6 +171,11 @@ const Settings = () => {
     const plans = getUserPlanIds();
     const currentPlanId = plans[0] || 'decouverte';
 
+    // DEBUG: Log actual plan
+    console.log('[Settings] Current Plan from localStorage:', localStorage.getItem('subscriptionPlan'));
+    console.log('[Settings] Parsed Plans:', plans);
+    console.log('[Settings] Current Plan ID:', currentPlanId);
+
     const formatPlanName = (id) => {
         if (!id) return 'Découverte';
         // Handle Amateur Names explicitly for nicer display

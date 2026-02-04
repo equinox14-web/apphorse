@@ -19,6 +19,8 @@ import Support from './pages/Support';
 import Payment from './pages/Payment';
 import Assistant from './pages/Assistant';
 import AITrainingCoach from './pages/AITrainingCoach';
+import AdminPlans from './pages/AdminPlans';
+import DiagnosticPlans from './pages/DiagnosticPlans';
 
 // Pages - Auth
 import { SignUp, Login, LoginCode, Onboarding, Register } from './pages/auth';
@@ -203,6 +205,8 @@ function AppContent() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/accounts" element={<SwitchAccount />} />
+          <Route path="/admin-plans" element={<AdminPlans />} />
+          <Route path="/diagnostic-plans" element={<DiagnosticPlans />} />
         </Route>
 
         {/* Catch-all redirect to root */}

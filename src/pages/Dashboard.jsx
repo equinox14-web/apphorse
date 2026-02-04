@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import { CloudSun, Activity, Plus, MapPin, Heart, Crown } from 'lucide-react';
+import { CloudSun, Activity, Plus, MapPin, Heart, Crown, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SEO from '../components/common/SEO';
 import { canAccess, getMaxHorses } from '../utils/permissions';
@@ -36,12 +36,29 @@ const StatCard = ({ label, value, icon: IconOrUrl, subtext, onClick }) => {
     );
 };
 
+const getDayOfWeekNumber = (dayName) => {
+    const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    return days.findIndex(d => d.toLowerCase() === dayName.toLowerCase());
+};
+
+const getNextDateForDay = (refDate, dayOfWeek) => {
+    if (dayOfWeek === -1) return null;
+    const resultDate = new Date(refDate);
+    const currentDay = resultDate.getDay();
+    let distance = dayOfWeek - currentDay;
+    if (distance < 0) distance += 7;
+    resultDate.setDate(resultDate.getDate() + distance);
+    return resultDate;
+};
+
 const Dashboard = () => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const { userProfile } = useAuth(); // Get profile
     const [upcomingEvents, setUpcomingEvents] = useState([]);
+    const [selectedEvent, setSelectedEvent] = useState(null); // Pour la modale de détail
     const [locationName, setLocationName] = useState('...');
+    const [refreshLoc, setRefreshLoc] = useState(0); // Trigger pour forcer la re-localisation
 
     // ... (keep useEffect for loadEvents and fetchCity same place or above, they don't depend on userProfile usually)
     // Actually I can jump to the stats effect.
@@ -78,7 +95,40 @@ const Dashboard = () => {
                 }));
             }
 
-            const all = [...careEvents, ...customEvents]
+            // MODIFICATION: On ne met PLUS les soins dans les "Activités à venir"
+            // On garde uniquement les événements personnalisés (cours, concours, etc.) et l'IA
+
+            // 3. AI Training Plans
+            let aiEvents = [];
+            try {
+                const savedAIPlans = JSON.parse(localStorage.getItem('ai_training_plans') || '[]');
+                savedAIPlans.forEach((planData, planIndex) => {
+                    if (planData.plan && planData.plan.weeklySchedule) {
+                        planData.plan.weeklySchedule.forEach((session, sessionIndex) => {
+                            if (session.day && session.sessionName) {
+                                const dayOfWeek = getDayOfWeekNumber(session.day);
+                                const targetDate = getNextDateForDay(now, dayOfWeek);
+
+                                if (targetDate && targetDate >= now) {
+                                    // Set time to morning or arbitrary logic if needed, but date obj is enough
+                                    aiEvents.push({
+                                        id: `ai-plan-${planIndex}-${sessionIndex}`,
+                                        title: `🤖 ${session.sessionName}`,
+                                        date: targetDate,
+                                        type: 'training',
+                                        details: `${session.intensity} • ${session.duration} (${planData.horseName || 'Cheval'})`,
+                                        description: session.exercises || session.tips || '' // Ajouter la description/conseils
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+            } catch (err) {
+                console.error("Error loading AI plans in dashboard", err);
+            }
+
+            const all = [...customEvents, ...aiEvents]
                 .filter(e => e.date >= now)
                 .sort((a, b) => a.date - b.date)
                 .slice(0, 5);
@@ -88,8 +138,12 @@ const Dashboard = () => {
         loadEvents();
     }, []);
 
+    const [weatherData, setWeatherData] = useState(null);
+
+    // Unified Location & Weather Logic
     useEffect(() => {
-        const fetchCity = async (lat, lon) => {
+        const fetchAllData = async (lat, lon) => {
+            // 1. Fetch City Name
             try {
                 const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=fr`);
                 const data = await response.json();
@@ -97,29 +151,62 @@ const Dashboard = () => {
                 const country = data.countryCode === 'FR' ? 'FR' : data.countryCode;
                 setLocationName(country ? `${city}, ${country}` : city);
             } catch (err) {
-                // setLocationName('Paris, FR'); // Keep ... or default
+                console.warn("Erreur reverse geo:", err);
+                if (locationName === '...') setLocationName("Ville inconnue");
+            }
+
+            // 2. Fetch Weather
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`);
+                const data = await res.json();
+                setWeatherData(data.current_weather);
+            } catch (err) {
+                console.error("Erreur météo dashboard:", err);
             }
         };
 
         const savedCoords = localStorage.getItem('weather_coords');
+
+        // If we have saved coords, load them immediately for speed
         if (savedCoords) {
             const { lat, lon } = JSON.parse(savedCoords);
-            fetchCity(lat, lon);
-        } else if ("geolocation" in navigator) {
+            fetchAllData(lat, lon);
+        }
+
+        // Always try to refresh with high accuracy if possible
+        if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    fetchCity(position.coords.latitude, position.coords.longitude);
-                    localStorage.setItem('weather_coords', JSON.stringify({
-                        lat: position.coords.latitude,
-                        lon: position.coords.longitude
-                    }));
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    // Update LocalStorage with precise data
+                    localStorage.setItem('weather_coords', JSON.stringify({ lat, lon }));
+
+                    // Refresh data with new precise location
+                    fetchAllData(lat, lon);
                 },
-                () => setLocationName('Paris, FR')
+                (error) => {
+                    console.warn("Geolocation error:", error);
+                    // If no saved coords and error, default to Paris
+                    if (!savedCoords) {
+                        setLocationName("Paris (Défaut)");
+                        fetchAllData(48.857, 2.352);
+                    }
+                },
+                {
+                    enableHighAccuracy: false, // Plus rapide et suffisant pour la météo
+                    timeout: 5000,
+                    maximumAge: 600000 // 10 minutes
+                }
             );
-        } else {
-            // Let it be ...
+        } else if (!savedCoords) {
+            // No geo support and no saved data -> Default Paris
+            setLocationName("Paris (Défaut)");
+            setLocationName("Paris (Défaut)");
+            fetchAllData(48.857, 2.352);
         }
-    }, []);
+    }, [refreshLoc]);
 
     const [stats, setStats] = useState({ horses: 0, mares: 0, cares: 0, activeAlerts: [] });
 
@@ -128,15 +215,25 @@ const Dashboard = () => {
         const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
         const savedCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
 
-        // Filter upcoming care (next 7 days)
+        // Filter upcoming care (ALL future cares, not just next 7 days)
         const now = new Date();
-        const oneWeekFromNow = new Date();
-        oneWeekFromNow.setDate(now.getDate() + 7);
+        now.setHours(0, 0, 0, 0); // Ignore time part for today comparison
 
         let upcomingCare = savedCare.filter(item => {
             const careDate = new Date(item.date);
-            return careDate >= now && careDate <= oneWeekFromNow;
+            return careDate >= now; // Show ALL future care events
         }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
+
+        // Enrichir avec l'ID du cheval pour la navigation
+        upcomingCare = upcomingCare.map(care => {
+            // Essayer de trouver l'ID du cheval correspondant par son nom
+            // Note: C'est une approximation si les noms ne sont pas uniques, mais c'est le mieux qu'on puisse faire avec les données actuelles
+            const horseObj = savedHorses.find(h => h.name === care.horse);
+            return {
+                ...care,
+                horseId: horseObj ? horseObj.id : null
+            };
+        });
 
         // Respect User Notification Settings
         if (userProfile?.notifications?.careAlerts === false) {
@@ -165,49 +262,6 @@ const Dashboard = () => {
             icon: Crown
         };
     }
-
-    const [weatherData, setWeatherData] = useState(null);
-
-    // Weather Fetching Logic (Same as Weather.jsx)
-    useEffect(() => {
-        const fetchWeather = async () => {
-            const savedCoords = localStorage.getItem('weather_coords');
-            let lat = 48.857, lon = 2.352;
-
-            if (savedCoords) {
-                const c = JSON.parse(savedCoords);
-                lat = c.lat;
-                lon = c.lon;
-            } else if ("geolocation" in navigator) {
-                // Try to get current pos if no saved preference
-                navigator.geolocation.getCurrentPosition(
-                    (p) => {
-                        lat = p.coords.latitude;
-                        lon = p.coords.longitude;
-                        // Don't save strictly here to avoid loop, let the main effect handle it, 
-                        // just use for this fetch
-                        doFetch(lat, lon);
-                    },
-                    (e) => doFetch(lat, lon) // Fallback Paris
-                );
-                return;
-            }
-
-            doFetch(lat, lon);
-        };
-
-        const doFetch = async (lat, lon) => {
-            try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`);
-                const data = await res.json();
-                setWeatherData(data.current_weather);
-            } catch (err) {
-                console.error("Erreur météo dashboard:", err);
-            }
-        };
-
-        fetchWeather();
-    }, []);
 
     const getWeatherIcon = (code) => {
         if (code >= 95) return <CloudSun size={48} color="#ef4444" />; // Thunder
@@ -254,15 +308,26 @@ const Dashboard = () => {
                     />
                 )}
 
-                <StatCard icon="/icons/stetoscope.png" value={stats.cares} label={t('dashboard_page.stats.planned_care')} subtext={t('dashboard_page.stats.total')} onClick={() => navigate('/care')} />
+                <StatCard icon="/icons/stetoscope.png" value={stats.cares} label={t('dashboard_page.stats.planned_care')} subtext={t('dashboard_page.stats.total')} onClick={() => navigate('/health')} />
                 <Card onClick={() => navigate('/weather')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} className="hover:scale-[1.02]">
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.25rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                        <div
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.25rem', color: 'var(--color-text-muted)', fontSize: '0.85rem', cursor: 'help' }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm("Voulez-vous redétecter votre position actuelle ?\nAssurez-vous d'autoriser l'accès à la localisation.")) {
+                                    localStorage.removeItem('weather_coords');
+                                    setLocationName("Détection...");
+                                    setRefreshLoc(n => n + 1);
+                                }
+                            }}
+                            title="Cliquez pour redétecter la localisation"
+                        >
                             <MapPin size={14} /> {locationName}
                         </div>
-                        <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', lineHeight: 1 }}>
-                            {weatherData ? `${weatherData.temperature}°C` : '...'}
-                        </h3>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+                            {weatherData ? `${weatherData.temperature}°C` : '--°C'}
+                        </div>
                         <p style={{ color: 'var(--color-text-muted)' }}>
                             {weatherData ? getWeatherCondition(weatherData.weathercode) : t('dashboard_page.weather.loading')}
                         </p>
@@ -303,6 +368,7 @@ const Dashboard = () => {
                                                     default: return '#0891b2'; // Cyan par défaut
                                                 }
                                             }
+                                            if (evt.type === 'training') return '#8b5cf6'; // Violet IA
                                             return evt.type === 'stable' ? '#722ed1' : 'var(--color-primary)';
                                         })(),
                                         borderRadius: '2px', marginRight: '1rem'
@@ -315,8 +381,8 @@ const Dashboard = () => {
                                             {evt.details ? ` • ${evt.details}` : ''}
                                         </p>
                                     </div>
-                                    <Button variant="secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={() => navigate('/calendar')}>
-                                        {t('dashboard_page.activities.see')}
+                                    <Button variant="secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={() => setSelectedEvent(evt)}>
+                                        Voir
                                     </Button>
                                 </div>
                             ))}
@@ -327,10 +393,10 @@ const Dashboard = () => {
                 {/* Side Column */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {canAccess('alerts') && (
-                        <Card title={t('dashboard_page.alerts.title')} accent={true} onClick={() => navigate('/care')} style={{ cursor: 'pointer' }} className="hover:scale-[1.02]">
+                        <Card title={t('dashboard_page.alerts.title')} accent={true} onClick={() => navigate('/health')} style={{ cursor: 'pointer' }} className="hover:scale-[1.02]">
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {stats.activeAlerts && stats.activeAlerts.length > 0 ? (
-                                    stats.activeAlerts.slice(0, 3).map((care, idx) => {
+                                    stats.activeAlerts.slice(0, 5).map((care, idx) => {
                                         // Format date
                                         const careDate = new Date(care.date);
                                         const formattedDate = careDate.toLocaleDateString(i18n.language, {
@@ -339,20 +405,41 @@ const Dashboard = () => {
                                             month: 'short'
                                         });
 
-                                        // Get type icon/emoji
-                                        const typeIcons = {
-                                            'vaccins': '💉',
-                                            'vermifuges': '💊',
-                                            'marechal': '🔨',
-                                            'dentiste': '🦷',
-                                            'osteo': '🤲',
-                                            'veto': '🩺',
-                                            'default': '📋'
+                                        // Get type icon/emoji based on care.type and care.name
+                                        const getIcon = () => {
+                                            // First check type
+                                            if (care.type === 'vaccins') return '💉';
+                                            if (care.type === 'vermifuges') return '💊';
+                                            if (care.type === 'marechal') return '🔨';
+                                            if (care.type === 'osteo') {
+                                                // Check name for dentiste
+                                                if (care.name && care.name.toLowerCase().includes('dentiste')) return '🦷';
+                                                return '🤲';
+                                            }
+                                            // Fallback: check name for veto/vet keywords
+                                            if (care.name && (care.name.toLowerCase().includes('veto') || care.name.toLowerCase().includes('vétérinaire'))) return '🩺';
+                                            return '📋';
                                         };
-                                        const icon = typeIcons[care.type] || typeIcons['default'];
+                                        const icon = getIcon();
 
                                         return (
-                                            <div key={idx} style={{ padding: '0.5rem 0', borderBottom: idx < 2 ? '1px solid rgba(0,0,0,0.05)' : 'none' }}>
+                                            <div
+                                                key={idx}
+                                                style={{
+                                                    padding: '0.5rem 0',
+                                                    borderBottom: idx < 4 ? '1px solid rgba(0,0,0,0.05)' : 'none',
+                                                    cursor: care.horseId ? 'pointer' : 'default',
+                                                    transition: 'background-color 0.2s'
+                                                }}
+                                                className={care.horseId ? "hover:bg-black/5 rounded px-2 -mx-2" : ""}
+                                                onClick={(e) => {
+                                                    if (care.horseId) {
+                                                        e.stopPropagation();
+                                                        navigate(`/horses/${care.horseId}`);
+                                                    }
+                                                }}
+                                                title={care.horseId ? "Voir la fiche du cheval" : ""}
+                                            >
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                                                     <span style={{ fontSize: '1.2rem' }}>{icon}</span>
                                                     <div style={{ fontWeight: '600' }}>{care.horse}</div>
@@ -369,8 +456,8 @@ const Dashboard = () => {
                                     </div>
                                 )}
                             </div>
-                            <Button style={{ marginTop: '1rem', width: '100%' }} onClick={(e) => { e.stopPropagation(); navigate('/care'); }}>
-                                {t('dashboard_page.alerts.see_health_record')}
+                            <Button style={{ marginTop: '1rem', width: '100%' }} onClick={(e) => { e.stopPropagation(); navigate('/health?tab=overview'); }}>
+                                Voir tous les soins
                             </Button>
                         </Card>
                     )}
@@ -420,6 +507,38 @@ const Dashboard = () => {
                     )}
                 </div>
             </div>
+            {/* Event Detail Modal */}
+            {selectedEvent && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.2)', zIndex: 9999, // Fond plus léger
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backdropFilter: 'blur(3px)'
+                }} onClick={() => setSelectedEvent(null)}>
+                    <Card style={{ width: '90%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+                        <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{selectedEvent.title}</h3>
+                        <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Calendar size={16} />
+                            {selectedEvent.date.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </p>
+
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 500 }}>{selectedEvent.details}</div>
+                        </div>
+
+                        {selectedEvent.description && (
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>Description / Exercices</div>
+                                <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{selectedEvent.description}</div>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button onClick={() => setSelectedEvent(null)}>Fermer</Button>
+                        </div>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 };

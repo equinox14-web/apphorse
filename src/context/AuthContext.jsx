@@ -206,40 +206,104 @@ export const AuthProvider = ({ children }) => {
 
                         if (!snapshot.empty) {
                             const subDoc = snapshot.docs[0].data(); // Take the first active one
+
+                            // 🔍 DEBUG: Log complete subscription data
+                            console.log("🔍 [STRIPE DEBUG] Complete Subscription Data:", {
+                                status: subDoc.status,
+                                role: subDoc.role,
+                                price: subDoc.price,
+                                product: subDoc.product,
+                                metadata: subDoc.metadata,
+                                full: subDoc
+                            });
+
                             // "Vérifier le champ role (assigné via les métadonnées produit)"
                             if (subDoc.role) {
-                                console.log("Abonnement détecté, Role:", subDoc.role);
+                                console.log("✅ Abonnement détecté, Role:", subDoc.role);
                                 activePlan = [subDoc.role]; // ex: ['pro'], ['elite']...
                                 activeRole = subDoc.role;
+                            } else {
+                                console.warn("⚠️ Subscription found but NO role field! Check Stripe product metadata.");
                             }
+                        } else {
+                            console.log("ℹ️ No active Stripe subscription found");
                         }
 
                         // CRITICAL: Check Firestore for isAdminBypass (Tester Whitelist)
                         // We MUST fetch from Firestore to ensure we have the latest data
                         let shouldBypassStripe = false;
+
+                        // PERMANENT ADMIN WHITELIST - OVERRIDE FIRESTORE
+                        // These emails ALWAYS get bypass, even if isAdminBypass is false in Firestore
+                        const PERMANENT_ADMIN_EMAILS = [
+                            'aurelie.jossic@gmail.com',
+                            'papy.gamers14@gmail.com',
+                            'horse-equinox@outlook.com',
+                            'admin@equinox.com',
+                            'dev@equinox.com'
+                        ];
+
+                        const userEmail = user.email?.toLowerCase();
+                        const isInPermanentWhitelist = PERMANENT_ADMIN_EMAILS.includes(userEmail);
+
                         try {
                             const userDocRef = doc(db, 'users', user.uid);
                             const userDocSnap = await getDoc(userDocRef);
                             if (userDocSnap.exists()) {
                                 const userData = userDocSnap.data();
-                                shouldBypassStripe = userData.isAdminBypass === true || userData.role === 'Admin';
+
+                                // Force bypass if in permanent whitelist, regardless of Firestore value
+                                shouldBypassStripe = isInPermanentWhitelist ||
+                                    userData.isAdminBypass === true ||
+                                    userData.role === 'Admin';
+
+                                if (isInPermanentWhitelist) {
+                                    console.log(`🔐 [PERMANENT WHITELIST] Forcing bypass for: ${userEmail}`);
+                                }
 
                                 if (shouldBypassStripe) {
-                                    // MODIFIED: Respect simulated plans for testing
-                                    // Only override with Elite if NO valid plan is set
-                                    if (userData.plans && userData.plans.length > 0 && userData.plans[0] !== 'decouverte') {
-                                        console.log("[Auth] 🔓 Admin Bypass - Using simulated plan:", userData.plans);
-                                        activePlan = userData.plans;
-                                        activeRole = userData.role || 'Propriétaire';
+                                    // DISTINCTION: Super Admin (Aurelie) vs Testeurs
+                                    // Aurelie doit pouvoir "se balader" sur toutes les offres (y compris Découverte)
+                                    // Les testeurs simples sont forcés en Elite
+                                    const isSuperAdmin = PERMANENT_ADMIN_EMAILS.includes(user.email);
+
+                                    if (isSuperAdmin) {
+                                        // SUPER ADMIN: Liberté totale -> On respecte Firestore à 100%
+                                        if (userData.plans && userData.plans.length > 0) {
+                                            console.log("[Auth] 🦅 Super Admin Freedom - Using stored plan:", userData.plans);
+                                            activePlan = userData.plans;
+                                            activeRole = userData.role || 'Propriétaire';
+                                        } else {
+                                            // S'il n'y a VRAIMENT aucun plan, fallback Elite
+                                            activePlan = ['elite'];
+                                            activeRole = 'Pro';
+                                        }
                                     } else {
-                                        console.log("[Auth] 🔓 Admin Bypass - Fallback to Elite");
-                                        activePlan = ['elite'];
-                                        activeRole = 'Pro';
+                                        // TESTEURS STANDARDS (Ex: tester1@equinox.app)
+                                        // On teste si un plan simulateur spécifique a été demandé, sinon Elite par défaut
+                                        const hasSpecificPlan = userData.plans && userData.plans.length > 0 && userData.plans[0] !== 'decouverte';
+
+                                        if (hasSpecificPlan) {
+                                            console.log("[Auth] 🧪 Tester - Specific plan active:", userData.plans);
+                                            activePlan = userData.plans;
+                                            activeRole = userData.role || 'Propriétaire';
+                                        } else {
+                                            console.log("[Auth] 🧪 Tester - Defaulting to Elite");
+                                            activePlan = ['elite'];
+                                            activeRole = 'Pro';
+                                        }
                                     }
                                 }
                             }
                         } catch (error) {
                             console.error("[Auth] Error fetching user bypass status:", error);
+                            // Even if Firestore read fails, whitelist still applies
+                            if (isInPermanentWhitelist) {
+                                shouldBypassStripe = true;
+                                activePlan = ['elite'];
+                                activeRole = 'Pro';
+                                console.log(`🔐 [PERMANENT WHITELIST] Applied even after Firestore error`);
+                            }
                         }
 
                         // Update State

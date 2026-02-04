@@ -25,8 +25,10 @@ export default function AITrainingCoach() {
     const [horses, setHorses] = useState([]);
 
     useEffect(() => {
-        const horsesData = JSON.parse(localStorage.getItem('my_horses_v4')) || [];
-        setHorses(horsesData);
+        // Chargement uniquement des chevaux de l'écurie active
+        // Les juments 'élevage seul' ne doivent pas apparaitre ici
+        const stableHorses = JSON.parse(localStorage.getItem('my_horses_v4')) || [];
+        setHorses(stableHorses);
     }, []);
 
 
@@ -250,7 +252,14 @@ export default function AITrainingCoach() {
                                                     {horse.name}
                                                 </h3>
                                                 <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                                                    {horse.race} • {horse.age} ans
+                                                    {horse.race} • {horse.birthDate ? (() => {
+                                                        const today = new Date();
+                                                        const birth = new Date(horse.birthDate);
+                                                        let age = today.getFullYear() - birth.getFullYear();
+                                                        const m = today.getMonth() - birth.getMonth();
+                                                        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+                                                        return age;
+                                                    })() : (horse.age || '?')} ans
                                                 </p>
                                             </div>
                                             {selectedHorse?.id === horse.id && (

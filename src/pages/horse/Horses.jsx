@@ -352,11 +352,17 @@ const Horses = () => {
     };
 
     // Sauvegarde automatique (Local + Cloud)
+    // Sauvegarde automatique (Local + Cloud avec Debounce)
     useEffect(() => {
         localStorage.setItem('my_horses_v4', JSON.stringify(horses));
+
         if (currentUser && horses.length > 0) {
-            // Debounce idéalement, mais ici direct pour simplicité (optimisation future possible)
-            syncHorsesToFirestore(currentUser.uid, horses);
+            // Debounce pour éviter de spammer Firestore (ex: slider position image)
+            const timeoutId = setTimeout(() => {
+                syncHorsesToFirestore(currentUser.uid, horses);
+            }, 3000); // Attendre 3s d'inactivité avant de sync
+
+            return () => clearTimeout(timeoutId);
         }
     }, [horses, currentUser]);
 

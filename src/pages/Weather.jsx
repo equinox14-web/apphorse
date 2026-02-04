@@ -11,22 +11,30 @@ const Weather = () => {
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Try geolocation ONLY if no saved location exists
+    // Try geolocation with High Accuracy whenever component mounts
     useEffect(() => {
-        if (!localStorage.getItem('weather_coords') && "geolocation" in navigator) {
-            setLoading(true);
+        if ("geolocation" in navigator) {
+            // Don't show loading immediately if we have saved coords, just update in background
+            if (!localStorage.getItem('weather_coords')) setLoading(true);
+
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    setCoords({
+                    const newCoords = {
                         lat: position.coords.latitude,
                         lon: position.coords.longitude
-                    });
+                    };
+                    setCoords(newCoords);
+                    localStorage.setItem('weather_coords', JSON.stringify(newCoords));
                     setLoading(false);
                 },
                 (err) => {
-                    console.log("Geo denied or error, using default.");
+                    console.log("Geo denied or error, keeping current coords.");
                     setLoading(false);
-                    // Do not show error, just fallback silently to default or let them search
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
                 }
             );
         }
