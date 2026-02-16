@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -158,8 +159,21 @@ export const AuthProvider = ({ children }) => {
             return;
         }
 
+
+        // Safety Timeout: Force loading to false if Firebase takes too long (e.g. offline/slow network)
+        const safetyTimeout = setTimeout(() => {
+            setLoading((currentLoading) => {
+                if (currentLoading) {
+                    console.warn("⚠️ Auth timeout - Forcing app load (Safety Fallback)");
+                    return false;
+                }
+                return currentLoading;
+            });
+        }, 4000); // 4 seconds max wait
+
         // MODE NORMAL (Firebase configuré)
         unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+            clearTimeout(safetyTimeout); // Clear timeout if auth responds
             setCurrentUser(user);
             if (user) {
                 localStorage.setItem('auth', 'true');
@@ -405,9 +419,32 @@ export const AuthProvider = ({ children }) => {
         syncUserProfile // Expose if we need to force refresh
     };
 
+    if (loading) {
+        return (
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                width: '100vw',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                backgroundColor: 'var(--color-bg, #f8fafc)',
+                zIndex: 9999
+            }}>
+                <Loader2 className="animate-spin" size={48} color="#ea580c" />
+                <p style={{ marginTop: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
+                    Chargement...
+                </p>
+            </div>
+        );
+    }
+
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
 };

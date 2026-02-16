@@ -1,44 +1,86 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../components/common/Card';
+import { MapPin } from 'lucide-react';
 
 const Weather = () => {
     // Initialize with saved coords or default (Paris)
+    // Initialize with saved coords, NO DEFAULT PARIS to force user awareness if not found
     const [coords, setCoords] = useState(() => {
         const saved = localStorage.getItem('weather_coords');
-        return saved ? JSON.parse(saved) : { lat: 48.857, lon: 2.352 };
+        return saved ? JSON.parse(saved) : null;
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Try geolocation with High Accuracy whenever component mounts
-    useEffect(() => {
-        if ("geolocation" in navigator) {
-            // Don't show loading immediately if we have saved coords, just update in background
-            if (!localStorage.getItem('weather_coords')) setLoading(true);
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const newCoords = {
-                        lat: position.coords.latitude,
-                        lon: position.coords.longitude
-                    };
-                    setCoords(newCoords);
-                    localStorage.setItem('weather_coords', JSON.stringify(newCoords));
-                    setLoading(false);
-                },
-                (err) => {
-                    console.log("Geo denied or error, keeping current coords.");
-                    setLoading(false);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                }
-            );
+    const fetchIpLocation = async () => {
+        try {
+            const res = await fetch('https://ipapi.co/json/');
+            if (!res.ok) throw new Error('IP API failed');
+            const data = await res.json();
+            if (data.latitude && data.longitude) {
+                const newCoords = { lat: data.latitude, lon: data.longitude };
+                setCoords(newCoords);
+                localStorage.setItem('weather_coords', JSON.stringify(newCoords));
+                setLoading(false);
+                return true;
+            }
+        } catch (err) {
+            console.error("IP Geoloc failed", err);
+            return false;
         }
+    };
+
+    const handleGeolocation = React.useCallback(() => {
+        if (!("geolocation" in navigator)) {
+            setError("La géolocalisation n'est pas supportée par votre navigateur.");
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        setSearchQuery("");
+        setCoords(null); // Force UI to show "Searching..." state
+
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 30000,
+            maximumAge: 0
+        };
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const newCoords = {
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude
+                };
+                setCoords(newCoords);
+                localStorage.setItem('weather_coords', JSON.stringify(newCoords));
+                setLoading(false);
+            },
+            (err) => {
+                console.error(err);
+                if (err.code === 1) { // PERMISSION_DENIED
+                    setError("⚠️ Localisation bloquée. Cliquez sur le cadenas 🔒 dans la barre d'adresse pour autoriser la localisation, puis réessayez.");
+                } else if (err.code === 2) { // POSITION_UNAVAILABLE
+                    setError("Position indisponible. Votre appareil ne parvient pas à vous localiser.");
+                } else if (err.code === 3) { // TIMEOUT
+                    setError("Le délai d'attente est dépassé. Réessayez dans une zone mieux couverte.");
+                } else {
+                    setError("Erreur inconnue lors de la localisation.");
+                }
+                setLoading(false);
+            },
+            options
+        );
     }, []);
+
+    // Try geolocation ONLY if we have no saved coords on mount
+    useEffect(() => {
+        if ("geolocation" in navigator && !localStorage.getItem('weather_coords')) {
+            handleGeolocation();
+        }
+    }, [handleGeolocation]);
 
     const handleSearch = async (e) => {
         e.preventDefault();
@@ -71,6 +113,7 @@ const Weather = () => {
 
     // Fetch real weather data
     useEffect(() => {
+        if (!coords) return; // Wait for coords
         const fetchWeather = async () => {
             try {
                 // Open-Meteo API (Free, no key)
@@ -189,70 +232,79 @@ const Weather = () => {
 
     const trainingAdvice = getTrainingAdvice(weatherData?.weathercode, weatherData?.temperature);
 
-    const mapSrc = `https://embed.windy.com/embed2.html?lat=${coords.lat}&lon=${coords.lon}&detailLat=${coords.lat}&detailLon=${coords.lon}&width=800&height=500&zoom=10&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1`;
+    const mapSrc = coords ? `https://embed.windy.com/embed2.html?lat=${coords.lat}&lon=${coords.lon}&detailLat=${coords.lat}&detailLon=${coords.lon}&width=800&height=500&zoom=10&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1` : "";
 
     return (
         <div className="animate-fade-in" style={{ padding: '1rem' }}>
 
 
             {/* Search Bar */}
-            <form onSubmit={handleSearch} style={{ maxWidth: '800px', margin: '0 auto 1.5rem', display: 'flex', gap: '0.5rem' }}>
-                <input
-                    type="text"
-                    placeholder="Entrez votre ville (ex: Saumur)"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{
-                        flex: 1,
-                        padding: '0.75rem 1rem',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid rgba(0,0,0,0.1)',
-                        fontSize: '1rem',
-                        backgroundColor: 'rgba(255,255,255,0.7)',
-                        backdropFilter: 'blur(10px)'
-                    }}
-                />
-                <button
-                    type="submit"
-                    style={{
-                        padding: '0 1.5rem',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--color-primary)',
-                        color: 'white',
-                        border: 'none',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        opacity: loading ? 0.7 : 1
-                    }}
-                    disabled={loading}
-                >
-                    {loading ? '...' : 'modifier'}
-                </button>
-            </form>
+            {/* Search Bar */}
+            <div className="max-w-3xl mx-auto mb-6">
+                {!coords && loading && (
+                    <div className="text-center mb-4 text-primary font-semibold">
+                        <span className="jumping-dots">📍 Recherche de votre position...</span>
+                    </div>
+                )}
+
+                <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
+                    <button
+                        type="button"
+                        onClick={handleGeolocation}
+                        title="Utiliser ma position"
+                        disabled={loading}
+                        className="p-3 rounded-lg bg-white/70 border border-black/5 hover:bg-white/90 transition-colors text-gray-500 flex items-center justify-center"
+                    >
+                        <MapPin size={20} />
+                    </button>
+                    <input
+                        type="text"
+                        placeholder="Entrez votre ville (ex: Saumur)"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1 p-3 rounded-lg border border-black/5 bg-white/70 backdrop-blur-md text-base"
+                    />
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-70"
+                    >
+                        {loading ? '...' : 'Modifier'}
+                    </button>
+                </form>
+            </div>
 
             {error && (
-                <div style={{ maxWidth: '800px', margin: '0 auto 1rem', padding: '0.75rem', background: 'rgba(255, 59, 48, 0.1)', color: '#FF3B30', borderRadius: '8px', fontSize: '0.9rem' }}>
+                <div className="max-w-3xl mx-auto mb-4 p-3 bg-red-500/10 text-red-500 rounded-lg text-sm text-center">
                     {error}
                 </div>
             )}
 
-            <Card style={{
-                maxWidth: '800px',
-                height: '500px',
-                margin: '0 auto',
-                padding: 0,
-                overflow: 'hidden',
-                position: 'relative',
-                borderRadius: 'var(--radius-lg)'
-            }}>
-                <iframe
-                    width="100%"
-                    height="100%"
-                    src={mapSrc}
-                    frameBorder="0"
-                    title="Windy Weather Radar"
-                    style={{ display: 'block' }}
-                ></iframe>
+            <Card
+                className="max-w-3xl mx-auto overflow-hidden rounded-xl h-[300px] sm:h-[500px]"
+                style={{ padding: 0 }}
+            >
+                {coords ? (
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        src={mapSrc}
+                        frameBorder="0"
+                        title="Windy Weather Radar"
+                        className="block"
+                    ></iframe>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-4">
+                        <MapPin size={48} className="opacity-30" />
+                        <p>En attente de localisation...</p>
+                        <button
+                            onClick={handleGeolocation}
+                            className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:opacity-90 transition"
+                        >
+                            Réessayer
+                        </button>
+                    </div>
+                )}
             </Card>
 
             <p style={{ textAlign: 'center', marginTop: '1rem', marginBottom: '2rem', color: 'var(--color-text-muted)' }}>
@@ -260,10 +312,10 @@ const Weather = () => {
             </p>
 
             {/* Weather Advice Section */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
 
                 <Card title="Conseil Couverture (En direct)">
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                    <div className="flex items-start gap-4">
                         <div style={{
                             flexShrink: 0,
                             width: '48px',
@@ -280,7 +332,7 @@ const Weather = () => {
                         </div>
                         <div>
                             <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', fontWeight: 600, color: rugAdvice.color || 'inherit' }}>{rugAdvice.title}</h4>
-                            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                            <p className="text-gray-500 text-sm leading-relaxed">
                                 {rugAdvice.text}
                             </p>
                         </div>
@@ -288,7 +340,7 @@ const Weather = () => {
                 </Card>
 
                 <Card title="Conseil Entraînement (En direct)">
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                    <div className="flex items-start gap-4">
                         <div style={{
                             flexShrink: 0,
                             width: '48px',
@@ -305,7 +357,7 @@ const Weather = () => {
                         </div>
                         <div>
                             <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', fontWeight: 600, color: trainingAdvice.color || 'inherit' }}>{trainingAdvice.title}</h4>
-                            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                            <p className="text-gray-500 text-sm leading-relaxed">
                                 {trainingAdvice.text}
                             </p>
                         </div>

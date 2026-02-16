@@ -1,24 +1,31 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { canAccess } from '../../utils/permissions';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import { Syringe, Stethoscope, Calendar, AlertCircle, CheckCircle, Plus, ArrowLeft, Pencil, Trash2, Camera, Loader2, ClipboardList } from 'lucide-react';
+import { Syringe, Stethoscope, Calendar, AlertCircle, CheckCircle, Plus, ArrowLeft, Pencil, Trash2, Camera, Loader2, ClipboardList, ScanLine, Upload, X } from 'lucide-react';
 import { analyzePrescription } from '../../utils/geminiVision';
+import { useAuth } from '../../context/AuthContext';
+import { scheduleSyncToFirestore } from '../../services/firestoreSync';
 
 import { useTranslation, Trans } from 'react-i18next';
 
 const Care = () => {
     const { t } = useTranslation();
+    const { currentUser } = useAuth();
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation(); // Pour lire les query params
     const [activeTab, setActiveTab] = useState('overview'); // Par défaut Vue d'ensemble
     // Scanner State
+    // Scanner State
     const [isScanning, setIsScanning] = useState(false);
     const [scannedData, setScannedData] = useState([]);
     const [showValidationModal, setShowValidationModal] = useState(false);
+    const [showScanOptions, setShowScanOptions] = useState(false);
+    const [showCamera, setShowCamera] = useState(false);
     const fileInputRef = React.useRef(null);
+    const videoRef = React.useRef(null);
 
 
 
@@ -74,21 +81,92 @@ const Care = () => {
     const resolvedHorse = horsesList.find(h => String(h.id) === String(id));
     const title = resolvedHorse ? `${t('care_page.title')} - ${resolvedHorse.name}` : (id ? t('care_page.title') : 'Prophylaxie (Toute l\'écurie)');
 
-    React.useEffect(() => {
+    const loadData = () => {
         const teamData = JSON.parse(localStorage.getItem('appHorse_team_v2') || '[]');
         const clientData = JSON.parse(localStorage.getItem('appHorse_clients_v2') || '[]');
 
         // Load Horses for Selector
         const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
         const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
-        setHorsesList([...savedHorses, ...savedMares]);
+        const allHorses = [...savedHorses, ...savedMares];
+        setHorsesList(allHorses);
+
+        // --- ORPHAN DATA CLEANUP & STATUS REFRESH ---
+        // Clean up care items for horses that no longer exist AND update dynamic status (daysLeft)
+        let savedItems = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+
+        // Refresh Status based on TODAY
+        const now = new Date();
+        savedItems = savedItems.map(item => {
+            const targetDate = new Date(item.date);
+            const daysLeft = Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24));
+
+            let status = 'ok';
+            if (daysLeft < 0) status = 'urgent';
+            else if (daysLeft <= 15) status = 'warning'; // Update to 15 days consistent with Dashboard
+
+            return {
+                ...item,
+                daysLeft,
+                status
+            };
+        });
+
+        const validItems = savedItems.filter(item => {
+            // 1. Keep generic items (no horseId)
+            if (!item.horseId || item.horseId === '99') return true;
+
+            // 2. Check if horse exists
+            const found = allHorses.find(h => String(h.id) === String(item.horseId));
+
+            if (found) return true; // Horse exists -> Keep
+
+            // 3. Horse DELETED: 
+            // Only remove if it's a FUTURE event (orphan task).
+            // KEEP if it's PAST (Legal History).
+            if (item.daysLeft <= 0) return true;
+
+            return false; // Remove future orphan
+        });
+
+        // Check if we need to save (either due to cleanup OR status update)
+        // Since we recalculated daysLeft, it likely changed since last save if day changed.
+        // We always save to be safe and ensure fresh data in LS for Dashboard too.
+        // But dashboard calculates on fly.
+        // Let's check deep equality or just save. Saving is safer.
+
+        const hasChanges = JSON.stringify(validItems) !== JSON.stringify(JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]'));
+
+        if (hasChanges) {
+            console.log(`🧹 Care: Data refreshed/cleaned.`);
+            localStorage.setItem('appHorse_careItems_v3', JSON.stringify(validItems));
+            setItems(validItems);
+            // Sync cleaned data
+            if (currentUser) scheduleSyncToFirestore(currentUser.uid);
+        } else {
+            setItems(validItems);
+        }
 
         // Split Team into Staff and Partners
         setTeamMembers(teamData.filter(m => !m.isExternal));
         setPartners(teamData.filter(m => m.isExternal));
 
         setExternalContacts(clientData);
-    }, []);
+
+        console.log("🔄 Care: Lists refreshed", { horses: savedHorses.length, team: teamData.length });
+    };
+
+    React.useEffect(() => {
+        loadData();
+
+        // Listen for global data refresh (after Firestore load)
+        const handleDataRefresh = () => loadData();
+        window.addEventListener('equinox_data_refreshed', handleDataRefresh);
+
+        return () => {
+            window.removeEventListener('equinox_data_refreshed', handleDataRefresh);
+        };
+    }, [currentUser]);
 
     // Handle URL Params for Tabs
     React.useEffect(() => {
@@ -100,8 +178,22 @@ const Care = () => {
 
     // Save to localStorage whenever items change
     React.useEffect(() => {
-        localStorage.setItem('appHorse_careItems_v3', JSON.stringify(items));
-    }, [items]);
+        if (items.length > 0) { // Only save if there's something (avoid saving empty on initial load race condition?)
+            localStorage.setItem('appHorse_careItems_v3', JSON.stringify(items));
+
+            // Auto-save to Firestore if user is logged in
+            if (currentUser) {
+                console.log("🏥 Care Items changed -> Scheduling Sync...");
+                scheduleSyncToFirestore(currentUser.uid);
+            }
+        } else {
+            // If items is empty, we still might want to save if the user DELETED everything.
+            // But we need to distinguish "Initial Load Empty" vs "User Deleted All".
+            // For now, let's just save.
+            localStorage.setItem('appHorse_careItems_v3', JSON.stringify(items));
+            if (currentUser) scheduleSyncToFirestore(currentUser.uid);
+        }
+    }, [items, currentUser]);
 
     const [showModal, setShowModal] = useState(false);
     // lastDate is the primary input now
@@ -279,25 +371,77 @@ const Care = () => {
     // --- SCANNER HANDLERS ---
     const [scanError, setScanError] = useState(null); // Local Error State
 
-    const handleFileChange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    const startCamera = () => {
+        setShowScanOptions(false);
+        setShowCamera(true);
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(stream => {
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    videoRef.current.play();
+                }
+            })
+            .catch(err => {
+                console.error("Camera Error:", err);
+                alert("Impossible d'accéder à la caméra.");
+                setShowCamera(false);
+            });
+    };
 
+    const stopCamera = () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+        }
+        setShowCamera(false);
+    };
+
+    const base64ToFile = (base64, filename) => {
+        const arr = base64.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, { type: mime });
+    };
+
+    const capturePhoto = () => {
+        if (videoRef.current) {
+            const canvas = document.createElement("canvas");
+            canvas.width = videoRef.current.videoWidth;
+            canvas.height = videoRef.current.videoHeight;
+            canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+            const imageBase64 = canvas.toDataURL("image/jpeg");
+            const file = base64ToFile(imageBase64, "capture.jpg");
+            stopCamera();
+            processFile(file);
+        }
+    };
+
+    const processFile = async (file) => {
         setIsScanning(true);
-        setScanError(null); // Reset error
+        setScanError(null);
 
         try {
             const results = await analyzePrescription(file);
-            setScannedData(results); // Array of { name, dosage, frequency, duration, start_date }
+            setScannedData(results); // Array of { name, dosage, frequency, duration, start_date, detectedHorse }
             setShowValidationModal(true);
         } catch (error) {
             console.error("Erreur Scanner:", error);
             setScanError("Erreur : " + error.message);
-            // alert("Erreur lors de l'analyse : " + error.message); // Too intrusive/flaky sometimes
         } finally {
             setIsScanning(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setShowScanOptions(false);
+        processFile(file);
     };
 
     const confirmPrescription = () => {
@@ -327,6 +471,24 @@ const Care = () => {
                 // Use currently resolved horse or generic
                 let targetHorseName = resolvedHorse ? resolvedHorse.name : 'Cheval Inconnu';
                 let targetHorseId = id || '99';
+
+                // Try to use detected horse from AI if not already on a specific horse profile
+                if (!id && med.detectedHorse) {
+                    const detectedName = med.detectedHorse.toLowerCase();
+                    // Simple fuzzy match
+                    const found = horsesList.find(h =>
+                        h.name.toLowerCase().includes(detectedName) ||
+                        detectedName.includes(h.name.toLowerCase())
+                    );
+                    if (found) {
+                        targetHorseName = found.name;
+                        targetHorseId = found.id;
+                    } else {
+                        // Keep detected name but mark ID as unknown if no match
+                        // Or just use "Cheval Inconnu [DetectedName]"
+                        targetHorseName = `${med.detectedHorse} (?)`;
+                    }
+                }
 
                 newItems.push({
                     id: baseId + index + (i * 1000), // Unique ID
@@ -371,7 +533,7 @@ const Care = () => {
                     />
                     <Button
                         variant="secondary"
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => setShowScanOptions(true)}
                         disabled={isScanning}
                     >
                         {isScanning ? <Loader2 className="animate-spin" size={18} /> : <Camera size={18} />}
@@ -723,6 +885,54 @@ const Care = () => {
                             </Button>
                         </div>
                     </Card>
+                </div>
+            )}
+            {/* Scan Options Modal */}
+            {showScanOptions && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.5)', zIndex: 1200,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }} onClick={(e) => { if (e.target === e.currentTarget) setShowScanOptions(false); }}>
+                    <Card style={{ width: '90%', maxWidth: '350px', padding: '2rem', textAlign: 'center' }}>
+                        <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', fontWeight: 600 }}>Scanner une ordonnance</h3>
+                        <div style={{ display: 'grid', gap: '1rem' }}>
+                            <Button variant="secondary" onClick={startCamera} style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem', gap: '0.5rem', height: 'auto', alignItems: 'center' }}>
+                                <Camera size={32} color="#8b5cf6" />
+                                <span>Prendre une photo</span>
+                            </Button>
+                            <Button variant="secondary" onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem', gap: '0.5rem', height: 'auto', alignItems: 'center' }}>
+                                <Upload size={32} color="#10b981" />
+                                <span>Importer un fichier</span>
+                            </Button>
+                        </div>
+                        <Button variant="ghost" onClick={() => setShowScanOptions(false)} style={{ marginTop: '1rem' }}>Fermer</Button>
+                    </Card>
+                </div>
+            )}
+
+            {/* Camera Overlay */}
+            {showCamera && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'black', zIndex: 1300, display: 'flex', flexDirection: 'column' }}>
+                    <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover' }} autoPlay playsInline />
+                    <div style={{ position: 'absolute', bottom: '3rem', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '2rem', alignItems: 'center' }}>
+                        <Button variant="secondary" onClick={stopCamera} style={{ borderRadius: '50%', width: '50px', height: '50px', padding: 0 }}>
+                            <X size={24} />
+                        </Button>
+                        <button onClick={capturePhoto} style={{ width: '70px', height: '70px', borderRadius: '50%', background: 'white', border: '4px solid rgba(255,255,255,0.5)', cursor: 'pointer' }}></button>
+                    </div>
+                </div>
+            )}
+
+            {/* Loading Overlay */}
+            {isScanning && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(255,255,255,0.8)', zIndex: 1400,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <Loader2 className="animate-spin" size={48} color="#4f46e5" />
+                    <div style={{ marginTop: '1rem', fontWeight: 600, color: '#4f46e5' }}>Analyse de l'ordonnance et identification du cheval...</div>
                 </div>
             )}
         </div>

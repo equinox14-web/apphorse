@@ -238,7 +238,7 @@ export async function scanFeedLabel(image) {
     // 5. Construction de l'objet aliment
     const feed = {
         id: `custom-${Date.now()}`,
-        category: 'GRANULE', // Par défaut
+        category: 'MELANGE', // Par défaut
         brand: productInfo.brand,
         name: productInfo.name,
         density: 0.55, // Densité par défaut pour granulés

@@ -115,9 +115,9 @@ body {
   /* Liquid Background Intense */
   background-color: var(--color-bg);
   background-image:
-    radial-gradient(at 0% 0%, color-mix(in srgb, var(--color-primary), transparent 70%) 0px, transparent 65%),
+    radial-gradient(at 0% 0%, color-mix(in srgb, var(--color-primary), transparent 40%) 0px, transparent 65%),
     radial-gradient(at 100% 0%, var(--color-bg) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, color-mix(in srgb, var(--color-primary), transparent 70%) 0px, transparent 65%),
+    radial-gradient(at 100% 100%, color-mix(in srgb, var(--color-primary), transparent 40%) 0px, transparent 65%),
     radial-gradient(at 0% 100%, var(--color-bg) 0px, transparent 50%);
   background-attachment: fixed;
   background-size: 100% 100%;
@@ -177,7 +177,7 @@ button {
 
 /* --- Buttons --- */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #9d174d 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--bg-gradient-2) 100%);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -205,13 +205,18 @@ button {
   transition: all 0.2s;
 }
 
-[data-theme='dark'] .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+[data-mode='dark'] .btn-secondary {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 .btn-secondary:hover {
   background: rgba(0, 0, 0, 0.05);
+}
+
+[data-mode='dark'] .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 
@@ -246,7 +251,7 @@ button {
   color: var(--color-primary);
 }
 
-[data-theme='dark'] .sidebar-link:hover {
+[data-mode='dark'] .sidebar-link:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
@@ -256,7 +261,7 @@ button {
   font-weight: 600;
 }
 
-[data-theme='dark'] .sidebar-link.active {
+[data-mode='dark'] .sidebar-link.active {
   background: rgba(131, 24, 67, 0.4);
   color: #fbcfe8;
 }

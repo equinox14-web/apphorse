@@ -195,46 +195,15 @@ const ClientsManagement = () => {
 
                     <div
                         onClick={e => e.stopPropagation()}
-                        style={{
-                            backgroundColor: 'white',
-                            borderRadius: '16px',
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                            width: '100%',
-                            maxWidth: '500px',
-                            maxHeight: '90vh', // Increased max height
-                            // marginTop removed for perfect centering
-                            display: 'flex',
-                            flexDirection: 'column',
-                            overflow: 'hidden',
-                            position: 'relative',
-                            animation: 'fade-in 0.2s ease-out'
-                        }}
+                        className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden relative animate-fade-in"
                     >
                         {/* Header */}
-                        <div style={{
-                            padding: '16px 20px',
-                            borderBottom: '1px solid #f0f0f0',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            backgroundColor: 'white',
-                            zIndex: 10
-                        }}>
-                            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#111' }}>{t('clients_page.modal.title')}</h3>
+                        <div className="flex justify-between items-center p-5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-slate-800 z-10">
+                            <h3 className="m-0 text-xl font-bold text-gray-900 dark:text-white">{t('clients_page.modal.title')}</h3>
                             <button
                                 type="button"
                                 onClick={() => setShowModal(false)}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    padding: '8px',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#666'
-                                }}
+                                className="bg-transparent border-none cursor-pointer p-2 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                             >
                                 <X size={24} />
                             </button>
@@ -250,10 +219,10 @@ const ClientsManagement = () => {
                             <form onSubmit={handleAddClient} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {/* Name */}
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>{t('clients_page.modal.name_label')}</label>
+                                    <label className="block mb-1.5 font-semibold text-sm text-gray-700 dark:text-gray-300">{t('clients_page.modal.name_label')}</label>
                                     <input
                                         required
-                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', color: '#333', backgroundColor: '#fff' }}
+                                        className="w-full p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-base text-gray-900 dark:text-white bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500/50 outline-none"
                                         value={newClient.name}
                                         onChange={e => setNewClient({ ...newClient, name: e.target.value })}
                                         placeholder={t('clients_page.modal.placeholders.name')}
@@ -261,10 +230,10 @@ const ClientsManagement = () => {
                                 </div>
                                 {/* Phone */}
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>{t('clients_page.modal.phone_label')}</label>
+                                    <label className="block mb-1.5 font-semibold text-sm text-gray-700 dark:text-gray-300">{t('clients_page.modal.phone_label')}</label>
                                     <input
                                         type="tel"
-                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', color: '#333', backgroundColor: '#fff' }}
+                                        className="w-full p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-base text-gray-900 dark:text-white bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500/50 outline-none"
                                         value={newClient.phone}
                                         onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
                                         placeholder={t('clients_page.modal.placeholders.phone')}
@@ -272,10 +241,10 @@ const ClientsManagement = () => {
                                 </div>
                                 {/* Email */}
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>{t('clients_page.modal.email_label')}</label>
+                                    <label className="block mb-1.5 font-semibold text-sm text-gray-700 dark:text-gray-300">{t('clients_page.modal.email_label')}</label>
                                     <input
                                         type="email"
-                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', color: '#333', backgroundColor: '#fff' }}
+                                        className="w-full p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-base text-gray-900 dark:text-white bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500/50 outline-none"
                                         value={newClient.email}
                                         onChange={e => setNewClient({ ...newClient, email: e.target.value })}
                                         placeholder={t('clients_page.modal.placeholders.email')}
@@ -283,9 +252,9 @@ const ClientsManagement = () => {
                                 </div>
                                 {/* Address */}
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>{t('clients_page.modal.address_label')}</label>
+                                    <label className="block mb-1.5 font-semibold text-sm text-gray-700 dark:text-gray-300">{t('clients_page.modal.address_label')}</label>
                                     <input
-                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', color: '#333', backgroundColor: '#fff' }}
+                                        className="w-full p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-base text-gray-900 dark:text-white bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500/50 outline-none"
                                         value={newClient.address}
                                         onChange={e => setNewClient({ ...newClient, address: e.target.value })}
                                         placeholder={t('clients_page.modal.placeholders.address')}
@@ -294,19 +263,19 @@ const ClientsManagement = () => {
 
                                 {/* Horses */}
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>{t('clients_page.modal.horses_label')}</label>
-                                    <div style={{ border: '1px solid #d1d5db', borderRadius: '8px', padding: '10px', backgroundColor: '#f9fafb' }}>
-                                        <div style={{ position: 'relative', marginBottom: '10px' }}>
-                                            <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                                    <label className="block mb-1.5 font-semibold text-sm text-gray-700 dark:text-gray-300">{t('clients_page.modal.horses_label')}</label>
+                                    <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-2.5 bg-gray-50 dark:bg-slate-700/50">
+                                        <div className="relative mb-2.5">
+                                            <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
                                             <input
                                                 placeholder={t('clients_page.search_placeholder')}
                                                 value={horseSearch}
                                                 onChange={e => setHorseSearch(e.target.value)}
-                                                style={{ width: '100%', padding: '8px 8px 8px 32px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '0.9rem', color: '#333', backgroundColor: '#fff' }}
+                                                className="w-full py-2 pl-8 pr-2 rounded-md border border-gray-200 dark:border-gray-600 text-sm text-gray-800 dark:text-white bg-white dark:bg-slate-700 focus:outline-none focus:border-blue-500"
                                                 onClick={e => e.stopPropagation()}
                                             />
                                         </div>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
+                                        <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto">
                                             {availableHorses.filter(h => h.name.toLowerCase().includes(horseSearch.toLowerCase())).map(h => {
                                                 const isSelected = (newClient._selected || []).includes(h.name);
                                                 return (
@@ -317,10 +286,10 @@ const ClientsManagement = () => {
                                                             let newSelected = isSelected ? currentSelected.filter(n => n !== h.name) : [...currentSelected, h.name];
                                                             setNewClient({ ...newClient, horses: newSelected.join(', '), _selected: newSelected });
                                                         }}
-                                                        style={{
-                                                            padding: '4px 10px', borderRadius: '14px', fontSize: '0.8rem', cursor: 'pointer',
-                                                            background: isSelected ? '#3b82f6' : 'white', color: isSelected ? 'white' : '#4b5563', border: '1px solid #d1d5db'
-                                                        }}
+                                                        className={`px-2.5 py-1 rounded-full text-xs cursor-pointer border transition-colors ${isSelected
+                                                                ? 'bg-blue-500 border-blue-600 text-white'
+                                                                : 'bg-white dark:bg-slate-600 border-gray-200 dark:border-gray-500 text-gray-600 dark:text-gray-200 hover:border-blue-400'
+                                                            }`}
                                                     >
                                                         {h.name}
                                                     </div>
@@ -328,16 +297,16 @@ const ClientsManagement = () => {
                                             })}
                                         </div>
                                         {newClient._selected?.length > 0 && (
-                                            <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                                                {newClient._selected.map(n => <span key={n} style={{ fontSize: '0.75rem', background: '#e0e7ff', padding: '2px 6px', borderRadius: '4px' }}>{n}</span>)}
+                                            <div className="mt-2 flex flex-wrap gap-1">
+                                                {newClient._selected.map(n => <span key={n} className="text-xs bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded">{n}</span>)}
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '12px', marginTop: '10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>
-                                    <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: '12px', background: '#e5e7eb', color: '#1f2937', border: '1px solid #d1d5db', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>{t('clients_page.modal.cancel_btn')}</button>
-                                    <button type="submit" style={{ flex: 1, padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600 }}>{t('clients_page.modal.submit_btn')}</button>
+                                <div className="flex gap-3 mt-2.5 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 px-4 bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-slate-600 transition">{t('clients_page.modal.cancel_btn')}</button>
+                                    <button type="submit" className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-500/30">{t('clients_page.modal.submit_btn')}</button>
                                 </div>
                                 {/* Bottom safety spacer inside the scrollable area */}
                                 <div style={{ height: '40px' }}></div>

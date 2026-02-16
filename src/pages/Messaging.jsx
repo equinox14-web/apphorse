@@ -228,14 +228,15 @@ const Messaging = () => {
         // Optionally update DB to say 'rejected'
     };
 
-    // 1. Fetch Channels
+    // 1. Fetch Channels (Sorted Client-Side to avoid Index Error)
     useEffect(() => {
         if (!currentUser) return;
 
+        // REMOVED orderBy('updatedAt', 'desc') to fix "Requires Index" error.
+        // We will sort client-side instead.
         const q = query(
             collection(db, 'channels'),
-            where('members', 'array-contains', currentUser.uid),
-            orderBy('updatedAt', 'desc')
+            where('members', 'array-contains', currentUser.uid)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -252,6 +253,14 @@ const Messaging = () => {
                     otherMemberId
                 };
             });
+
+            // Client-side sort by updatedAt desc
+            loadedChannels.sort((a, b) => {
+                const dateA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0;
+                const dateB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0;
+                return dateB - dateA;
+            });
+
             setChannels(loadedChannels);
         });
 

@@ -39,6 +39,8 @@ import {
   MediaGallery
 } from './pages/horse';
 
+import FeedLibrary from './pages/nutrition/FeedLibrary';
+
 
 // Pages - Management
 import { Team, Billing, ClientsManagement, Stock, Budget } from './pages/management';
@@ -77,6 +79,26 @@ function AppContent() {
   // --- AUTO SAVE SYSTEM ---
   useEffect(() => {
     if (currentUser?.uid) {
+      // ONE-TIME CLEANUP: Remove orphaned AI training plans
+      try {
+        const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+        const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+        const allHorses = [...savedHorses, ...savedMares];
+
+        const savedAIPlans = JSON.parse(localStorage.getItem('ai_training_plans') || '[]');
+        const validAIPlans = savedAIPlans.filter(plan => {
+          const found = allHorses.find(h => h.name === plan.horseName);
+          return !!found;
+        });
+
+        if (validAIPlans.length !== savedAIPlans.length) {
+          console.log(`🧹 App: Cleaned ${savedAIPlans.length - validAIPlans.length} orphan AI training plans on startup.`);
+          localStorage.setItem('ai_training_plans', JSON.stringify(validAIPlans));
+        }
+      } catch (err) {
+        console.error('Error cleaning AI plans on startup:', err);
+      }
+
       // Initial sync on mount if needed, or rely on AuthContext load.
       // We set up an interval to save pending changes every 60s
       const saveInterval = setInterval(() => {
@@ -170,6 +192,7 @@ function AppContent() {
           <Route path="horses/:id/care" element={<Care />} />
           <Route path="horses/:id/weight" element={<WeightTracking />} />
           <Route path="horses/:id/nutrition" element={<NutritionCalculator />} />
+          <Route path="feed-library" element={<FeedLibrary />} />
           <Route path="health" element={<Care />} />
 
           <Route path="training/:id" element={<TrainingDetail />} />

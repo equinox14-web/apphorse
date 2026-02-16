@@ -8,6 +8,17 @@ import { useTrainingAI } from '../hooks/useTrainingAI';
 import SEO from '../components/common/SEO';
 import { useAuth } from '../context/AuthContext';
 
+// Import Icons
+import iconCSO from '../assets/CSO.png';
+import iconDressage from '../assets/Dressage.png';
+import iconCCE from '../assets/CCE.png';
+import iconAttelage from '../assets/Attelage.png';
+import iconPonyGames from '../assets/Pony games.png';
+import iconHorseBall from '../assets/Horse ball.png';
+import iconEndurance from '../assets/Endurance.png';
+import iconGalop from '../assets/Plat.png';
+import iconTrot from '../assets/Trot Attelé.png';
+
 export default function AITrainingCoach() {
     const navigate = useNavigate();
     const { generatePlan, loading, error, trainingPlan } = useTrainingAI();
@@ -25,7 +36,9 @@ export default function AITrainingCoach() {
         discipline: '',
         level: '',
         frequency: 3,
-        focus: ''
+        focus: '',
+        targetDate: '',
+        eventName: ''
     });
 
     // Initialiser le nom du cavalier
@@ -38,10 +51,35 @@ export default function AITrainingCoach() {
     // Charger les chevaux depuis localStorage
     const [horses, setHorses] = useState([]);
 
+    // Helper to calculate age from birthDate
+    const calculateAge = (dateString) => {
+        if (!dateString || dateString === '-' || dateString === 'Inconnu') return null;
+        const birthDate = new Date(dateString);
+        if (isNaN(birthDate.getTime())) return null;
+
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age >= 0 ? age : 0;
+    };
+
     useEffect(() => {
         // Chargement uniquement des chevaux de l'écurie active
         const stableHorses = JSON.parse(localStorage.getItem('my_horses_v4')) || [];
-        setHorses(stableHorses);
+
+        // Recalculate age if birthDate is present
+        const processedHorses = stableHorses.map(h => {
+            const calculatedAge = calculateAge(h.birthDate);
+            return {
+                ...h,
+                age: calculatedAge !== null ? calculatedAge : h.age
+            };
+        });
+
+        setHorses(processedHorses);
 
         // Chargement de l'équipe
         const savedTeam = JSON.parse(localStorage.getItem('appHorse_team_v2')) || [];
@@ -49,19 +87,16 @@ export default function AITrainingCoach() {
         setTeamMembers(riders);
     }, []);
 
-    // Disciplines disponibles
     const disciplines = [
-        { value: 'CSO', label: 'CSO', icon: '🏇' },
-        { value: 'Dressage', label: 'Dressage', icon: '🎭' },
-        { value: 'CCE', label: 'CCE', icon: '🏆' },
-        { value: 'Complet', label: 'Complet', icon: '⭐' },
-        { value: 'Attelage', label: 'Attelage', icon: '🐴' },
-        { value: 'PonyGames', label: 'Pony Games', icon: '🎯' },
-        { value: 'HorseBall', label: 'Horse Ball', icon: '⚽' },
-        { value: 'Endurance', label: 'Endurance', icon: '🏃' },
-        { value: 'Galop', label: 'Courses Galop', icon: '🏁' },
-        { value: 'Trot', label: 'Courses Trot', icon: '🚜' },
-        { value: 'Loisir', label: 'Loisir', icon: '🌄' }
+        { value: 'CSO', label: 'CSO', icon: iconCSO },
+        { value: 'Dressage', label: 'Dressage', icon: iconDressage },
+        { value: 'CCE', label: 'CCE', icon: iconCCE },
+        { value: 'Attelage', label: 'Attelage', icon: iconAttelage },
+        { value: 'PonyGames', label: 'Pony Games', icon: iconPonyGames },
+        { value: 'HorseBall', label: 'Horse Ball', icon: iconHorseBall },
+        { value: 'Endurance', label: 'Endurance', icon: iconEndurance },
+        { value: 'Galop', label: 'Courses Galop', icon: iconGalop },
+        { value: 'Trot', label: 'Courses Trot', icon: iconTrot }
     ];
 
     // Niveaux CHEVAL disponibles
@@ -128,7 +163,9 @@ export default function AITrainingCoach() {
             discipline: formData.discipline,
             level: formData.level,
             frequency: formData.frequency,
-            focus: formData.focus
+            focus: formData.focus,
+            targetDate: formData.targetDate,
+            eventName: formData.eventName
         };
 
         const result = await generatePlan(params);
@@ -284,7 +321,7 @@ export default function AITrainingCoach() {
                                                     {horse.name}
                                                 </h3>
                                                 <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                                                    {horse.race} • {horse.age || '?'} ans
+                                                    {horse.race} • {horse.age !== undefined && horse.age !== null ? horse.age : '?'} ans
                                                 </p>
                                             </div>
                                             {selectedHorse?.id === horse.id && (
@@ -389,32 +426,7 @@ export default function AITrainingCoach() {
                                 )}
                             </div>
 
-                            <div>
-                                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '1rem', color: 'var(--color-text-main)' }}>
-                                    Niveau du cavalier
-                                </label>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                                    {riderLevels.map((lvl) => (
-                                        <div
-                                            key={lvl.value}
-                                            onClick={() => setRiderLevel(lvl.value)}
-                                            style={{
-                                                padding: '1rem',
-                                                borderRadius: '12px',
-                                                border: riderLevel === lvl.value ? '2px solid var(--color-primary)' : '1px solid var(--border-color)',
-                                                background: riderLevel === lvl.value ? 'rgba(221, 161, 94, 0.05)' : 'transparent',
-                                                cursor: 'pointer',
-                                                textAlign: 'center',
-                                                fontWeight: 500,
-                                                color: 'var(--color-text-main)',
-                                                transition: 'all 0.2s'
-                                            }}
-                                        >
-                                            {lvl.label}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+
                         </div>
                     </div>
                 )}
@@ -449,23 +461,55 @@ export default function AITrainingCoach() {
                             gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
                             gap: '1rem'
                         }}>
-                            {disciplines.map((disc) => (
-                                <Card
-                                    key={disc.value}
-                                    className="hover-card"
-                                    style={{
-                                        cursor: 'pointer',
-                                        textAlign: 'center',
-                                        padding: '1.5rem 1rem',
-                                        borderLeft: formData.discipline === disc.value ? '4px solid var(--color-primary)' : 'none',
-                                        background: formData.discipline === disc.value ? 'rgba(221, 161, 94, 0.05)' : 'transparent'
-                                    }}
-                                    onClick={() => setFormData({ ...formData, discipline: disc.value })}
-                                >
-                                    <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{disc.icon}</div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-main)' }}>{disc.label}</div>
-                                </Card>
-                            ))}
+                            {disciplines.map((disc) => {
+                                const isSelected = formData.discipline === disc.value;
+                                return (
+                                    <Card
+                                        key={disc.value}
+                                        className="hover-card"
+                                        style={{
+                                            cursor: 'pointer',
+                                            textAlign: 'center',
+                                            padding: '1.5rem 1rem',
+                                            borderLeft: isSelected ? '4px solid var(--color-primary)' : 'none',
+                                            background: isSelected ? 'rgba(221, 161, 94, 0.05)' : 'white',
+                                            transition: 'all 0.2s',
+                                            transform: isSelected ? 'translateY(-2px)' : 'none',
+                                            boxShadow: isSelected ? '0 4px 12px rgba(221, 161, 94, 0.15)' : '0 2px 4px rgba(0,0,0,0.02)'
+                                        }}
+                                        onClick={() => setFormData({ ...formData, discipline: disc.value })}
+                                    >
+                                        <div style={{
+                                            marginBottom: '0.75rem',
+                                            transition: 'transform 0.2s',
+                                            transform: isSelected ? 'scale(1.1)' : 'scale(1)',
+                                            height: '90px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            <img
+                                                src={disc.icon}
+                                                alt={disc.label}
+                                                style={{
+                                                    width: 'auto',
+                                                    height: '100%',
+                                                    maxHeight: '90px',
+                                                    objectFit: 'contain',
+                                                    filter: isSelected ? 'none' : 'grayscale(30%) opacity(0.8)'
+                                                }}
+                                            />
+                                        </div>
+                                        <div style={{
+                                            fontSize: '0.9rem',
+                                            fontWeight: 600,
+                                            color: isSelected ? 'var(--color-text-main)' : '#4b5563'
+                                        }}>
+                                            {disc.label}
+                                        </div>
+                                    </Card>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
@@ -569,6 +613,49 @@ export default function AITrainingCoach() {
                         </div>
 
                         <div style={{ marginBottom: '2rem' }}>
+                            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                                <div style={{ flex: 1, minWidth: '200px' }}>
+                                    <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
+                                        Date de l'objectif (Optionnel)
+                                    </label>
+                                    <input
+                                        type="date"
+                                        min={new Date().toISOString().split('T')[0]}
+                                        value={formData.targetDate}
+                                        onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.75rem',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border-color)',
+                                            fontSize: '0.95rem',
+                                            background: 'var(--color-bg)',
+                                            color: 'var(--color-text-main)'
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ flex: 1, minWidth: '200px' }}>
+                                    <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
+                                        Nom de l'événement (Ex: Concours Régional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.eventName}
+                                        onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
+                                        placeholder="Ex: Finale Cycle Classique"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.75rem',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border-color)',
+                                            fontSize: '0.95rem',
+                                            background: 'var(--color-bg)',
+                                            color: 'var(--color-text-main)'
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
                             <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>
                                 Focus (Optionnel)
                             </label>

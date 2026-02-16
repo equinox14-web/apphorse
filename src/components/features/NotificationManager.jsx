@@ -66,11 +66,18 @@ const NotificationManager = () => {
                 ? `Rappel : ${urgentItems[0].name} pour ${urgentItems[0].horse} est à prévoir.`
                 : `Vous avez ${count} soins à prévoir ou en retard.`;
 
-            new Notification(title, {
-                body: body,
-                icon: "/Logo_equinox.png",
-                tag: 'care-reminder' // 'tag' prevents duplicate notifications stacking up
-            });
+            // Utiliser le Service Worker pour afficher la notification (API correcte)
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'SHOW_NOTIFICATION',
+                    title,
+                    options: {
+                        body: body,
+                        icon: "/Logo_equinox.png",
+                        tag: 'care-reminder' // 'tag' prevents duplicate notifications stacking up
+                    }
+                });
+            }
 
             // Update timestamp
             localStorage.setItem('last_notification_sent', nowTime.toISOString());

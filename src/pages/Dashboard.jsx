@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import { CloudSun, Activity, Plus, MapPin, Heart, Crown, Calendar } from 'lucide-react';
+import { CloudSun, Activity, Plus, MapPin, Heart, Crown, Calendar, Sparkles, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SEO from '../components/common/SEO';
 import { canAccess, getMaxHorses } from '../utils/permissions';
@@ -98,10 +98,28 @@ const Dashboard = () => {
             // MODIFICATION: On ne met PLUS les soins dans les "Activités à venir"
             // On garde uniquement les événements personnalisés (cours, concours, etc.) et l'IA
 
-            // 3. AI Training Plans
+            // 3. AI Training Plans - CLEANUP ORPHANS FIRST
             let aiEvents = [];
             try {
-                const savedAIPlans = JSON.parse(localStorage.getItem('ai_training_plans') || '[]');
+                const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+                const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+                const allHorses = [...savedHorses, ...savedMares];
+
+                let savedAIPlans = JSON.parse(localStorage.getItem('ai_training_plans') || '[]');
+
+                // Filter out plans for deleted horses
+                const validAIPlans = savedAIPlans.filter(plan => {
+                    const found = allHorses.find(h => h.name === plan.horseName);
+                    return !!found;
+                });
+
+                // If we removed orphans, save back to localStorage
+                if (validAIPlans.length !== savedAIPlans.length) {
+                    console.log(`🧹 Dashboard: Removed ${savedAIPlans.length - validAIPlans.length} orphan AI training plans.`);
+                    localStorage.setItem('ai_training_plans', JSON.stringify(validAIPlans));
+                    savedAIPlans = validAIPlans;
+                }
+
                 savedAIPlans.forEach((planData, planIndex) => {
                     if (planData.plan && planData.plan.weeklySchedule) {
                         planData.plan.weeklySchedule.forEach((session, sessionIndex) => {
@@ -113,11 +131,13 @@ const Dashboard = () => {
                                     // Set time to morning or arbitrary logic if needed, but date obj is enough
                                     aiEvents.push({
                                         id: `ai-plan-${planIndex}-${sessionIndex}`,
-                                        title: `🤖 ${session.sessionName}`,
+                                        title: session.sessionName,
+                                        isAI: true,
                                         date: targetDate,
                                         type: 'training',
-                                        details: `${session.intensity} • ${session.duration} (${planData.horseName || 'Cheval'})`,
-                                        description: session.exercises || session.tips || '' // Ajouter la description/conseils
+                                        details: `${session.intensity} • ${session.duration} • ${planData.horseName || 'Cheval'}${planData.riderName ? ` / ${planData.riderName}` : ''}`,
+                                        description: session.rawEvent?.description || session.coachObjective || '',
+                                        phases: session.phases || []
                                     });
                                 }
                             }
@@ -135,7 +155,23 @@ const Dashboard = () => {
 
             setUpcomingEvents(all);
         };
+
         loadEvents();
+
+        // Reload events when returning to Dashboard (to reflect deletions from Planning)
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                loadEvents();
+            }
+        };
+
+        window.addEventListener('focus', handleVisibilityChange);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('focus', handleVisibilityChange);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, []);
 
     const [weatherData, setWeatherData] = useState(null);
@@ -219,15 +255,12 @@ const Dashboard = () => {
         const now = new Date();
         now.setHours(0, 0, 0, 0); // Ignore time part for today comparison
 
-        let upcomingCare = savedCare.filter(item => {
-            const careDate = new Date(item.date);
-            return careDate >= now; // Show ALL future care events
-        }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
+        let upcomingCare = savedCare
+            .filter(item => item.date) // Ensure date exists
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()); // Strict chronological sort
 
         // Enrichir avec l'ID du cheval pour la navigation
         upcomingCare = upcomingCare.map(care => {
-            // Essayer de trouver l'ID du cheval correspondant par son nom
-            // Note: C'est une approximation si les noms ne sont pas uniques, mais c'est le mieux qu'on puisse faire avec les données actuelles
             const horseObj = savedHorses.find(h => h.name === care.horse);
             return {
                 ...care,
@@ -247,6 +280,53 @@ const Dashboard = () => {
             activeAlerts: upcomingCare
         });
     }, [userProfile]); // Refresh when profile loads/updates
+
+    // Force refresh when navigating back to Dashboard
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                // Page is visible again - reload data
+                const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+                const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+                const savedCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+
+                let upcomingCare = savedCare
+                    .filter(item => item.date)
+                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+                upcomingCare = upcomingCare.map(care => {
+                    const horseObj = savedHorses.find(h => h.name === care.horse);
+                    return {
+                        ...care,
+                        horseId: horseObj ? horseObj.id : null
+                    };
+                });
+
+                if (userProfile?.notifications?.careAlerts === false) {
+                    upcomingCare = [];
+                }
+
+                setStats({
+                    horses: savedHorses.length,
+                    mares: savedMares.length,
+                    cares: savedCare.length,
+                    activeAlerts: upcomingCare
+                });
+            }
+        };
+
+        // Also refresh on focus (when navigating between routes)
+        window.addEventListener('focus', handleVisibilityChange);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('focus', handleVisibilityChange);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [userProfile]);
 
     const userPlans = JSON.parse(localStorage.getItem('subscriptionPlan') || '[]');
     const isBreederOnly = userPlans.includes('eleveur');
@@ -348,14 +428,7 @@ const Dashboard = () => {
                                 <div style={{ color: '#999', fontStyle: 'italic', padding: '1rem' }}>{t('dashboard_page.activities.empty')}</div>
                             )}
                             {upcomingEvents.map((evt) => (
-                                <div key={evt.id} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    padding: '1rem',
-                                    background: 'rgba(255,255,255,0.5)',
-                                    borderRadius: 'var(--radius-md)',
-                                    border: '1px solid rgba(0,0,0,0.03)'
-                                }}>
+                                <div key={evt.id} className="flex items-center p-4 bg-white/50 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5 transition-colors">
                                     <div style={{
                                         width: '4px', height: '40px',
                                         background: (() => {
@@ -374,16 +447,61 @@ const Dashboard = () => {
                                         borderRadius: '2px', marginRight: '1rem'
                                     }}></div>
                                     <div style={{ flex: 1 }}>
-                                        <h4 style={{ fontSize: '1rem', margin: 0 }}>{evt.title}</h4>
+                                        <h4 style={{ fontSize: '1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {evt.isAI && <Sparkles size={16} color="#8b5cf6" fill="#8b5cf6" style={{ opacity: 0.8 }} />}
+                                            {evt.title}
+                                        </h4>
                                         <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: '0.2rem 0 0 0' }}>
                                             {evt.date.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })}
                                             {evt.date.getHours() ? ` • ${evt.date.getHours()}h${String(evt.date.getMinutes()).padStart(2, '0')}` : ''}
                                             {evt.details ? ` • ${evt.details}` : ''}
                                         </p>
                                     </div>
-                                    <Button variant="secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={() => setSelectedEvent(evt)}>
-                                        Voir
-                                    </Button>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <Button
+                                            variant="secondary"
+                                            style={{ padding: '0.5rem', fontSize: '0.85rem', color: '#ef4444' }}
+                                            onClick={() => {
+                                                // Delete this specific activity
+                                                if (evt.isAI) {
+                                                    // Extract plan and session index from ID (format: ai-plan-{planIndex}-{sessionIndex})
+                                                    const match = evt.id.match(/ai-plan-(\d+)-(\d+)/);
+                                                    if (match) {
+                                                        const planIndex = parseInt(match[1]);
+                                                        const sessionIndex = parseInt(match[2]);
+
+                                                        const savedPlans = JSON.parse(localStorage.getItem('ai_training_plans') || '[]');
+                                                        if (savedPlans[planIndex] && savedPlans[planIndex].plan && savedPlans[planIndex].plan.weeklySchedule) {
+                                                            // Remove this session from the plan
+                                                            savedPlans[planIndex].plan.weeklySchedule.splice(sessionIndex, 1);
+
+                                                            // If plan has no more sessions, remove the entire plan
+                                                            if (savedPlans[planIndex].plan.weeklySchedule.length === 0) {
+                                                                savedPlans.splice(planIndex, 1);
+                                                            }
+
+                                                            localStorage.setItem('ai_training_plans', JSON.stringify(savedPlans));
+                                                            console.log(`✅ Deleted AI session: ${evt.title}`);
+                                                        }
+                                                    }
+                                                } else {
+                                                    // Delete custom event
+                                                    const savedEvents = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
+                                                    const filtered = savedEvents.filter(e => e.id !== evt.id && evt.id !== `care-${e.id}`);
+                                                    localStorage.setItem('appHorse_customEvents', JSON.stringify(filtered));
+                                                    console.log(`✅ Deleted custom event: ${evt.title}`);
+                                                }
+
+                                                // Remove from display immediately
+                                                setUpcomingEvents(upcomingEvents.filter(e => e.id !== evt.id));
+                                            }}
+                                        >
+                                            <Trash2 size={16} />
+                                        </Button>
+                                        <Button variant="secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={() => setSelectedEvent(evt)}>
+                                            Voir
+                                        </Button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -404,6 +522,24 @@ const Dashboard = () => {
                                             day: 'numeric',
                                             month: 'short'
                                         });
+
+                                        // Calculate Days Difference for Color Coding
+                                        const now = new Date();
+                                        now.setHours(0, 0, 0, 0);
+                                        const target = new Date(care.date);
+                                        target.setHours(0, 0, 0, 0);
+                                        const diffTime = target - now;
+                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                                        // Determine Color
+                                        let statusColor = 'var(--color-text-main)'; // Default (11-21 days)
+                                        if (diffDays < 0) {
+                                            statusColor = '#ef4444'; // Red (Overdue)
+                                        } else if (diffDays <= 15) {
+                                            statusColor = '#f97316'; // Orange (Upcoming <= 15 days)
+                                        } else if (diffDays > 21) {
+                                            statusColor = '#22c55e'; // Green (> 3 weeks)
+                                        }
 
                                         // Get type icon/emoji based on care.type and care.name
                                         const getIcon = () => {
@@ -441,10 +577,10 @@ const Dashboard = () => {
                                                 title={care.horseId ? "Voir la fiche du cheval" : ""}
                                             >
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                                    <span style={{ fontSize: '1.2rem' }}>{icon}</span>
-                                                    <div style={{ fontWeight: '600' }}>{care.horse}</div>
+                                                    <span style={{ fontSize: '1.2rem', filter: diffDays < 0 ? 'grayscale(0)' : 'none' }}>{icon}</span>
+                                                    <div style={{ fontWeight: '600', color: statusColor }}>{care.horse}</div>
                                                 </div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginLeft: '1.7rem' }}>
+                                                <div style={{ fontSize: '0.85rem', color: statusColor, marginLeft: '1.7rem', opacity: 0.9 }}>
                                                     {care.name} • {formattedDate}
                                                 </div>
                                             </div>
@@ -511,12 +647,15 @@ const Dashboard = () => {
             {selectedEvent && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.2)', zIndex: 9999, // Fond plus léger
+                    background: 'transparent', zIndex: 9999,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backdropFilter: 'blur(3px)'
+                    pointerEvents: 'none' // Click-through background
                 }} onClick={() => setSelectedEvent(null)}>
-                    <Card style={{ width: '90%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
-                        <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{selectedEvent.title}</h3>
+                    <Card style={{ width: '90%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', pointerEvents: 'auto' }} onClick={e => e.stopPropagation()}>
+                        <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            {selectedEvent.isAI && <Sparkles size={24} color="#8b5cf6" fill="#8b5cf6" style={{ opacity: 0.8 }} />}
+                            {selectedEvent.title}
+                        </h3>
                         <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <Calendar size={16} />
                             {selectedEvent.date.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -526,7 +665,22 @@ const Dashboard = () => {
                             <div style={{ fontSize: '1.1rem', fontWeight: 500 }}>{selectedEvent.details}</div>
                         </div>
 
-                        {selectedEvent.description && (
+                        {selectedEvent.phases && selectedEvent.phases.length > 0 ? (
+                            <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {selectedEvent.phases.map((phase, idx) => (
+                                    <div key={idx} style={{ background: 'rgba(0,0,0,0.02)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                                        <div style={{ fontWeight: '600', color: 'var(--color-primary)', marginBottom: '0.25rem', fontSize: '0.95rem' }}>
+                                            {phase.name} <span style={{ opacity: 0.7, fontWeight: 400 }}>• {phase.duration}</span>
+                                        </div>
+                                        <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--color-text-main)', fontSize: '0.9rem' }}>
+                                            {phase.exercises.map((exo, i) => (
+                                                <li key={i} style={{ marginBottom: '0.25rem' }}>{exo}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : selectedEvent.description && (
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>Description / Exercices</div>
                                 <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{selectedEvent.description}</div>

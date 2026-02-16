@@ -2,89 +2,266 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import { FileText, Download, Plus, Filter, Search, ArrowLeft } from 'lucide-react';
+import { FileText, Download, Filter, Search, Stethoscope, Activity, ClipboardList, AlertCircle } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { useNavigate } from 'react-router-dom';
 
 const LegalRegister = () => {
     const { t } = useTranslation();
-    const navigate = useNavigate();
-    const [movements, setMovements] = useState([]);
-    const [filterType, setFilterType] = useState('ALL'); // ALL, ENTRÉE, SORTIE, NAISSANCE, DÉCÈS
+    const [activeTab, setActiveTab] = useState('movements'); // movements, sanitary, breeding
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Data States
+    const [movements, setMovements] = useState([]);
+    const [sanitaryMain, setSanitaryMain] = useState([]);
+    const [breedingEvents, setBreedingEvents] = useState([]);
+
+    // Filters
+    const [movFilter, setMovFilter] = useState('ALL');
+
     useEffect(() => {
-        const saved = localStorage.getItem('appHorse_register_movements');
-        if (saved) {
-            setMovements(JSON.parse(saved));
+        // Load Movements
+        const savedMov = localStorage.getItem('appHorse_register_movements');
+        if (savedMov) setMovements(JSON.parse(savedMov));
+
+        // Load Sanitary (Care Items)
+        const savedCare = localStorage.getItem('appHorse_careItems_v3');
+        if (savedCare) {
+            // Sort by date desc
+            const careList = JSON.parse(savedCare).sort((a, b) => new Date(b.date) - new Date(a.date));
+            setSanitaryMain(careList);
         }
+
+        // Load Breeding (Aggregate from visible horses + maybe orphaned if we could find them)
+        // Currently limiting to visible horses for stability
+        const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+        const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+        const allHorses = [...savedHorses, ...savedMares];
+
+        let allBreeding = [];
+        allHorses.forEach(h => {
+            const bEvents = localStorage.getItem(`appHorse_breeding_events_${h.id}`);
+            if (bEvents) {
+                const events = JSON.parse(bEvents).map(e => ({ ...e, horseName: h.name }));
+                allBreeding = [...allBreeding, ...events];
+            }
+        });
+        allBreeding.sort((a, b) => new Date(b.date) - new Date(a.date));
+        setBreedingEvents(allBreeding);
+
     }, []);
 
-    const filteredMovements = movements.filter(m => {
-        const matchesType = filterType === 'ALL' || m.type === filterType;
-        const matchesSearch = m.horseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (m.reason && m.reason.toLowerCase().includes(searchTerm.toLowerCase()));
-        return matchesType && matchesSearch;
-    }).sort((a, b) => new Date(b.date) - new Date(a.date));
-
+    // --- PDF EXPORT ---
     const exportPDF = () => {
         const doc = new jsPDF();
         doc.setFontSize(18);
-        doc.text("Registre d'Élevage - Mouvements", 14, 22);
+
+        let title = "Registre Légal";
+        if (activeTab === 'movements') title += " - Mouvements (Traçabilité)";
+        else if (activeTab === 'sanitary') title += " - Sanitaire";
+        else if (activeTab === 'breeding') title += " - Reproduction";
+
+        doc.text(title, 14, 22);
         doc.setFontSize(11);
         doc.text(`Édité le ${new Date().toLocaleDateString()}`, 14, 30);
 
-        const tableColumn = ["Date", "Type", "Cheval", "Raison", "Lieu / Détails"];
-        const tableRows = filteredMovements.map(m => [
-            new Date(m.date).toLocaleDateString(),
-            m.type,
-            m.horseName,
-            m.reason,
-            m.origin || '-'
-        ]);
+        if (activeTab === 'movements') {
+            const tableColumn = ["Date", "Type", "Cheval", "Raison", "Lieu / Origine"];
+            const tableRows = movements.map(m => [
+                new Date(m.date).toLocaleDateString(),
+                m.type,
+                m.horseName,
+                m.reason,
+                m.origin || '-'
+            ]);
+            doc.autoTable({ startY: 40, head: [tableColumn], body: tableRows });
+        } else if (activeTab === 'sanitary') {
+            const tableColumn = ["Date", "Cheval", "Acte", "Intervenant", "Lot / Délai"];
+            const tableRows = sanitaryMain.map(s => [
+                new Date(s.date).toLocaleDateString(),
+                s.horse || 'Inconnu',
+                `${s.name} (${s.type})`,
+                s.practitioner || '-',
+                `${s.batchNumber || '-'} / ${s.withdrawal || '-'}`
+            ]);
+            doc.autoTable({ startY: 40, head: [tableColumn], body: tableRows });
+        } else if (activeTab === 'breeding') {
+            const tableColumn = ["Date", "Jument", "Type", "Détails"];
+            const tableRows = breedingEvents.map(b => [
+                new Date(b.date).toLocaleDateString(),
+                b.horseName,
+                b.type,
+                b.note || '-'
+            ]);
+            doc.autoTable({ startY: 40, head: [tableColumn], body: tableRows });
+        }
 
-        doc.autoTable({
-            startY: 40,
-            head: [tableColumn],
-            body: tableRows,
-        });
+        doc.save(`registre_${activeTab}.pdf`);
+    };
 
-        doc.save("registre_elevage.pdf");
+    // --- RENDER HELPERS ---
+    const renderMovements = () => {
+        const filtered = movements.filter(m =>
+            (movFilter === 'ALL' || m.type === movFilter) &&
+            (m.horseName?.toLowerCase().includes(searchTerm.toLowerCase()) || m.reason?.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+
+        return (
+            <div style={{ overflowX: 'auto' }}>
+                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
+                    <select
+                        value={movFilter}
+                        onChange={e => setMovFilter(e.target.value)}
+                        style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                    >
+                        <option value="ALL">Tous les mouvements</option>
+                        <option value="ENTRÉE">Entrées</option>
+                        <option value="SORTIE">Sorties</option>
+                        <option value="NAISSANCE">Naissances</option>
+                        <option value="DÉCÈS">Décès</option>
+                    </select>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px', fontSize: '0.9rem' }}>
+                    <thead style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+                        <tr>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Date</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Type</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Cheval</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Raison</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Lieu / Origine</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filtered.length > 0 ? filtered.map((m, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                <td style={{ padding: '1rem' }}>{new Date(m.date).toLocaleDateString()}</td>
+                                <td style={{ padding: '1rem' }}>
+                                    <span style={{
+                                        padding: '4px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
+                                        background: m.type === 'ENTRÉE' ? '#dcfce7' : (m.type === 'SORTIE' ? '#fee2e2' : '#f3f4f6'),
+                                        color: m.type === 'ENTRÉE' ? '#166534' : (m.type === 'SORTIE' ? '#991b1b' : '#374151')
+                                    }}>
+                                        {m.type}
+                                    </span>
+                                </td>
+                                <td style={{ padding: '1rem', fontWeight: 600 }}>{m.horseName}</td>
+                                <td style={{ padding: '1rem', color: '#4b5563' }}>{m.reason}</td>
+                                <td style={{ padding: '1rem', color: '#6b7280' }}>{m.origin || '-'}</td>
+                            </tr>
+                        )) : (
+                            <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>Aucun mouvement.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
+    const renderSanitary = () => {
+        const filtered = sanitaryMain.filter(item =>
+            item.horse?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        return (
+            <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px', fontSize: '0.9rem' }}>
+                    <thead style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+                        <tr>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Date</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Cheval</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Acte / Produit</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Intervenant</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Lot / Délai</th>
+                            <th style={{ padding: '1rem', textAlign: 'center' }}>Ord.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filtered.length > 0 ? filtered.map((s, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                <td style={{ padding: '1rem' }}>{new Date(s.date).toLocaleDateString()}</td>
+                                <td style={{ padding: '1rem', fontWeight: 600 }}>{s.horse}</td>
+                                <td style={{ padding: '1rem' }}>
+                                    <div style={{ fontWeight: 500 }}>{s.name}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{s.type}</div>
+                                </td>
+                                <td style={{ padding: '1rem' }}>{s.practitioner || '-'}</td>
+                                <td style={{ padding: '1rem', color: '#6b7280' }}>
+                                    {s.batchNumber ? <div>Lot: {s.batchNumber}</div> : null}
+                                    {s.withdrawal ? <div>Délai: {s.withdrawal}</div> : null}
+                                    {!s.batchNumber && !s.withdrawal && '-'}
+                                </td>
+                                <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                    {/* Placeholder for Prescription Link */}
+                                    {s.hasPrescription ? <FileText size={16} color="#2563eb" /> : '-'}
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>Aucun acte sanitaire.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
+    const renderBreeding = () => {
+        const filtered = breedingEvents.filter(b =>
+            b.horseName?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        return (
+            <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px', fontSize: '0.9rem' }}>
+                    <thead style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+                        <tr>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Date</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Jument</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Type</th>
+                            <th style={{ padding: '1rem', textAlign: 'left' }}>Détails</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filtered.length > 0 ? filtered.map((b, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                <td style={{ padding: '1rem' }}>{new Date(b.date).toLocaleDateString()}</td>
+                                <td style={{ padding: '1rem', fontWeight: 600 }}>{b.horseName}</td>
+                                <td style={{ padding: '1rem' }}>
+                                    <span style={{
+                                        padding: '4px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
+                                        background: b.type === 'SAILLIE' ? '#fce7f3' : (b.type === 'ECHO' ? '#e0f2fe' : '#f3f4f6'),
+                                        color: b.type === 'SAILLIE' ? '#be185d' : (b.type === 'ECHO' ? '#0369a1' : '#374151')
+                                    }}>
+                                        {b.type}
+                                    </span>
+                                </td>
+                                <td style={{ padding: '1rem', color: '#4b5563' }}>{b.note || '-'}</td>
+                            </tr>
+                        )) : (
+                            <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>Aucun événement de reproduction.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        );
     };
 
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '4rem' }}>
             <div className="responsive-row" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
                 <div style={{ padding: '12px', background: '#e0e7ff', borderRadius: '12px', color: '#4338ca' }}>
-                    <FileText size={32} />
+                    <ClipboardList size={32} />
                 </div>
                 <div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: '#312e81' }}>Registre Légal</h2>
-                    <p style={{ color: '#6b7280' }}>Suivi des mouvements et registre d'élevage obligatoire.</p>
+                    <p style={{ color: '#6b7280' }}>Mouvements, Sanitaire et Reproduction (Obligations IFCE).</p>
                 </div>
             </div>
 
-            {/* Responsive Styles */}
-            <style>{`
-                @media (max-width: 768px) {
-                    .desktop-table { display: none !important; }
-                    .mobile-cards { display: flex !important; flexDirection: column; gap: 1rem; }
-                    .search-container { min-width: 100% !important; flex-direction: column; }
-                    .search-input-wrapper { width: 100%; }
-                    .filter-select { width: 100%; }
-                }
-                @media (min-width: 769px) {
-                    .desktop-table { display: block !important; }
-                    .mobile-cards { display: none !important; }
-                    .search-container { min-width: 300px; }
-                }
-            `}</style>
-
             <Card className="mb-6">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div className="search-container" style={{ display: 'flex', gap: '1rem', flex: 1 }}>
-                        <div className="search-input-wrapper" style={{ position: 'relative', flex: 1 }}>
+                    <div style={{ display: 'flex', gap: '1rem', flex: 1 }}>
+                        <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
                             <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
                             <input
                                 placeholder="Rechercher..."
@@ -96,109 +273,56 @@ const LegalRegister = () => {
                                 }}
                             />
                         </div>
-                        <select
-                            className="filter-select"
-                            value={filterType}
-                            onChange={e => setFilterType(e.target.value)}
-                            style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid #ddd' }}
-                        >
-                            <option value="ALL">Tout</option>
-                            <option value="ENTRÉE">Entrées</option>
-                            <option value="SORTIE">Sorties</option>
-                            <option value="NAISSANCE">Naissances</option>
-                            <option value="DÉCÈS">Décès</option>
-                        </select>
                     </div>
-
                     <Button onClick={exportPDF} variant="secondary" style={{ width: '100%', maxWidth: '200px' }}>
                         <Download size={18} style={{ marginRight: '8px' }} />
-                        PDF
+                        Exporter PDF
                     </Button>
                 </div>
-            </Card>
 
-            {/* Desktop Table View */}
-            <Card style={{ padding: 0, overflow: 'hidden' }} className="desktop-table">
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-                        <thead style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                            <tr>
-                                <th style={{ padding: '1rem', textAlign: 'left', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>Date</th>
-                                <th style={{ padding: '1rem', textAlign: 'left', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>Type</th>
-                                <th style={{ padding: '1rem', textAlign: 'left', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>Cheval</th>
-                                <th style={{ padding: '1rem', textAlign: 'left', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>Raison</th>
-                                <th style={{ padding: '1rem', textAlign: 'left', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>Lieu / Origine</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredMovements.length > 0 ? (
-                                filteredMovements.map((move, idx) => (
-                                    <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                        <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
-                                            {new Date(move.date).toLocaleDateString()}
-                                        </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <span style={{
-                                                padding: '4px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                                                background: move.type === 'ENTRÉE' ? '#dcfce7' : (move.type === 'SORTIE' ? '#fee2e2' : '#f3f4f6'),
-                                                color: move.type === 'ENTRÉE' ? '#166534' : (move.type === 'SORTIE' ? '#991b1b' : '#374151')
-                                            }}>
-                                                {move.type}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '1rem', fontWeight: 600 }}>{move.horseName}</td>
-                                        <td style={{ padding: '1rem', color: '#4b5563' }}>{move.reason}</td>
-                                        <td style={{ padding: '1rem', color: '#6b7280', fontSize: '0.9rem' }}>{move.origin || '-'}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af', fontStyle: 'italic' }}>
-                                        Aucun mouvement enregistré.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                {/* TABS */}
+                <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #eee', marginTop: '1.5rem' }}>
+                    <button
+                        onClick={() => setActiveTab('movements')}
+                        style={{
+                            padding: '0.8rem 1rem', background: 'none', border: 'none',
+                            borderBottom: activeTab === 'movements' ? '2px solid #4f46e5' : '2px solid transparent',
+                            color: activeTab === 'movements' ? '#4f46e5' : '#6b7280',
+                            fontWeight: 600, cursor: 'pointer'
+                        }}
+                    >
+                        Mouvements
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('sanitary')}
+                        style={{
+                            padding: '0.8rem 1rem', background: 'none', border: 'none',
+                            borderBottom: activeTab === 'sanitary' ? '2px solid #4f46e5' : '2px solid transparent',
+                            color: activeTab === 'sanitary' ? '#4f46e5' : '#6b7280',
+                            fontWeight: 600, cursor: 'pointer'
+                        }}
+                    >
+                        Sanitaire
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('breeding')}
+                        style={{
+                            padding: '0.8rem 1rem', background: 'none', border: 'none',
+                            borderBottom: activeTab === 'breeding' ? '2px solid #4f46e5' : '2px solid transparent',
+                            color: activeTab === 'breeding' ? '#4f46e5' : '#6b7280',
+                            fontWeight: 600, cursor: 'pointer'
+                        }}
+                    >
+                        Reproduction
+                    </button>
                 </div>
             </Card>
 
-            {/* Mobile Card View */}
-            <div className="mobile-cards">
-                {filteredMovements.length > 0 ? (
-                    filteredMovements.map((move, idx) => (
-                        <Card key={idx} style={{ padding: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                <div>
-                                    <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>{move.horseName}</h4>
-                                    <div style={{ color: '#6b7280', fontSize: '0.85rem' }}>{new Date(move.date).toLocaleDateString()}</div>
-                                </div>
-                                <span style={{
-                                    padding: '4px 8px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600,
-                                    background: move.type === 'ENTRÉE' ? '#dcfce7' : (move.type === 'SORTIE' ? '#fee2e2' : '#f3f4f6'),
-                                    color: move.type === 'ENTRÉE' ? '#166534' : (move.type === 'SORTIE' ? '#991b1b' : '#374151')
-                                }}>
-                                    {move.type}
-                                </span>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem', fontSize: '0.9rem' }}>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <span style={{ fontWeight: 600, color: '#374151' }}>Raison:</span>
-                                    <span style={{ color: '#4b5563' }}>{move.reason}</span>
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <span style={{ fontWeight: 600, color: '#374151' }}>{move.type === 'ENTRÉE' ? 'Provenance:' : 'Destination:'}</span>
-                                    <span style={{ color: '#4b5563' }}>{move.origin || '-'}</span>
-                                </div>
-                            </div>
-                        </Card>
-                    ))
-                ) : (
-                    <div style={{ padding: '2rem', textAlign: 'center', color: '#9ca3af', fontStyle: 'italic', background: '#f9fafb', borderRadius: '8px' }}>
-                        Aucun mouvement enregistré.
-                    </div>
-                )}
-            </div>
+            <Card style={{ padding: 0, overflow: 'hidden' }}>
+                {activeTab === 'movements' && renderMovements()}
+                {activeTab === 'sanitary' && renderSanitary()}
+                {activeTab === 'breeding' && renderBreeding()}
+            </Card>
         </div>
     );
 };

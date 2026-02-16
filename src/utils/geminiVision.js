@@ -68,6 +68,7 @@ Tu dois répondre UNIQUEMENT au format JSON strict suivant (sans texte avant ni 
 
 {
   "is_prescription": true,
+  "horse_name": "Nom du cheval si présent (ex: Spirit)",
   "medications": [
     {
       "name": "Nom du médicament (ex: Équipalazone)",
@@ -135,7 +136,8 @@ Assure-toi que le JSON est valide. Si ce n'est pas une ordonnance ou si aucun m�
             // Nouveau format Vet Guard
             return parsedData.medications.map(med => ({
                 ...med,
-                summary: parsedData.analysis_summary
+                summary: parsedData.analysis_summary,
+                detectedHorse: parsedData.horse_name
             }));
         } else if (Array.isArray(parsedData)) {
             // Ancien format (fallback)

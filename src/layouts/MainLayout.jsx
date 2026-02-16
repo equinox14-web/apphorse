@@ -12,6 +12,8 @@ import AdBanner from '../components/features/AdBanner';
 import Button from '../components/common/Button';
 
 import SEO from '../components/common/SEO';
+import DemoModeWarning from '../components/features/DemoModeWarning';
+import TrialModeWarning from '../components/features/TrialModeWarning';
 
 const SidebarItem = ({ to, icon: Icon, label }) => (
     <NavLink
@@ -253,7 +255,7 @@ const MainLayout = () => {
                         marginBottom: '2rem',
                         padding: '1rem 0'
                     }}>
-                        <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             {/* Hamburger Menu Button (Mobile Only via CSS) */}
                             <button
                                 className="btn-secondary"
@@ -309,7 +311,7 @@ const MainLayout = () => {
                 )}
 
                 {/* Page Content */}
-                <main className="animate-fade-in" style={{ paddingBottom: '2rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <main style={{ paddingBottom: '2rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {showAds && <AdBanner seed={1} />}
                     <div style={{ flex: 1 }}>
                         <Outlet />
@@ -376,110 +378,10 @@ const MainLayout = () => {
             }
 
             {/* DEMO MODE BANNER & LOGIC */}
-            {localStorage.getItem('app_demo_mode') === 'true' && (() => {
-                const expiresAt = parseInt(localStorage.getItem('app_demo_expires') || '0');
-                const [timeLeft, setTimeLeft] = useState(Math.max(0, Math.floor((expiresAt - Date.now()) / 60000))); // Minutes
-
-                useEffect(() => {
-                    const timer = setInterval(() => {
-                        const remaining = expiresAt - Date.now();
-                        if (remaining <= 0) {
-                            // EXPIRED
-                            clearInterval(timer);
-                            localStorage.clear();
-                            alert(t('demo.expired'));
-                            window.location.href = '/signup';
-                        } else {
-                            setTimeLeft(Math.floor(remaining / 60000));
-                        }
-                    }, 1000 * 60); // Check every minute (or refresh on mount)
-                    return () => clearInterval(timer);
-                }, []);
-
-                const days = Math.floor(timeLeft / 1440);
-                const hours = Math.floor((timeLeft % 1440) / 60);
-                const minutes = timeLeft % 60;
-
-                // Progress base on 7 days (10080 minutes)
-                const totalMinutes = 7 * 24 * 60;
-                const progress = Math.min(100, (timeLeft / totalMinutes) * 100);
-
-                return (
-                    <div style={{
-                        position: 'fixed',
-                        top: '0',
-                        left: '0',
-                        right: '0',
-                        height: '6px',
-                        background: '#1f2937',
-                        zIndex: 99999
-                    }}>
-                        <div style={{
-                            height: '100%',
-                            background: '#fbbf24',
-                            width: `${progress}%`,
-                            transition: 'width 1s linear'
-                        }} />
-                        <div style={{
-                            position: 'absolute',
-                            top: '10px',
-                            right: '20px',
-                            background: '#fbbf24',
-                            color: '#1f2937',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '20px',
-                            fontWeight: 'bold',
-                            fontSize: '0.85rem',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                        }}>
-                            {t('demo.bar_text', { days, hours, minutes })}
-                        </div>
-                    </div>
-                );
-            })()}
+            <DemoModeWarning />
 
             {/* PRO TRIAL BANNER */}
-            {(() => {
-                const userPlans = JSON.parse(localStorage.getItem('subscriptionPlan') || '[]');
-                if (userPlans.includes('pro_trial')) {
-                    const startStr = localStorage.getItem('trialStartDate');
-                    if (startStr) {
-                        const start = parseInt(startStr);
-                        const now = Date.now();
-                        const daysPassed = (now - start) / (1000 * 60 * 60 * 24);
-                        const daysLeft = Math.max(0, Math.ceil(30 - daysPassed));
-
-                        return (
-                            <div style={{
-                                position: 'fixed',
-                                bottom: '1rem',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                backgroundColor: '#f97316',
-                                color: 'white',
-                                padding: '0.6rem 1.2rem',
-                                borderRadius: '999px',
-                                boxShadow: '0 4px 12px rgba(249, 115, 22, 0.4)',
-                                zIndex: 9990,
-                                fontSize: '0.9rem',
-                                fontWeight: 600,
-                                display: 'flex', alignItems: 'center', gap: '0.5rem'
-                            }}>
-                                <Trophy size={16} />
-                                <span>{t('trial.text', { days: daysLeft })}</span>
-                                <Button
-                                    size="small"
-                                    onClick={() => navigate('/settings')}
-                                    style={{ marginLeft: '0.5rem', background: 'white', color: '#f97316', border: 'none', padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}
-                                >
-                                    {t('trial.subscribe')}
-                                </Button>
-                            </div>
-                        );
-                    }
-                }
-                return null;
-            })()}
+            <TrialModeWarning />
 
             {/* Mobile Bottom Navigation */}
             <nav className="bottom-nav no-print">

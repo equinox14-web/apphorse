@@ -331,6 +331,7 @@ const Horses = () => {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showExtraSlotModal, setShowExtraSlotModal] = useState(false);
     const [upgradeType, setUpgradeType] = useState('passion');
+    const [deleteForm, setDeleteForm] = useState({ type: 'SORTIE', destination: '', reason: '' });
 
     const filteredHorses = horses.filter(h =>
         h.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -343,11 +344,73 @@ const Horses = () => {
 
     const confirmDelete = () => {
         if (horseToDelete) {
+            // LEGAL REGISTER: Record the movement (SORTIE)
+            const movementEntry = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                type: deleteForm.type, // SORTIE or DÉCÈS
+                horseName: horseToDelete.name,
+                reason: deleteForm.reason || (deleteForm.type === 'DÉCÈS' ? 'Décès' : 'Sortie'),
+                origin: deleteForm.destination || '-'
+            };
+
+            const existingMovements = JSON.parse(localStorage.getItem('appHorse_register_movements') || '[]');
+            localStorage.setItem('appHorse_register_movements', JSON.stringify([movementEntry, ...existingMovements]));
+
+            // 1. Update Main List
             const updated = horses.filter(h => h.id !== horseToDelete.id);
             setHorses(updated);
             setHorseToDelete(null);
+            setDeleteForm({ type: 'SORTIE', destination: '', reason: '' });
+
+            // 2. Remove related CARE Items (Health Alerts) - BUT KEEP HISTORY for Legal Register
+            try {
+                const savedCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                const now = new Date();
+                const updatedCare = savedCare.filter(c => {
+                    const isTargetHorse = c.horse === horseToDelete.name || String(c.horseId) === String(horseToDelete.id);
+                    if (!isTargetHorse) return true; // Keep others
+
+                    // If it's the deleted horse, only keep PAST events (History)
+                    // Delete future alerts (Cleanup)
+                    return new Date(c.date) <= now;
+                });
+                localStorage.setItem('appHorse_careItems_v3', JSON.stringify(updatedCare));
+            } catch (e) {
+                console.error("Error cleaning care items", e);
+            }
+
+            // 3. Remove related AI Plans (Future Templates - Safe to delete)
+            try {
+                const savedPlans = JSON.parse(localStorage.getItem('ai_training_plans') || '[]');
+                const updatedPlans = savedPlans.filter(p => p.horseName !== horseToDelete.name);
+                localStorage.setItem('ai_training_plans', JSON.stringify(updatedPlans));
+            } catch (e) {
+                console.error("Error cleaning AI plans", e);
+            }
+
+            // 4. Remove related Calendar Events - BUT KEEP HISTORY
+            try {
+                const savedEvents = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
+                const now = new Date();
+                const updatedEvents = savedEvents.filter(evt => {
+                    const isTargetHorse = String(evt.horseId) === String(horseToDelete.id);
+                    if (!isTargetHorse) return true;
+
+                    // Keep past events for history/register
+                    const evtDate = new Date(evt.dateStr || evt.date);
+                    return evtDate <= now;
+                });
+                localStorage.setItem('appHorse_customEvents', JSON.stringify(updatedEvents));
+            } catch (e) {
+                console.error("Error cleaning calendar events", e);
+            }
+
             // Sync immédiate lors d'une suppression
-            if (currentUser) syncHorsesToFirestore(currentUser.uid, updated);
+            if (currentUser) {
+                syncHorsesToFirestore(currentUser.uid, updated);
+                scheduleSyncToFirestore(currentUser.uid); // Sync secondary data (care, plans, etc.)
+            }
         }
     };
 
@@ -900,23 +963,73 @@ const Horses = () => {
                     background: 'rgba(0,0,0,0)', zIndex: 9999,
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
-                    <Card style={{ width: '90%', maxWidth: '400px', padding: '2rem', textAlign: 'center' }}>
+                    <Card style={{ width: '90%', maxWidth: '500px', padding: '2rem' }}>
                         <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
                             <Trash2 size={32} />
                         </div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem', color: '#1f2937' }}>{t('horses_page.delete_confirm_title')}</h3>
-                        <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
-                            <Trans i18nKey="horses_page.delete_confirm_desc" values={{ name: horseToDelete.name }} components={{ strong: <strong /> }} />
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem', color: '#1f2937', textAlign: 'center' }}>Retrait de {horseToDelete.name}</h3>
+                        <p style={{ color: '#6b7280', marginBottom: '1.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
+                            Pour le registre légal, veuillez indiquer la destination du cheval :
                         </p>
+
+                        {/* Form */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left', marginBottom: '2rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Type de sortie *</label>
+                                <select
+                                    value={deleteForm.type}
+                                    onChange={e => setDeleteForm({ ...deleteForm, type: e.target.value })}
+                                    style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #d1d5db', outline: 'none' }}
+                                    required
+                                >
+                                    <option value="SORTIE">Vente / Transfer / Pension</option>
+                                    <option value="DÉCÈS">Décès</option>
+                                    <option value="CONCOURS">Concours / Déplacement temporaire</option>
+                                </select>
+                            </div>
+
+                            {deleteForm.type !== 'DÉCÈS' && (
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Destination {deleteForm.type === 'CONCOURS' ? '(Optionnel)' : '*'}</label>
+                                    <input
+                                        type="text"
+                                        value={deleteForm.destination}
+                                        onChange={e => setDeleteForm({ ...deleteForm, destination: e.target.value })}
+                                        placeholder="Ex: Écurie Montparnasse, Paris"
+                                        style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #d1d5db', outline: 'none' }}
+                                        required={deleteForm.type !== 'CONCOURS'}
+                                    />
+                                </div>
+                            )}
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Raison / Note (Optionnel)</label>
+                                <input
+                                    type="text"
+                                    value={deleteForm.reason}
+                                    onChange={e => setDeleteForm({ ...deleteForm, reason: e.target.value })}
+                                    placeholder={deleteForm.type === 'DÉCÈS' ? 'Ex: Maladie, accident...' : 'Ex: Fin de pension, vente...'}
+                                    style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #d1d5db', outline: 'none' }}
+                                />
+                            </div>
+                        </div>
+
                         <div style={{ display: 'flex', gap: '1rem' }}>
-                            <Button variant="secondary" onClick={() => setHorseToDelete(null)} style={{ flex: 1 }}>
-                                {t('horses_page.cancel')}
+                            <Button variant="secondary" onClick={() => { setHorseToDelete(null); setDeleteForm({ type: 'SORTIE', destination: '', reason: '' }); }} style={{ flex: 1 }}>
+                                Annuler
                             </Button>
                             <Button
                                 onClick={confirmDelete}
-                                style={{ flex: 1, background: '#ef4444', color: 'white', border: 'none' }}
+                                disabled={deleteForm.type !== 'DÉCÈS' && deleteForm.type !== 'CONCOURS' && !deleteForm.destination}
+                                style={{
+                                    flex: 1,
+                                    background: (!deleteForm.destination && deleteForm.type !== 'DÉCÈS' && deleteForm.type !== 'CONCOURS') ? '#d1d5db' : '#ef4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    cursor: (!deleteForm.destination && deleteForm.type !== 'DÉCÈS' && deleteForm.type !== 'CONCOURS') ? 'not-allowed' : 'pointer'
+                                }}
                             >
-                                {t('horses_page.delete')}
+                                Confirmer le retrait
                             </Button>
                         </div>
                     </Card>

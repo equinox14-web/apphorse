@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     Camera, X, CheckCircle, AlertCircle, Loader,
-    Info, ArrowRight, RotateCw
+    Info, ArrowRight, RotateCw, Cloud
 } from 'lucide-react';
 import Button from '../common/Button';
 import { REFERENCE_OBJECTS, getDefaultReferenceObject } from '../../constants/referenceObjects';
 import { useDeviceOrientation } from '../../hooks/useDeviceOrientation';
 import { performBarymetricMeasurement } from '../../services/barymetricService';
+import { cloudPhotoService } from '../../services';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * CAMÉRA BARYMÉTRIQUE GUIDÉE
@@ -14,6 +16,9 @@ import { performBarymetricMeasurement } from '../../services/barymetricService';
  * avec auto-déclenchement basé sur critères temps réel
  */
 export default function BarometricCamera({ horse, onMeasurementComplete, onClose }) {
+    // Authentication
+    const { currentUser } = useAuth();
+
     // ===== États principaux =====
     const [phase, setPhase] = useState('PREPARATION'); // PREPARATION, PROFILE, REAR, PROCESSING, RESULT
     const [selectedReferenceObject, setSelectedReferenceObject] = useState(getDefaultReferenceObject().id);
@@ -21,6 +26,8 @@ export default function BarometricCamera({ horse, onMeasurementComplete, onClose
     // Images capturées
     const [profileImage, setProfileImage] = useState(null);
     const [rearImage, setRearImage] = useState(null);
+    const [profileImageBlob, setProfileImageBlob] = useState(null);
+    const [rearImageBlob, setRearImageBlob] = useState(null);
 
     // État de la caméra
     const [stream, setStream] = useState(null);
@@ -37,6 +44,7 @@ export default function BarometricCamera({ horse, onMeasurementComplete, onClose
     const [measurementResult, setMeasurementResult] = useState(null);
     const [error, setError] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
 
     // Refs
     const videoRef = useRef(null);
@@ -151,6 +159,7 @@ export default function BarometricCamera({ horse, onMeasurementComplete, onClose
             img.onload = () => {
                 if (phase === 'PROFILE') {
                     setProfileImage(img);
+                    setProfileImageBlob(blob); // Store blob for cloud upload
                     stopCamera();
                     // Passer à la phase DOS
                     setTimeout(() => {
@@ -158,6 +167,7 @@ export default function BarometricCamera({ horse, onMeasurementComplete, onClose
                     }, 500);
                 } else if (phase === 'REAR') {
                     setRearImage(img);
+                    setRearImageBlob(blob); // Store blob for cloud upload
                     stopCamera();
                     // Lancer le traitement
                     processImages(profileImage, img);
@@ -194,25 +204,73 @@ export default function BarometricCamera({ horse, onMeasurementComplete, onClose
         }
     };
 
-    // ===== Validation finale =====
-    const handleValidate = () => {
+    // ===== Validation finale avec upload photos cloud =====
+    const handleValidate = async () => {
         if (!measurementResult) return;
 
-        const weightData = {
-            weight: measurementResult.final_weight_calculation.estimated_weight_kg,
-            confidence: measurementResult.final_weight_calculation.confidence_score,
-            measurements: measurementResult.measurements,
-            method: 'barymetric_ai',
-            timestamp: new Date().toISOString()
-        };
+        // Valider auth
+        if (!currentUser?.uid || !horse?.id) {
+            setError('Authentification manquante. Veuillez vous reconnecter.');
+            return;
+        }
 
-        onMeasurementComplete(weightData);
+        setIsUploadingPhotos(true);
+
+        try {
+            let profilePhotoUrl = null;
+            let rearPhotoUrl = null;
+
+            // Upload des images vers le cloud
+            if (profileImageBlob) {
+                console.log('☁️ Upload photo profil vers cloud...');
+                const profileResult = await cloudPhotoService.uploadPhoto(
+                    currentUser.uid,
+                    horse.id,
+                    new File([profileImageBlob], `profile_${Date.now()}.jpg`, { type: 'image/jpeg' })
+                );
+                profilePhotoUrl = profileResult.url;
+                console.log('✅ Photo profil uploadée:', profilePhotoUrl);
+            }
+
+            if (rearImageBlob) {
+                console.log('☁️ Upload photo arrière vers cloud...');
+                const rearResult = await cloudPhotoService.uploadPhoto(
+                    currentUser.uid,
+                    horse.id,
+                    new File([rearImageBlob], `rear_${Date.now()}.jpg`, { type: 'image/jpeg' })
+                );
+                rearPhotoUrl = rearResult.url;
+                console.log('✅ Photo arrière uploadée:', rearPhotoUrl);
+            }
+
+            // Construire les données de poids avec URLs photos
+            const weightData = {
+                weight: measurementResult.final_weight_calculation.estimated_weight_kg,
+                confidence: measurementResult.final_weight_calculation.confidence_score,
+                measurements: measurementResult.measurements,
+                method: 'barymetric_ai',
+                timestamp: new Date().toISOString(),
+                profilePhotoUrl,     // Nouvelle: URL photo profil
+                rearPhotoUrl,        // Nouvelle: URL photo arrière
+                source: 'BARYMETRIC_AI'
+            };
+
+            console.log('✅ Données de poids avec photos ready:', weightData);
+            onMeasurementComplete(weightData);
+        } catch (err) {
+            console.error('❌ Erreur upload photos:', err);
+            setError('Erreur lors du sauvegarde des photos. Veuillez réessayer.');
+        } finally {
+            setIsUploadingPhotos(false);
+        }
     };
 
     // ===== Recommencer =====
     const handleRetry = () => {
         setProfileImage(null);
         setRearImage(null);
+        setProfileImageBlob(null);
+        setRearImageBlob(null);
         setMeasurementResult(null);
         setError(null);
         setAutoTriggerCountdown(null);
@@ -491,10 +549,24 @@ export default function BarometricCamera({ horse, onMeasurementComplete, onClose
                             </div>
 
                             <div className="flex gap-3">
-                                <Button onClick={handleValidate} className="flex-1 bg-green-600 hover:bg-green-700">
-                                    Enregistrer
+                                <Button 
+                                    onClick={handleValidate} 
+                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                    disabled={isUploadingPhotos || isProcessing}
+                                >
+                                    {isUploadingPhotos ? (
+                                        <>
+                                            <Loader size={18} className="inline mr-2 animate-spin" />
+                                            Sauvegarde en cloud...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Cloud size={18} className="inline mr-2" />
+                                            Enregistrer
+                                        </>
+                                    )}
                                 </Button>
-                                <Button onClick={handleRetry} variant="secondary" className="flex-1">
+                                <Button onClick={handleRetry} variant="secondary" className="flex-1" disabled={isUploadingPhotos}>
                                     Recommencer
                                 </Button>
                             </div>

@@ -6,19 +6,21 @@ import autoTable from 'jspdf-autotable';
 import {
     FileText, Trash2, CreditCard, Star, Download, Wallet,
     Check, Crown, Briefcase, User, Bell, Palette, Settings as SettingsIcon,
-    ChevronRight, LogOut, Mail, Smartphone, X
+    ChevronRight, LogOut, Mail, Smartphone, X, Cloud, Info
 } from 'lucide-react';
 
 // Component Imports
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import SEO from '../../components/common/SEO';
+import PhotoMigrationWizard from '../../components/migration/PhotoMigrationWizard';
 
 // Context & Utils Imports
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { getUserPlanIds } from '../../utils/permissions';
 import { redirectToCustomerPortal, startCheckoutSession, changeSubscriptionPlan, connectStripeAccount } from '../../utils/stripePayment';
+import { migrationService } from '../../services/migrationService';
 
 // Firebase Imports
 import { auth, db } from '../../firebase';
@@ -139,6 +141,12 @@ const Settings = () => {
         supportMessages: true
     });
 
+    // Photo Migration State
+    const [horses, setHorses] = useState([]);
+    const [migrationSummary, setMigrationSummary] = useState(null);
+    const [showMigrationWizard, setShowMigrationWizard] = useState(false);
+    const [isLoadingMigration, setIsLoadingMigration] = useState(false);
+
     // Sync Notifications from Profile
     useEffect(() => {
         if (userProfile?.notifications) {
@@ -148,6 +156,47 @@ const Settings = () => {
             });
         }
     }, [userProfile]);
+
+    // Load Horses and Migration Summary
+    useEffect(() => {
+        const loadHorsesAndMigration = async () => {
+            try {
+                // Charger les chevaux depuis localStorage
+                const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+                const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+                const allHorses = [...savedHorses, ...savedMares];
+                setHorses(allHorses);
+
+                // Charger le résumé de migration si user authentifié
+                if (currentUser?.uid && allHorses.length > 0) {
+                    setIsLoadingMigration(true);
+                    const summary = migrationService.getMigrationSummary(
+                        currentUser.uid,
+                        allHorses
+                    );
+                    setMigrationSummary(summary);
+                }
+            } catch (err) {
+                console.error('Erreur chargement chevaux:', err);
+            } finally {
+                setIsLoadingMigration(false);
+            }
+        };
+
+        loadHorsesAndMigration();
+    }, [currentUser?.uid]);
+
+    const handleMigrationComplete = (result) => {
+        console.log('Migration complétée:', result);
+        // Recharger le résumé après migration
+        if (currentUser?.uid && horses.length > 0) {
+            const summary = migrationService.getMigrationSummary(
+                currentUser.uid,
+                horses
+            );
+            setMigrationSummary(summary);
+        }
+    };
 
     const handleToggleNotification = async (key) => {
         if (!currentUser) return;
@@ -382,7 +431,7 @@ const Settings = () => {
             };
 
             // Collect all localStorage items starting with prefixes or specific keys
-            const prefixes = ['appHorse_', 'my_', 'user', 'subscription', 'weather'];
+            const prefixes = ['appHorse_', 'my_', 'user', 'subscription', 'weather', 'weightHistory_'];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (prefixes.some(p => key.startsWith(p)) || key === 'company_details') {
@@ -815,6 +864,60 @@ const Settings = () => {
                             onChange={handleImportData}
                         />
                     </div>
+                </Card>
+
+                {/* 8.5. CARD: MIGRATION PHOTOS CLOUD */}
+                <Card
+                    title={<span className="flex items-center gap-2 dark:text-white"><Cloud size={20} /> Migration Photos Cloud</span>}
+                >
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Transférez vos photos du stockage local vers le cloud Firebase pour y accéder depuis tous vos appareils.
+                    </p>
+                    
+                    {isLoadingMigration ? (
+                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                            ⏳ Analyse en cours...
+                        </div>
+                    ) : migrationSummary && migrationSummary.totalOldPhotos > 0 ? (
+                        <>
+                            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4 mb-4">
+                                <div className="flex items-start gap-3">
+                                    <Info size={20} className="text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <strong className="text-orange-900 dark:text-orange-200">Photos à migrer</strong>
+                                        <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                                            {migrationSummary.totalOldPhotos} photo{migrationSummary.totalOldPhotos > 1 ? 's' : ''} trouvée{migrationSummary.totalOldPhotos > 1 ? 's' : ''} en stockage local
+                                        </p>
+                                        {migrationSummary.horseDetails && migrationSummary.horseDetails.length > 0 && (
+                                            <div className="mt-3 space-y-1 text-sm text-orange-600 dark:text-orange-400">
+                                                {migrationSummary.horseDetails.map((horse) => (
+                                                    <div key={horse.id}>
+                                                        🐴 {horse.name}: {horse.oldPhotosCount} photo{horse.oldPhotosCount > 1 ? 's' : ''}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => setShowMigrationWizard(true)}
+                                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-bold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg flex items-center justify-center gap-2"
+                            >
+                                <Cloud size={18} />
+                                Commencer la migration ({migrationSummary.totalOldPhotos} photos)
+                            </button>
+                        </>
+                    ) : (
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6 text-center">
+                            <div className="text-4xl mb-3">✅</div>
+                            <strong className="text-green-900 dark:text-green-200 text-lg">Toutes vos photos sont déjà dans le cloud!</strong>
+                            <p className="text-sm text-green-700 dark:text-green-300 mt-2">
+                                Vos photos sont accessibles sur tous vos appareils
+                            </p>
+                        </div>
+                    )}
                 </Card>
 
                 {/* 9. CARD: APPARENCE */}
@@ -1461,6 +1564,17 @@ const Settings = () => {
                         </div>
                     </div>,
                     document.body
+                )
+            }
+
+            {/* PHOTO MIGRATION WIZARD MODAL */}
+            {
+                showMigrationWizard && (
+                    <PhotoMigrationWizard
+                        horses={horses}
+                        onComplete={handleMigrationComplete}
+                        onClose={() => setShowMigrationWizard(false)}
+                    />
                 )
             }
         </div >

@@ -14,14 +14,27 @@ export const syncHorsesToFirestore = async (userId, horses) => {
         const batch = writeBatch(db);
         const horsesRef = collection(db, 'users', userId, 'horses');
 
-        // 1. Sauvegarder chaque cheval comme un document
+        // 1. Récupérer tous les IDs existants dans Firestore pour identifier ceux à supprimer
+        const snapshot = await getDocs(horsesRef);
+        const existingIds = snapshot.docs.map(doc => doc.id);
+        const currentIds = horses.map(h => h.id.toString());
+
+        // 2. Supprimer les chevaux qui ne sont plus dans la liste locale
+        existingIds.forEach(id => {
+            if (!currentIds.includes(id)) {
+                const docRef = doc(horsesRef, id);
+                batch.delete(docRef);
+            }
+        });
+
+        // 3. Sauvegarder/Mettre à jour chaque cheval
         horses.forEach(horse => {
             const docRef = doc(horsesRef, horse.id.toString());
             batch.set(docRef, horse);
         });
 
         await batch.commit();
-        console.log('✅ Chevaux sauvegardés sur le Cloud !');
+        console.log('✅ Chevaux sauvegardés (et nettoyés) sur le Cloud !');
     } catch (error) {
         console.error("Erreur sauvegarde chevaux:", error);
     }

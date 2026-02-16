@@ -68,26 +68,26 @@ export const PHYSIOLOGICAL_STATES = {
     GESTATION_LATE: {
         code: 'GESTATION_LATE',
         label: 'Jument Gestante (8-11 mois)',
-        ufcAdjustment: 0.8,
-        madcAdjustment: 120,
+        ufcAdjustment: 1.5,
+        madcAdjustment: 150,
     },
     LACTATION_EARLY: {
         code: 'LACTATION_EARLY',
         label: 'Jument Allaitante (0-3 mois)',
-        ufcAdjustment: 2.5,
-        madcAdjustment: 350,
+        ufcAdjustment: 5.5,
+        madcAdjustment: 450,
     },
     LACTATION_LATE: {
         code: 'LACTATION_LATE',
         label: 'Jument Allaitante (3-6 mois)',
-        ufcAdjustment: 1.5,
-        madcAdjustment: 200,
+        ufcAdjustment: 3.5,
+        madcAdjustment: 300,
     },
     GROWTH_FOAL: {
         code: 'GROWTH_FOAL',
         label: 'Poulain en Croissance',
-        ufcAdjustment: 0.5,
-        madcAdjustment: 150,
+        ufcAdjustment: 2.0,
+        madcAdjustment: 250,
     },
 };
 
@@ -95,48 +95,81 @@ export const PHYSIOLOGICAL_STATES = {
  * Valeurs nutritionnelles de référence pour aliments courants
  */
 export const REFERENCE_FEEDS = [
-    // FOURRAGES
+    // FOURRAGES (Sources: INRA 2011 & Reverdy)
     {
-        id: 'foin-prairie',
+        id: 'foin-prairie-tardif',
         category: 'FOURRAGE',
-        brand: 'Générique',
-        name: 'Foin de Prairie',
-        density: 0.15, // kg/L (très variable selon compression)
-        ufc: 0.50, // UFC/kg MS
-        madc: 30, // g/kg MS
-        matiereSèche: 85, // %
-        cellulose: 30,
-        cendres: 8,
-        calcium: 5, // g/kg
-        phosphore: 2, // g/kg
+        brand: 'INRA',
+        name: 'Foin de Prairie (Tardif)',
+        description: 'Coupe tardive, tigeux, jaune. Idéal entretien/poney.',
+        density: 0.15,
+        ufc: 0.45, // Faible énergie
+        madc: 30,  // Faible protéine
+        matiereSèche: 90,
+        cellulose: 32,
+        cendres: 7,
+        calcium: 4,
+        phosphore: 2,
     },
     {
-        id: 'foin-luzerne',
+        id: 'foin-prairie-precoce',
         category: 'FOURRAGE',
-        brand: 'Générique',
-        name: 'Foin de Luzerne',
+        brand: 'INRA',
+        name: 'Foin de Prairie (Précoce)',
+        description: 'Coupe précoce, feuillu, vert. Riche en énergie/sucres.',
         density: 0.15,
-        ufc: 0.60,
-        madc: 100,
-        matiereSèche: 85,
+        ufc: 0.62, // Haute énergie
+        madc: 55,
+        matiereSèche: 90,
+        cellulose: 26,
+        cendres: 8,
+        calcium: 5,
+        phosphore: 2.5,
+    },
+    {
+        id: 'foin-crau',
+        category: 'FOURRAGE',
+        brand: 'AOP',
+        name: 'Foin de Crau',
+        description: 'Foin de qualité supérieure, équilibré et appétent.',
+        density: 0.16,
+        ufc: 0.68, // Premium
+        madc: 60,
+        matiereSèche: 92,
         cellulose: 28,
-        cendres: 10,
-        calcium: 15,
+        cendres: 9,
+        calcium: 8, // Riche en calcium
         phosphore: 2.5,
     },
     {
         id: 'enrubanne',
         category: 'FOURRAGE',
         brand: 'Générique',
-        name: 'Enrubannage',
-        density: 0.25,
-        ufc: 0.70,
-        madc: 50,
-        matiereSèche: 50,
+        name: 'Enrubanné / Haylage',
+        description: 'Fourrage fermenté, humide. Très riche. Attention PSSM/SME.',
+        density: 0.25, // Plus dense car humide
+        ufc: 0.75, // Très riche (par kg MS)
+        madc: 70,
+        matiereSèche: 65, // ⚠️ CRITIQUE : Contient 35% d'eau
         cellulose: 25,
         cendres: 9,
-        calcium: 4,
-        phosphore: 2,
+        calcium: 5,
+        phosphore: 3,
+    },
+    {
+        id: 'paille',
+        category: 'FOURRAGE',
+        brand: 'Générique',
+        name: 'Paille de Blé',
+        description: 'Lest alimentaire, très pauvre. Pour dilution.',
+        density: 0.10,
+        ufc: 0.25, // Très faible énergie
+        madc: 15,
+        matiereSèche: 88,
+        cellulose: 40, // Très fibreux
+        cendres: 6,
+        calcium: 3,
+        phosphore: 1,
     },
 
     // CÉRÉALES
@@ -186,7 +219,7 @@ export const REFERENCE_FEEDS = [
     // ALIMENTS COMPLETS (Exemples Reverdy)
     {
         id: 'reverdy-adult',
-        category: 'GRANULE',
+        category: 'MELANGE',
         brand: 'Reverdy',
         name: 'Adult',
         density: 0.55,
@@ -200,7 +233,7 @@ export const REFERENCE_FEEDS = [
     },
     {
         id: 'reverdy-energy',
-        category: 'GRANULE',
+        category: 'MELANGE',
         brand: 'Reverdy',
         name: 'Energy Control',
         density: 0.55,
@@ -214,7 +247,7 @@ export const REFERENCE_FEEDS = [
     },
     {
         id: 'reverdy-sport',
-        category: 'GRANULE',
+        category: 'MELANGE',
         brand: 'Reverdy',
         name: 'Chronos Sport',
         density: 0.55,
@@ -234,22 +267,22 @@ export const REFERENCE_FEEDS = [
 
 /**
  * Calcule les besoins énergétiques d'entretien (UFC)
- * Formule INRA: UFC_entretien = 0.033 × PV^0.75
+ * Formule INRA 2011 (Revisée): UFC_entretien = 0.038 × PV^0.75 (au lieu de 0.033)
  * @param {number} weight - Poids du cheval en kg
  * @returns {number} Besoins en UFC
  */
 export function calculateMaintenanceUFC(weight) {
-    return 0.033 * Math.pow(weight, 0.75);
+    return 0.038 * Math.pow(weight, 0.75);
 }
 
 /**
  * Calcule les besoins en protéines d'entretien (MADC)
- * Formule INRA: MADC_entretien = 0.6 × PV (en g/jour)
+ * Formule INRA 2011: MADC_entretien = 2.8 × PV^0.75 (en g/jour)
  * @param {number} weight - Poids du cheval en kg
  * @returns {number} Besoins en MADC (g/jour)
  */
 export function calculateMaintenanceMADC(weight) {
-    return 0.6 * weight;
+    return 2.8 * Math.pow(weight, 0.75);
 }
 
 /**
@@ -319,8 +352,10 @@ export function calculateForageNutrition(kgBrut, forage) {
     const kgMS = kgBrut * (forage.matiereSèche / 100);
 
     return {
-        ufc: Math.round(kgMS * forage.ufc * 100) / 100,
-        madc: Math.round(kgMS * forage.madc),
+        ufc: Math.round(kgMS * (forage.ufc || 0) * 100) / 100,
+        madc: Math.round(kgMS * (forage.madc || 0)),
+        calcium: Math.round(kgMS * (forage.calcium || 0) * 10) / 10,
+        phosphore: Math.round(kgMS * (forage.phosphore || 0) * 10) / 10,
     };
 }
 
@@ -493,6 +528,39 @@ function generateWarnings(weight, needs, forageNutrition, concentrateAmount, caT
 }
 
 /**
+ * Calcule le nombre de repas recommandés selon le volume total de concentrés
+ * Règle INRA : Max 2.5L à 3L par repas (pour un cheval de 500kg)
+ */
+export function calculateMealAdvice(totalLiters, weight = 500) {
+    // Volume max par repas ajusté au poids (env 0.5% à 0.6% du PV en volume, ou 3L pour 500kg)
+    // 3L pour 500kg => 0.6 L / 100kg
+    const maxLitersPerMeal = (weight / 500) * 3.0;
+
+    let recommendedMeals = 2; // Minimum standard
+
+    if (totalLiters > maxLitersPerMeal * 3) {
+        recommendedMeals = 4;
+    } else if (totalLiters > maxLitersPerMeal * 2) {
+        recommendedMeals = 3;
+    } else if (totalLiters > maxLitersPerMeal) {
+        recommendedMeals = 2; // On reste à 2, mais ça remplit bien les repas
+    }
+
+    // Safety check : Si gros volume (> 4L), jamais moins de 3 repas
+    if (totalLiters > 4 && recommendedMeals < 3) recommendedMeals = 3;
+    if (totalLiters > 8 && recommendedMeals < 4) recommendedMeals = 4;
+
+    const litersPerMeal = totalLiters / recommendedMeals;
+
+    return {
+        mealsCount: recommendedMeals,
+        litersPerMeal: Math.round(litersPerMeal * 10) / 10,
+        maxLitersPerMeal: Math.round(maxLitersPerMeal * 10) / 10,
+        reason: totalLiters > 0 ? `Volume total de ${totalLiters}L` : 'Pas de concentrés'
+    };
+}
+
+/**
  * Estime les valeurs UFC à partir de la cellulose et des protéines (pour OCR)
  * Formule simplifiée basée sur les équations INRA
  * @param {number} cellulose - % cellulose brute
@@ -519,21 +587,33 @@ export function estimateNutritionFromAnalysis(cellulose, mat, cendres = 8) {
  * @param {Object} needs - Besoins calculés { ufc, madc }
  * @param {Object} forageData - Données du fourrage { kg, nutrition }
  * @param {Array} ingredients - Liste des ingrédients [{ feed, quantity }]
+ * @param {number} weight - Poids du cheval (défaut 500)
  * @returns {Object} Bilan complet (totaux, balance, pourcentages)
  */
-export function calculateRationStats(needs, forageData, ingredients = []) {
-    // 1. Apports du Fourrage
+export function calculateRationStats(needs, forageData, ingredients = [], weight = 500) {
+    // 1. Apports du Fourrage (Base)
+    // forageData.nutrition est supposé contenir les totaux calculés via calculateForageNutrition
+    // Mais calculateForageNutrition ne renvoie que ufc, madc, calcium, phosphore.
+    // Si le fourrage a d'autres propriétés (zinc, cuivre...), elles ne sont pas dans .nutrition.
+    // On doit donc vérifier forageData.nutrition OU recalculer depuis forageData complet si dispo.
+    // Pour simplifier, on prend ce qui est dans .nutrition et on ajoute 0 pour le reste du fourrage (souvent négligeable ou inconnu pour foin standard sauf analyse)
+
     let totalUFC = forageData.nutrition.ufc || 0;
     let totalMADC = forageData.nutrition.madc || 0;
-    let totalCalcium = (forageData.kg * forageData.nutrition.calcium) || 0; // Attention: forageData.nutrition est souvent le total, pas par kg. Vérifier usage.
-    // Dans generateRation, forageNutrition est le TOTAL pour la quantité.
-    // Donc on suppose ici que forageData.nutrition contient déjà les totaux calculés.
+    let totalCalcium = forageData.nutrition.calcium || 0;
+    let totalPhosphore = forageData.nutrition.phosphore || forageData.nutrition.phosphorus || 0;
 
-    let totalPhosphore = 0; // À récupérer si disponible dans forageNutrition
-    // Note: forageData.nutrition standard contient ufc/madc calculés. Pour Ca/P, il faut souvent recalculer si pas passé.
-
-    // Pour simplifier, on va recalculer les minéraux du fourrage si on a l'info brute
-    // Mais suivons la structure existante. On va sommer ce qu'on a.
+    // Initialisation des autres minéraux (souvent 0 pour fourrage standard sans analyse poussée)
+    // Si on veut être précis, il faudrait que forageData contienne l'objet fourrage source pour relire ses props zinc/cuivre...
+    // Supposons pour l'instant 0.
+    let totalMagnesium = 0;
+    let totalSodium = 0;
+    let totalZinc = 0;
+    let totalCuivre = 0;
+    let totalSelenium = 0;
+    let totalLysine = 0;
+    let totalAmidon = 0;
+    let totalSucre = 0;
 
     // 2. Somme des Ingrédients
     const ingredientsAnalysis = ingredients.map(item => {
@@ -541,27 +621,65 @@ export function calculateRationStats(needs, forageData, ingredients = []) {
         const feed = item.feed;
         if (!feed || qty <= 0) return null;
 
-        // Facteur matière sèche (si feed.ufc est sur MS, sinon sur Brut).
-        // Convention app actuelle : les vals ref sont souvent sur Brut ou gérées.
-        // On simplifie : Qty * ValeurUnitaire
+        // Facteur : Si item.unit est 'L' et feed.density existe, qty est en Litres.
+        // Mais attention, dans NutritionCalculator, 'quantity' est souvent stocké en kg (converti).
+        // On suppose ici que 'item.quantity' est en KG (standard du calculateur).
 
-        const itemUFC = qty * (feed.ufc || 0);
-        const itemMADC = qty * (feed.madc || 0);
-        const itemCa = qty * (feed.calcium || 0);
-        const itemP = qty * (feed.phosphore || 0);
+        // Valeurs nutritionnelles de l'aliment (par kg)
+        const ufc = feed.ufc || 0;
+        const madc = feed.madc || 0;
+        const ca = feed.calcium || 0;
+        const p = feed.phosphore || feed.phosphorus || 0;
+        const mg = feed.magnesium || 0;
+        const na = feed.sodium || 0;
+        const zn = feed.zinc || 0;
+        const cu = feed.cuivre || feed.copper || 0; // Gérer FR/EN
+        const se = feed.selenium || 0;
+        const lys = feed.lysine || 0;
+        const starch = feed.amidon || feed.starch || 0; // %
+        const sugar = feed.sucre || feed.sugar || 0; // %
 
+        // Calculs par ingrédient
+        const itemUFC = qty * ufc;
+        const itemMADC = qty * madc;
+        const itemCa = qty * ca;
+        const itemP = qty * p;
+        const itemMg = qty * mg;
+        const itemNa = qty * na;
+        const itemZn = qty * zn;
+        const itemCu = qty * cu;
+        const itemSe = qty * se;
+        const itemLys = qty * lys;
+
+        // Pour Amidon/Sucre, c'est souvent en % -> convertir en g (qty * % * 10)
+        const itemAmidon = qty * starch * 10;
+        const itemSucre = qty * sugar * 10;
+
+        // Cumul
         totalUFC += itemUFC;
         totalMADC += itemMADC;
         totalCalcium += itemCa;
         totalPhosphore += itemP;
+        totalMagnesium += itemMg;
+        totalSodium += itemNa;
+        totalZinc += itemZn;
+        totalCuivre += itemCu;
+        totalSelenium += itemSe;
+        totalLysine += itemLys;
+        totalAmidon += itemAmidon;
+        totalSucre += itemSucre;
 
         return {
             ...item,
-            nutrition: { ufc: itemUFC, madc: itemMADC, calcium: itemCa, phosphore: itemP }
+            nutrition: {
+                ufc: itemUFC, madc: itemMADC,
+                calcium: itemCa, phosphore: itemP,
+                zinc: itemZn, cuivre: itemCu
+            }
         };
     }).filter(Boolean);
 
-    // 3. Calcul de la balance
+    // 3. Calcul de la balance (Besoins vs Apports)
     const balance = {
         ufc: totalUFC - needs.ufc,
         madc: totalMADC - needs.madc,
@@ -572,16 +690,44 @@ export function calculateRationStats(needs, forageData, ingredients = []) {
         madc: (totalMADC / needs.madc) * 100
     };
 
-    // Minéraux
-    // On ajoute ceux du fourrage s'ils n'étaient pas inclus (dépend de forageData entré)
-    // Supposons que forageData contient tout ce qu'il faut ou qu'on l'a géré.
+    // 4. Ratios
+    // Ca:P (Cible normal ~ 1.5 - 2.0)
+    const ratioCaP = totalPhosphore > 0 ? totalCalcium / totalPhosphore : 0;
+
+    // Zn:Cu (Cible ~ 3:1 à 4:1)
+    const ratioZnCu = totalCuivre > 0 ? totalZinc / totalCuivre : 0;
 
     return {
-        totals: { ufc: totalUFC, madc: totalMADC, calcium: totalCalcium, phosphore: totalPhosphore },
+        totals: {
+            ufc: totalUFC,
+            madc: totalMADC,
+            calcium: totalCalcium,
+            phosphore: totalPhosphore,
+            magnesium: totalMagnesium,
+            sodium: totalSodium,
+            zinc: totalZinc,
+            cuivre: totalCuivre,
+            selenium: totalSelenium,
+            lysine: totalLysine,
+            amidon: totalAmidon,
+            sucre: totalSucre
+        },
+        ratios: {
+            ca_p: ratioCaP,
+            zn_cu: ratioZnCu
+        },
         needs,
         balance,
         percent,
-        ingredients: ingredientsAnalysis
+        ingredients: ingredientsAnalysis,
+        mealAdvice: calculateMealAdvice(
+            ingredientsAnalysis.reduce((sum, item) => {
+                let density = parseFloat(item.feed.density) || 0.65;
+                if (density > 10) density = density / 1000;
+                return sum + (parseFloat(item.quantity) / density);
+            }, 0),
+            weight
+        )
     };
 }
 
@@ -597,5 +743,6 @@ export default {
     calculateConcentrateAmount,
     generateRation,
     estimateNutritionFromAnalysis,
-    calculateRationStats, // Nouvel export
+    calculateRationStats,
+    calculateMealAdvice, // Nouvel export
 };

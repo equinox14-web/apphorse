@@ -107,6 +107,27 @@ AppHorse/
 └── dist/                # Build de production
 ```
 
+## 📚 Documentation
+
+Toute la documentation technique est disponible dans le dossier **[`docs/`](./docs/)** :
+
+- **[INDEX.md](./docs/INDEX.md)** - Index complet de la documentation
+- **[START_HERE.md](./docs/START_HERE.md)** - Point de départ pour les nouveaux développeurs
+- **[QUICK_START_v2.2.md](./docs/QUICK_START_v2.2.md)** - Guide de démarrage rapide
+
+### Documentation par Module
+
+| Module | Documentation |
+|--------|---------------|
+| 🤖 IA Coach | [README_AI_COACH.md](./docs/README_AI_COACH.md) |
+| 🍽️ Nutrition | [NUTRI_PREDICTIVE_ENGINE_V2.1.md](./docs/NUTRI_PREDICTIVE_ENGINE_V2.1.md) |
+| ⚖️ Pesée IA | [WEIGHT_ESTIMATION_MODULE.md](./docs/WEIGHT_ESTIMATION_MODULE.md) |
+| 👁️ Vision IA | [CORTEX_VISION.md](./docs/CORTEX_VISION.md) |
+| 🚀 Déploiement | [DEPLOYMENT.md](./docs/DEPLOYMENT.md) |
+| 📱 PWA | [PWA_README.md](./docs/PWA_README.md) |
+
+**➡️ Voir l'[index complet](./docs/INDEX.md) pour accéder à toute la documentation**
+
 ## 🧪 Modules Principaux
 
 ### 1. Weight Estimation (AI)

@@ -2,9 +2,21 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // Règles par défaut: refuser tout
     match /{allPaths=**} {
-      // Autoriser l'accès uniquement aux utilisateurs authentifiés
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
-  }
-}
+    
+    // Photos et vidéos des utilisateurs - structure: users/{userId}/horses/{horseId}/media/{fileName}
+    match /users/{userId}/horses/{horseId}/media/{allFiles=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Photos de profil des chevaux - structure: users/{userId}/horses/{horseId}/profile/{fileName}
+    match /users/{userId}/horses/{horseId}/profile/{allFiles=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Photos de profil utilisateur - structure: users/{userId}/profile/{fileName}
+    match /users/{userId}/profile/{allFiles=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;

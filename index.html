@@ -33,6 +33,53 @@
     fbq('track', 'PageView');
   </script>
   <!-- End Meta Pixel Code -->
+  <style>
+    /* Splash Screen Styles (Pre-React) */
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; }
+    #root-loading {
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #fdfbf7 0%, #ffffff 100%);
+      font-family: system-ui, -apple-system, sans-serif;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 9999;
+    }
+    .splash-logo {
+      width: 96px;
+      height: 96px;
+      border-radius: 24px;
+      margin-bottom: 32px;
+      box-shadow: 0 20px 40px -10px rgba(124, 58, 237, 0.2);
+      animation: breathe 3s ease-in-out infinite;
+    }
+    .splash-spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(124, 58, 237, 0.1);
+      border-radius: 50%;
+      border-top-color: #8b5cf6;
+      animation: spin 1s linear infinite;
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  </style>
 </head>
 
 <body>
@@ -41,11 +88,17 @@
       src="https://www.facebook.com/tr?id=885941003803054&ev=PageView&noscript=1" /></noscript>
 
   <div id="root">
-    <h1>Equinox - Gestion Écurie & Élevage / Stable Management Software</h1>
-    <p>Application complète pour la gestion de vos écuries, chevaux, et élevages. Suivi sanitaire, reproduction,
-      facturation, et planning.</p>
-    <p>Complete app for managing your stables, horses, and breeding. Health tracking, reproduction, invoicing, and
-      scheduling.</p>
+    <div id="root-loading">
+      <img src="/pwa-icon.png" class="splash-logo" alt="Equinox Logo" />
+      <div class="splash-spinner"></div>
+      
+      <!-- SEO Content (Hidden for users, visible for bots) -->
+      <div class="visually-hidden">
+        <h1>Equinox - Gestion Écurie & Élevage / Stable Management Software</h1>
+        <p>Application complète pour la gestion de vos écuries, chevaux, et élevages. Suivi sanitaire, reproduction, facturation, et planning.</p>
+        <p>Complete app for managing your stables, horses, and breeding. Health tracking, reproduction, invoicing, and scheduling.</p>
+      </div>
+    </div>
   </div>
   <script type="module" src="/src/main.jsx"></script>
 </body>

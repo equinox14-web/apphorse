@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { syncHorsesToFirestore } from '../../services/dataSyncService';
+import { cloudPhotoService } from '../../services';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import { ArrowLeft, Activity, Dna, Calendar, User, FileText, QrCode, Upload, Camera, Edit2, Save, X, ScanLine, Trash2, Utensils, MapPin, Image as ImageIcon, Scale, Plus as PlusIcon, CheckCircle2 } from 'lucide-react';
+import { scheduleSyncToFirestore } from '../../services/firestoreSync';
+import { ArrowLeft, Activity, Dna, Calendar, User, FileText, QrCode, Upload, Camera, Edit2, Save, X, ScanLine, Trash2, Utensils, MapPin, Image as ImageIcon, Scale, Plus as PlusIcon, CheckCircle2, Cloud, Loader } from 'lucide-react';
 import { canEdit, canManageHorses } from '../../utils/permissions';
+import { getCurrentWeight } from '../../utils/weightEstimation';
 
 // Helper to resize images
 const resizeImage = (file, callback) => {
@@ -40,11 +45,24 @@ const resizeImage = (file, callback) => {
 };
 
 const calculateAge = (dateString) => {
-    if (!dateString) return null;
+    if (!dateString || dateString === '-' || dateString === 'Inconnu') return null;
+
+    let birthDate;
+    // Handle YYYY-MM-DD explicitly to avoid UTC/Timezone shift issues
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        const [year, month, day] = dateString.split('-').map(Number);
+        birthDate = new Date(year, month - 1, day);
+    } else {
+        birthDate = new Date(dateString);
+    }
+
+    if (isNaN(birthDate.getTime())) return null; // Invalid Date check
+
     const today = new Date();
-    const birthDate = new Date(dateString);
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
+
+    // Adjust age if birthday hasn't happened yet this year
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
         age--;
     }
@@ -54,6 +72,7 @@ const calculateAge = (dateString) => {
 const HorseProfile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
 
     // In a real app, fetch horse by ID
     // For now, we mock data or retrieve from localStorage
@@ -98,7 +117,10 @@ const HorseProfile = () => {
                 breed: found.breed || 'Cheval de Selle',
                 gender: found.gender || (source === 'breeding' ? 'F' : '?'), // F for Mare
                 color: found.color || '-',
-                age: calculatedAge !== null ? calculatedAge : (found.age || '?')
+                // Prioritize manual age if available. Explicitly check for undefined/null only.
+                // We trust the stored age as the "truth" if it exists, even if it is 0.
+                age: (found.age !== undefined && found.age !== null) ? found.age : (calculatedAge !== null ? calculatedAge : '?'),
+                weight: found.weight || getCurrentWeight(found.id) || '-'
             });
             return;
         }
@@ -123,6 +145,7 @@ const HorseProfile = () => {
 
     const [upcomingEvents, setUpcomingEvents] = useState([]);
     const [pastEvents, setPastEvents] = useState([]);
+    const [historyDateFilter, setHistoryDateFilter] = useState('all'); // 'all', 'week', 'month', 'year'
 
     // Helper functions for AI planning dates
     const getDayOfWeekNumber = (dayName) => {
@@ -181,75 +204,72 @@ const HorseProfile = () => {
                 details: c.type
             }));
 
-        // 3. AI Training Plans
-        let myAiEvents = [];
+        // 3. AI Training Plans - EXCLUS du livret (seulement si validés manuellement dans planning)
+        // Les séances AI Coach ne s'affichent pas ici, uniquement dans le calendrier
+
+
+        // 4. Breeding Events
+        let myBreedingEvents = [];
         try {
-            const savedAIPlans = JSON.parse(localStorage.getItem('ai_training_plans') || '[]');
-            savedAIPlans.forEach((planData, planIndex) => {
-                // Check match by ID or Name
-                const isMatch = (planData.horseId && String(planData.horseId) === String(id)) ||
-                    (horse && planData.horseName === horse.name);
-
-                if (isMatch && planData.plan && planData.plan.weeklySchedule) {
-                    planData.plan.weeklySchedule.forEach((session, sessionIndex) => {
-                        if (session.day && session.sessionName) {
-                            const dayOfWeek = getDayOfWeekNumber(session.day);
-                            const targetDate = getNextDateForDay(now, dayOfWeek);
-
-                            // Only include if date is today or future
-                            if (targetDate >= now) {
-                                myAiEvents.push({
-                                    id: `ai-plan-${planIndex}-${sessionIndex}`,
-                                    title: `🤖 ${session.sessionName}`,
-                                    dateObj: targetDate,
-                                    type: 'training',
-                                    source: 'ai_coach',
-                                    details: `${session.intensity} • ${session.duration}`,
-                                });
-                            }
-                        }
-                    });
-                }
-            });
+            const savedBreeding = JSON.parse(localStorage.getItem(`appHorse_breeding_events_${id}`) || '[]');
+            myBreedingEvents = savedBreeding.map(evt => ({
+                id: `breeding-${evt.id}`,
+                title: `${evt.type}${evt.note ? ' - ' + evt.note : ''}`,
+                dateObj: new Date(evt.date),
+                type: 'breeding',
+                source: 'breeding',
+                details: evt.note,
+                completed: new Date(evt.date) < now
+            }));
         } catch (err) {
-            console.error("Error loading AI plans in profile", err);
+            console.error("Error loading breeding events", err);
         }
 
         const upcomingCare = myCare.filter(c => c.dateObj >= now);
         const historyCare = myCare.filter(c => c.dateObj < now);
 
-        const allUpcoming = [...myEvents.filter(e => e.dateObj >= now), ...upcomingCare, ...myAiEvents]
+        const upcomingBreeding = myBreedingEvents.filter(e => e.dateObj >= now);
+        const historyBreeding = myBreedingEvents.filter(e => e.dateObj < now);
+
+        const allUpcoming = [...myEvents.filter(e => e.dateObj >= now), ...upcomingCare, ...upcomingBreeding]
             .sort((a, b) => a.dateObj - b.dateObj);
 
-        const allHistory = [...myHistoryEvents, ...historyCare]
+        const allHistory = [...myHistoryEvents, ...historyCare, ...historyBreeding]
             .sort((a, b) => b.dateObj - a.dateObj);
 
         setUpcomingEvents(allUpcoming);
         setPastEvents(allHistory);
-    }, [id, horse]);
+    }, [id, horse?.name]);
 
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({});
+    const [uploading, setUploading] = useState(false);
 
     // Sync Edit Form when horse data loads
     useEffect(() => {
         if (horse) {
-            setEditForm(horse);
+            // Only update editForm if it's empty or if we are not currently editing
+            // This prevents overwriting user input if background data refreshes
+            if (!isEditing) {
+                setEditForm(horse);
+            }
         }
-    }, [horse]);
+    }, [horse, isEditing]);
 
-    const handleImageUpdate = (e) => {
+    const handleImageUpdate = async (e) => {
         const file = e.target.files[0];
-        if (file) {
-            // Utilisation de resizeImage pour compresser et redimensionner
-            resizeImage(file, (resizedDataUrl) => {
-                const newImage = resizedDataUrl;
-                // Update Local State
-                const updatedHorse = { ...horse, image: newImage };
+        if (file && currentUser?.uid) {
+            setUploading(true);
+            try {
+                // Upload to cloud and get URL
+                const result = await cloudPhotoService.uploadProfilePhoto(currentUser.uid, id, file);
+                
+                // Update Local State with cloud URL
+                const updatedHorse = { ...horse, image: result.url };
                 setHorse(updatedHorse);
-                setEditForm(prev => ({ ...prev, image: newImage }));
+                setEditForm(prev => ({ ...prev, image: result.url }));
 
-                // Update Local Storage based on source
+                // Update Local Storage with cloud URL
                 if (horse.source === 'breeding') {
                     const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
                     const updatedMares = savedMares.map(m => m.id.toString() === id ? updatedHorse : m);
@@ -261,11 +281,37 @@ const HorseProfile = () => {
                     );
                     localStorage.setItem('my_horses_v4', JSON.stringify(updatedHorses));
                 }
-            });
+
+                // Sync to Firestore
+                await syncHorsesToFirestore();
+                
+                console.log('Profile image uploaded to cloud');
+            } catch (err) {
+                console.error('Error uploading profile image:', err);
+                alert('Erreur lors de l\'upload de l\'image. Veuillez réessayer.');
+            } finally {
+                setUploading(false);
+            }
         }
     };
 
     const handleSave = () => {
+        // Handle weight update specifically to add a history entry if changed
+        if (editForm.weight && editForm.weight !== horse.weight) {
+            const weightVal = parseInt(editForm.weight);
+            if (!isNaN(weightVal)) {
+                const historyKey = `weightHistory_${id}`;
+                const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+                const newEntry = {
+                    id: Date.now().toString(),
+                    date: new Date().toISOString(),
+                    value: weightVal,
+                    source: 'MANUAL_PROFILE'
+                };
+                localStorage.setItem(historyKey, JSON.stringify([newEntry, ...history]));
+            }
+        }
+
         // Auto-Register: Detect Location Change
         if (horse && editForm.location && horse.location !== editForm.location) {
             const newMovement = {
@@ -305,10 +351,18 @@ const HorseProfile = () => {
                 updatedHorses = [...savedHorses, editForm];
             }
             localStorage.setItem('my_horses_v4', JSON.stringify(updatedHorses));
+
+            // Sync immediately to the Horses Collection (Service A) to ensure Horses.jsx sees fresh data
+            if (currentUser?.uid) {
+                syncHorsesToFirestore(currentUser.uid, updatedHorses);
+            }
         }
 
         setIsEditing(false);
-        // Toast/Feedback could go here
+        if (currentUser?.uid) {
+            // Also sync the full backup (Service B)
+            scheduleSyncToFirestore(currentUser.uid);
+        }
     };
 
     const [showScanningCamera, setShowScanningCamera] = useState(false);
@@ -462,12 +516,20 @@ const HorseProfile = () => {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem',
                                 opacity: isHoveringImage ? 1 : 0, transition: 'opacity 0.2s'
                             }}>
-                                <label htmlFor="profile-upload" className="glass-panel" style={{ cursor: 'pointer', padding: '1rem', borderRadius: '50%', background: 'white', color: '#1890ff' }} title="Galerie">
-                                    <Upload size={24} />
-                                </label>
-                                <label htmlFor="profile-cam" className="glass-panel" style={{ cursor: 'pointer', padding: '1rem', borderRadius: '50%', background: 'white', color: '#52c41a' }} title="Caméra">
-                                    <Camera size={24} />
-                                </label>
+                                {uploading ? (
+                                    <div style={{ cursor: 'wait', padding: '1rem', borderRadius: '50%', background: 'white', color: '#1890ff' }}>
+                                        <Loader size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                                    </div>
+                                ) : (
+                                    <>
+                                        <label htmlFor="profile-upload" className="glass-panel" style={{ cursor: 'pointer', padding: '1rem', borderRadius: '50%', background: 'white', color: '#1890ff' }} title="Galerie">
+                                            <Upload size={24} />
+                                        </label>
+                                        <label htmlFor="profile-cam" className="glass-panel" style={{ cursor: 'pointer', padding: '1rem', borderRadius: '50%', background: 'white', color: '#52c41a' }} title="Caméra">
+                                            <Camera size={24} />
+                                        </label>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div style={{ padding: '1.5rem', textAlign: 'center' }}>
@@ -502,7 +564,10 @@ const HorseProfile = () => {
                                 </div>
                             ) : (
                                 <>
-                                    <h3 style={{ fontSize: '2rem', margin: '0 0 0.5rem 0' }}>{horse.name}</h3>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <h3 style={{ fontSize: '2rem', margin: 0 }}>{horse.name}</h3>
+                                        {currentUser?.uid && <Cloud size={20} style={{ color: '#3b82f6' }} title="Sauvegardé en cloud" />}
+                                    </div>
                                     <span style={{
                                         display: 'inline-block',
                                         padding: '0.25rem 0.75rem',
@@ -649,42 +714,78 @@ const HorseProfile = () => {
 
                     {/* History Card */}
                     <Card title="Historique & Journal" icon={FileText}>
-                        {pastEvents.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '300px', overflowY: 'auto' }}>
-                                {pastEvents.map((e, i) => (
-                                    <div key={i} style={{
-                                        display: 'flex', alignItems: 'center', gap: '1rem',
-                                        padding: '0.8rem', background: '#f9fafb', borderRadius: '8px',
-                                        borderLeft: `4px solid ${e.type === 'care' ? '#ccc' : '#e5e7eb'}`,
-                                        opacity: 0.8
-                                    }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
-                                            <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#6b7280' }}>
-                                                {e.dateObj.getDate()}
-                                            </span>
-                                            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#9ca3af' }}>
-                                                {e.dateObj.toLocaleString('default', { month: 'short' })}
-                                            </span>
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                {e.title}
-                                                {e.completed && <CheckCircle2 size={16} color="#10b981" style={{ flexShrink: 0 }} title="Validé" />}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <select
+                                value={historyDateFilter}
+                                onChange={(e) => setHistoryDateFilter(e.target.value)}
+                                style={{
+                                    width: '100%', padding: '0.7rem', borderRadius: '8px',
+                                    border: '1px solid #e2e8f0', fontSize: '0.95rem',
+                                    background: 'white', color: '#1e293b', cursor: 'pointer'
+                                }}
+                            >
+                                <option value="all">Tout l'historique</option>
+                                <option value="week">7 derniers jours</option>
+                                <option value="month">30 derniers jours</option>
+                                <option value="year">Cette année</option>
+                            </select>
+                        </div>
+                        {(() => {
+                            const now = new Date();
+                            now.setHours(23, 59, 59, 999);
+
+                            let filtered = pastEvents;
+
+                            if (historyDateFilter === 'week') {
+                                const lastWeek = new Date(now);
+                                lastWeek.setDate(lastWeek.getDate() - 7);
+                                filtered = pastEvents.filter(e => e.dateObj >= lastWeek);
+                            } else if (historyDateFilter === 'month') {
+                                const lastMonth = new Date(now);
+                                lastMonth.setDate(lastMonth.getDate() - 30);
+                                filtered = pastEvents.filter(e => e.dateObj >= lastMonth);
+                            } else if (historyDateFilter === 'year') {
+                                const startOfYear = new Date(now.getFullYear(), 0, 1);
+                                filtered = pastEvents.filter(e => e.dateObj >= startOfYear);
+                            }
+
+                            return filtered.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '300px', overflowY: 'auto' }}>
+                                    {filtered.map((e, i) => (
+                                        <div key={i} style={{
+                                            display: 'flex', alignItems: 'center', gap: '1rem',
+                                            padding: '0.8rem', background: '#f9fafb', borderRadius: '8px',
+                                            borderLeft: `4px solid ${e.type === 'care' ? '#ccc' : '#e5e7eb'}`,
+                                            opacity: 0.8
+                                        }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
+                                                <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#6b7280' }}>
+                                                    {e.dateObj.getDate()}
+                                                </span>
+                                                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#9ca3af' }}>
+                                                    {e.dateObj.toLocaleString('default', { month: 'short' })}
+                                                </span>
                                             </div>
-                                            <div style={{ fontSize: '0.85rem', color: '#9ca3af', display: 'flex', gap: '10px' }}>
-                                                {e.dateObj.getFullYear() !== new Date().getFullYear() && <span>{e.dateObj.getFullYear()}</span>}
-                                                {e.rider && <span>• {e.rider}</span>}
-                                                {e.details && <span>• {e.details}</span>}
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    {e.title}
+                                                    {e.completed && <CheckCircle2 size={16} color="#10b981" style={{ flexShrink: 0 }} title="Validé" />}
+                                                </div>
+                                                <div style={{ fontSize: '0.85rem', color: '#9ca3af', display: 'flex', gap: '10px' }}>
+                                                    {e.dateObj.getFullYear() !== new Date().getFullYear() && <span>{e.dateObj.getFullYear()}</span>}
+                                                    {e.rider && <span>• {e.rider}</span>}
+                                                    {e.details && <span>• {e.details}</span>}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div style={{ fontStyle: 'italic', color: '#999', textAlign: 'center', padding: '1rem' }}>
-                                Aucun historique disponible.
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            ) : (
+                                <div style={{ fontStyle: 'italic', color: '#999', textAlign: 'center', padding: '1rem' }}>
+                                    Aucun historique pour cette période.
+                                </div>
+                            );
+                        })()}
                     </Card>
 
                     {/* Rationing Card (Protected) */}
@@ -737,9 +838,14 @@ const HorseProfile = () => {
                                         ) : (
                                             <div style={{ fontWeight: 600 }}>
                                                 {(Array.isArray(horse.ration?.[key]) ? horse.ration[key] : (horse.ration?.[key] ? [horse.ration[key]] : []))
-                                                    .map((line, i) => (
-                                                        <div key={i}>{line}</div>
-                                                    ))}
+                                                    .map((line, i) => {
+                                                        // Nettoyage : Retirer "(x3)", "(Dont ..)", etc.
+                                                        const cleaned = String(line)
+                                                            .replace(/\s*\(x\d+\)/gi, '')
+                                                            .replace(/\s*\(Dont.*?\)/gi, '')
+                                                            .replace(/\s*\(soit.*?\)/gi, '');
+                                                        return <div key={i}>{cleaned}</div>;
+                                                    })}
                                                 {(!horse.ration?.[key] || horse.ration[key].length === 0) && '-'}
                                             </div>
                                         )}
@@ -788,9 +894,11 @@ const HorseProfile = () => {
                                     ) : (
                                         <div style={{ fontWeight: 600 }}>
                                             {(Array.isArray(horse.ration?.hay) ? horse.ration.hay : (horse.ration?.hay ? [horse.ration.hay] : []))
-                                                .map((line, i) => (
-                                                    <div key={i}>{line}</div>
-                                                ))}
+                                                .map((line, i) => {
+                                                    // Nettoyage des anciennes parenthèses (ex: "Dont 5.0 kg/repas")
+                                                    const cleaned = String(line).replace(/\s*\(Dont.*?\)/gi, '').replace(/\s*\(soit.*?\)/gi, '');
+                                                    return <div key={i}>{cleaned}</div>;
+                                                })}
                                             {(!horse.ration?.hay || horse.ration.hay.length === 0) && '-'}
                                         </div>
                                     )}
@@ -871,10 +979,10 @@ const HorseProfile = () => {
                             </div>
 
                             <div>
-                                <div style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '0.4rem' }}>Date de Naissance</div>
+                                <div style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '0.4rem' }}>Poids (kg)</div>
                                 {isEditing ? (
                                     <input
-                                        type="date"
+                                        type="number"
                                         style={{
                                             width: '100%', padding: '0.8rem', borderRadius: '12px',
                                             border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)',
@@ -883,20 +991,64 @@ const HorseProfile = () => {
                                         }}
                                         onFocus={(e) => { e.target.style.background = 'white'; e.target.style.borderColor = 'var(--color-primary)'; }}
                                         onBlur={(e) => { e.target.style.background = 'rgba(255,255,255,0.5)'; e.target.style.borderColor = 'rgba(0,0,0,0.1)'; }}
-                                        value={editForm.birthDate || ''}
-                                        onChange={e => {
-                                            const newDate = e.target.value;
-                                            const newAge = calculateAge(newDate); // Recalculer l'age
-                                            setEditForm({
-                                                ...editForm,
-                                                birthDate: newDate,
-                                                age: newAge // Mettre à jour l'age affiché et sauvegardé
-                                            });
-                                        }}
+                                        // Ensure value is numeric. Reject '-' placeholder.
+                                        value={(editForm.weight && editForm.weight !== '-' && !isNaN(editForm.weight)) ? editForm.weight : ''}
+                                        onChange={e => setEditForm({ ...editForm, weight: e.target.value })}
+                                        placeholder="ex: 500"
                                     />
                                 ) : (
+                                    <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{horse.weight} kg</div>
+                                )}
+                            </div>
+
+                            <div>
+                                <div style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '0.4rem' }}>Date de Naissance & Âge</div>
+                                {isEditing ? (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <input
+                                            type="date"
+                                            style={{
+                                                flex: 2, padding: '0.8rem', borderRadius: '12px',
+                                                border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)',
+                                                backdropFilter: 'blur(5px)', fontSize: '1rem', outline: 'none',
+                                                fontFamily: 'var(--font-main)'
+                                            }}
+                                            onFocus={(e) => { e.target.style.background = 'white'; e.target.style.borderColor = 'var(--color-primary)'; }}
+                                            onBlur={(e) => { e.target.style.background = 'rgba(255,255,255,0.5)'; e.target.style.borderColor = 'rgba(0,0,0,0.1)'; }}
+                                            // Ensure value is a valid YYYY-MM-DD string or empty. Avoid placeholder '-' or 'Inconnu'
+                                            value={(editForm.birthDate && editForm.birthDate !== '-' && editForm.birthDate !== 'Inconnu') ? editForm.birthDate : ''}
+                                            onChange={e => {
+                                                const newDate = e.target.value;
+                                                const newAge = calculateAge(newDate);
+                                                // Force automatic age update when date changes.
+                                                // If date is invalid (newAge is null), we keep the old age or clear it?
+                                                // User wants "auto fill", so if date is valid, fill it!
+                                                setEditForm(prev => ({
+                                                    ...prev,
+                                                    birthDate: newDate,
+                                                    age: newAge !== null ? newAge : prev.age // Keep manual age only if date is invalid/incomplete
+                                                }));
+                                            }}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Âge"
+                                            style={{
+                                                flex: 1, padding: '0.8rem', borderRadius: '12px',
+                                                border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)',
+                                                backdropFilter: 'blur(5px)', fontSize: '1rem', outline: 'none',
+                                                fontFamily: 'var(--font-main)'
+                                            }}
+                                            onFocus={(e) => { e.target.style.background = 'white'; e.target.style.borderColor = 'var(--color-primary)'; }}
+                                            onBlur={(e) => { e.target.style.background = 'rgba(255,255,255,0.5)'; e.target.style.borderColor = 'rgba(0,0,0,0.1)'; }}
+                                            // Ensure value is numeric or empty. Avoid placeholder '?'
+                                            value={(editForm.age !== undefined && editForm.age !== null && editForm.age !== '?' && !isNaN(editForm.age)) ? editForm.age : ''}
+                                            onChange={e => setEditForm({ ...editForm, age: e.target.value })}
+                                        />
+                                    </div>
+                                ) : (
                                     <div style={{ fontWeight: 600, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Calendar size={18} /> {horse.birthDate} ({horse.age} ans)
+                                        <Calendar size={18} /> {horse.birthDate && horse.birthDate !== '-' ? horse.birthDate : 'Date inconnue'} ({horse.age || '?'} ans)
                                     </div>
                                 )}
                             </div>

@@ -8,7 +8,9 @@ import { useAuth } from '../../context/AuthContext';
 import {
     calculateWeightStats,
     BODY_CONDITION_SCORES,
+    getCurrentWeight,
 } from '../../utils/weightEstimation';
+import { scheduleSyncToFirestore } from '../../services/firestoreSync';
 
 function WeightTracking() {
     const { id } = useParams();
@@ -35,6 +37,16 @@ function WeightTracking() {
     useEffect(() => {
         loadHorseData();
         loadWeightHistory();
+
+        // Listen for cloud sync completion
+        const handleRefresh = () => {
+            console.log("🔄 WeightTracking: Cloud data refreshed, reloading...");
+            loadHorseData();
+            loadWeightHistory();
+        };
+
+        window.addEventListener('equinox_data_refreshed', handleRefresh);
+        return () => window.removeEventListener('equinox_data_refreshed', handleRefresh);
     }, [id]);
 
     const loadHorseData = () => {
@@ -61,35 +73,61 @@ function WeightTracking() {
         setWeightEntries(history);
     };
 
+    const updateHorseMainWeight = (newWeight) => {
+        const idStr = id.toString();
+
+        // 1. Update in Main Stable
+        const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
+        const horseIndex = savedHorses.findIndex(h => h.id.toString() === idStr);
+        if (horseIndex > -1) {
+            savedHorses[horseIndex].weight = newWeight;
+            localStorage.setItem('my_horses_v4', JSON.stringify(savedHorses));
+        }
+
+        // 2. Update in Breeding if applicable
+        const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
+        const mareIndex = savedMares.findIndex(m => m.id.toString() === idStr);
+        if (mareIndex > -1) {
+            savedMares[mareIndex].weight = newWeight;
+            localStorage.setItem('appHorse_breeding_v2', JSON.stringify(savedMares));
+        }
+
+        // 3. Schedule Sync
+        if (currentUser?.uid) {
+            scheduleSyncToFirestore(currentUser.uid);
+        }
+    };
+
+    const _updateWeightEntriesAndPersist = (updated) => {
+        setWeightEntries(updated);
+        localStorage.setItem(`weightHistory_${id}`, JSON.stringify(updated));
+
+        // Update horse's main weight if this is the new most recent
+        const sorted = [...updated].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const newWeight = sorted.length > 0 ? sorted[0].value : '-';
+        updateHorseMainWeight(newWeight);
+    };
+
     const saveWeightEntry = (entry) => {
         const newEntry = {
             id: Date.now().toString(),
             date: new Date().toISOString(),
             ...entry,
         };
-
-        const updated = [newEntry, ...weightEntries];
-        setWeightEntries(updated);
-
-        // Sauvegarder dans localStorage (à remplacer par Firestore)
-        const key = `weightHistory_${id}`;
-        localStorage.setItem(key, JSON.stringify(updated));
+        _updateWeightEntriesAndPersist([newEntry, ...weightEntries]);
     };
 
-    const updateWeightEntry = (id, updates) => {
+    const updateWeightEntry = (entryId, updates) => {
         const updated = weightEntries.map(e =>
-            e.id === id ? { ...e, ...updates } : e
+            e.id === entryId ? { ...e, ...updates } : e
         );
-        setWeightEntries(updated);
-        localStorage.setItem(`weightHistory_${id}`, JSON.stringify(updated));
+        _updateWeightEntriesAndPersist(updated);
     };
 
     const deleteWeightEntry = (entryId) => {
         if (!confirm('Supprimer cette pesée ?')) return;
-
         const updated = weightEntries.filter(e => e.id !== entryId);
-        setWeightEntries(updated);
-        localStorage.setItem(`weightHistory_${id}`, JSON.stringify(updated));
+        _updateWeightEntriesAndPersist(updated);
     };
 
     const handleOpenBarymetricCamera = () => {
@@ -339,7 +377,54 @@ function WeightTracking() {
                                         BCS {entry.bodyConditionScore || 3}
                                     </div>
 
-                                    {canEditWeight && (
+                                    {(entry.profilePhotoUrl || entry.rearPhotoUrl) && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            {entry.profilePhotoUrl && (
+                                                <a 
+                                                    href={entry.profilePhotoUrl} 
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title="Photo profil"
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: '28px',
+                                                        height: '28px',
+                                                        borderRadius: '4px',
+                                                        background: 'rgba(59, 130, 246, 0.1)',
+                                                        border: '1px solid #3b82f6',
+                                                        textDecoration: 'none',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    📸 P
+                                                </a>
+                                            )}
+                                            {entry.rearPhotoUrl && (
+                                                <a 
+                                                    href={entry.rearPhotoUrl} 
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title="Photo arrière"
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: '28px',
+                                                        height: '28px',
+                                                        borderRadius: '4px',
+                                                        background: 'rgba(59, 130, 246, 0.1)',
+                                                        border: '1px solid #3b82f6',
+                                                        textDecoration: 'none',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    📸 R
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
                                         <div style={{ display: 'flex', gap: '0.25rem', marginLeft: '0.5rem' }}>
                                             <button
                                                 onClick={() => {

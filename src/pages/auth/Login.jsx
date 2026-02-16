@@ -136,7 +136,7 @@ const Login = () => {
                         style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }}
                         disabled={loading}
                     >
-                        {loading ? t('settings_page.subscription.loading') : t('landing.nav.login')}
+                        {loading ? 'Connexion en cours...' : t('landing.nav.login')}
                     </Button>
                 </form>
 

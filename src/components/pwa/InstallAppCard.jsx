@@ -6,14 +6,31 @@ import { usePWA } from '../../context/PWAContext';
 
 const InstallAppCard = () => {
     const { isInstalled, openInstructions, canInstall, isIOS } = usePWA();
-    const [isVisible, setIsVisible] = React.useState(true);
 
-    // Debug: We removed the strict 'isInstalled' check to ensure visibility for your test.
-    // Instead, we allow the user to dismiss it manually.
+    // Initialize state based on 24h dismissal logic
+    const [isVisible, setIsVisible] = React.useState(() => {
+        const dismissed = localStorage.getItem('install_app_dismissed');
+        if (dismissed) {
+            const timestamp = parseInt(dismissed, 10);
+            const now = Date.now();
+            // If less than 24h (86400000 ms) has passed, keep hidden
+            if (now - timestamp < 24 * 60 * 60 * 1000) {
+                return false;
+            }
+        }
+        return true;
+    });
+
     if (!isVisible) return null;
 
-    // Optional: Auto-hide if installed, but user says it doesn't show up when it should.
-    // if (isInstalled) return null;
+    // If explicitly installed (standalone mode), do not show
+    if (isInstalled) return null;
+
+    const handleDismiss = (e) => {
+        e.stopPropagation();
+        setIsVisible(false);
+        localStorage.setItem('install_app_dismissed', Date.now().toString());
+    };
 
     return (
         <Card
@@ -25,7 +42,7 @@ const InstallAppCard = () => {
             }}
         >
             <button
-                onClick={(e) => { e.stopPropagation(); setIsVisible(false); }}
+                onClick={handleDismiss}
                 style={{
                     position: 'absolute', top: '10px', right: '10px',
                     background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%',

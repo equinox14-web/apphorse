@@ -230,7 +230,9 @@ const Breeding = () => {
         const allEvents = [];
         mares.forEach(mare => {
             const mareEvents = JSON.parse(localStorage.getItem(`appHorse_breeding_events_${mare.id}`) || '[]');
-            const todoEvents = mareEvents.filter(e => e.status === 'todo' && e.type !== 'Vaccin');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todoEvents = mareEvents.filter(e => new Date(e.date) >= today);
             todoEvents.forEach(evt => {
                 allEvents.push({
                     ...evt,
@@ -269,18 +271,20 @@ const Breeding = () => {
             </div>
 
             {/* Stats Overview */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                <Card style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1890ff' }}>{mares.length}</div>
-                    <div style={{ color: '#666' }}>{t('breeding_page.stats.mares')}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <Card className="text-center p-6 bg-white dark:bg-slate-800">
+                    <div className="text-3xl font-bold text-blue-500 mb-1">{mares.length}</div>
+                    <div className="text-gray-500 dark:text-gray-400">{t('breeding_page.stats.mares')}</div>
                 </Card>
-                <Card style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#52c41a' }}>{mares.filter(m => m.status === 'Gestante').length}</div>
-                    <div style={{ color: '#666' }}>{t('breeding_page.stats.pregnant')}</div>
+                <Card className="text-center p-6 bg-white dark:bg-slate-800">
+                    <div className="text-3xl font-bold text-green-500 mb-1">{mares.filter(m => m.status === 'Gestante').length}</div>
+                    <div className="text-gray-500 dark:text-gray-400">{t('breeding_page.stats.pregnant')}</div>
                 </Card>
-                <Card style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#eb2f96' }}>{planning.filter(e => e.type === 'Poulinage' && new Date(e.date).getFullYear() === 2025).length}</div>
-                    <div style={{ color: '#666' }}>{t('breeding_page.stats.foals_expected')}</div>
+                <Card className="text-center p-6 bg-white dark:bg-slate-800">
+                    <div className="text-3xl font-bold text-pink-500 mb-1">
+                        {mares.filter(m => m.status === 'Gestante' && m.termDate && new Date(m.termDate).getFullYear() === new Date().getFullYear()).length}
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400">{t('breeding_page.stats.foals_expected')} {new Date().getFullYear()}</div>
                 </Card>
             </div>
 
@@ -292,24 +296,21 @@ const Breeding = () => {
                     </h3>
                     <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
                         {planning.map(evt => (
-                            <div key={evt.id} onClick={() => navigate(`/breeding/${evt.mareId}`)} style={{
-                                minWidth: '200px', background: 'white', padding: '1rem', borderRadius: '12px',
-                                border: '1px solid #eee', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                borderLeft: `4px solid ${evt.type.includes('Insemination') ? '#1890ff' :
+                            <div key={evt.id} onClick={() => navigate(`/breeding/${evt.mareId}`)} className="min-w-[200px] p-4 rounded-xl cursor-pointer bg-white dark:bg-slate-800 border-l-4 shadow-sm border border-gray-100 dark:border-gray-700" style={{
+                                borderLeftColor: evt.type.includes('Insemination') ? '#1890ff' :
                                     evt.type.includes('DG') || evt.type === 'Echographie' ? '#722ed1' :
                                         evt.type === 'Poulinage' ? '#eb2f96' : '#faad14'
-                                    }`
                             }}>
-                                <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '0.25rem' }}>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">
                                     {new Date(evt.date).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })}
                                 </div>
-                                <div style={{ fontWeight: 700, marginBottom: '0.25rem', color: '#333' }}>
-                                    {evt.mareName} {evt.mareInternalNumber && <span style={{ color: '#eb2f96', fontWeight: 600 }}>#{evt.mareInternalNumber}</span>}
+                                <div className="font-bold text-gray-900 dark:text-white mb-1">
+                                    {evt.mareName} {evt.mareInternalNumber && <span className="text-pink-500 text-xs">#{evt.mareInternalNumber}</span>}
                                 </div>
-                                <div style={{ fontSize: '0.9rem', color: '#555' }}>
+                                <div className="text-sm text-gray-700 dark:text-gray-300">
                                     {evt.type}
                                 </div>
-                                {evt.note && <div style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.2rem', fontStyle: 'italic' }}>{evt.note}</div>}
+                                {evt.note && <div className="text-xs text-gray-400 mt-1 italic">{evt.note}</div>}
                             </div>
                         ))}
                     </div>
@@ -331,16 +332,16 @@ const Breeding = () => {
                                     <Heart size={24} color={getStatusColor(mare.status)} fill={getStatusColor(mare.status)} />
                                 </div>
 
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <h3 style={{ margin: 0, fontSize: '1.1rem', wordBreak: 'break-word' }}>
-                                        {mare.name} {mare.internalNumber && <span style={{ fontSize: '0.9rem', color: '#eb2f96', background: '#fff0f6', padding: '2px 6px', borderRadius: '12px', marginLeft: '4px' }}>#{mare.internalNumber}</span>}
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="m-0 text-xl font-bold text-gray-900 dark:text-white break-words flex items-center gap-2">
+                                        {mare.name} {mare.internalNumber && <span className="text-sm text-pink-500 bg-pink-50 dark:bg-pink-900/20 px-2 py-0.5 rounded-full">#{mare.internalNumber}</span>}
                                     </h3>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                                        <span style={{ background: '#f0f0f0', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, color: '#333' }}>
+                                    <div className="flex flex-wrap gap-2 mt-2 text-sm">
+                                        <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-800 dark:text-gray-200 font-medium">
                                             {mare.role === 'Poulinière' ? t('breeding_page.modal.roles.mare') : mare.role === 'Donneuse' ? t('breeding_page.modal.roles.donor') : mare.role === 'Porteuse' ? t('breeding_page.modal.roles.recipient') : mare.role}
                                         </span>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#666' }}>
-                                            <Activity size={12} /> <strong style={{ color: getStatusColor(mare.status) }}>
+                                        <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                                            <Activity size={14} className="text-current" /> <strong style={{ color: getStatusColor(mare.status) }}>
                                                 {mare.status === 'Vide' ? t('breeding_page.status.empty') :
                                                     mare.status === 'Inseminée' ? t('breeding_page.status.inseminated') :
                                                         mare.status === 'Gestante' ? t('breeding_page.status.pregnant') :
@@ -349,9 +350,9 @@ const Breeding = () => {
                                         </span>
                                     </div>
                                     {(mare.sire || mare.geneticDam) && (
-                                        <div style={{ marginTop: '0.3rem', fontSize: '0.8rem', color: '#666' }}>
-                                            {mare.sire && <span style={{ marginRight: '0.5rem' }}><strong style={{ color: '#999' }}>P:</strong> {mare.sire}</span>}
-                                            {mare.geneticDam && <span><strong style={{ color: '#999' }}>M:</strong> {mare.geneticDam}</span>}
+                                        <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                            {mare.sire && <span className="mr-3"><strong className="text-gray-400 dark:text-gray-500">P:</strong> {mare.sire}</span>}
+                                            {mare.geneticDam && <span><strong className="text-gray-400 dark:text-gray-500">M:</strong> {mare.geneticDam}</span>}
                                         </div>
                                     )}
                                 </div>
@@ -359,9 +360,9 @@ const Breeding = () => {
 
                             {/* Term Date (if exists) */}
                             {mare.termDate !== '-' && (
-                                <div style={{ background: '#f9fafb', padding: '0.5rem 0.75rem', borderRadius: '8px', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '2px' }}>{t('breeding_page.term_date')}</div>
-                                    <div style={{ fontWeight: 700, fontSize: '1rem' }}>{new Date(mare.termDate).toLocaleDateString(i18n.language)}</div>
+                                <div className="bg-gray-50 dark:bg-white/5 rounded-lg py-3 px-4 text-center mt-2 border border-gray-100 dark:border-white/10">
+                                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{t('breeding_page.term_date')}</div>
+                                    <div className="font-bold text-lg text-gray-800 dark:text-white">{new Date(mare.termDate).toLocaleDateString(i18n.language)}</div>
                                 </div>
                             )}
 
@@ -562,13 +563,13 @@ const Breeding = () => {
 
                             {/* Genetics: Show for Pregnant/Insem OR if Recipient (Porteuse) */}
                             {(newMare.status !== 'Vide' || newMare.role === 'Porteuse') && (
-                                <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg flex flex-col gap-4 border border-gray-100 dark:border-gray-700">
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                                        <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
                                             {newMare.role === 'Porteuse' ? t('breeding_page.modal.bio_sire_label') : t('breeding_page.modal.sire_label')}
                                         </label>
                                         <input
-                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', color: '#333', backgroundColor: '#fff' }}
+                                            className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50"
                                             value={newMare.sire}
                                             onChange={e => setNewMare({ ...newMare, sire: e.target.value })}
                                             placeholder={newMare.role === 'Porteuse' ? "Ex: Chacco Blue" : "Ex: Baloubet du Rouet"}
@@ -577,9 +578,9 @@ const Breeding = () => {
 
                                     {newMare.role === 'Porteuse' && (
                                         <div>
-                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('breeding_page.modal.bio_dam_label')}</label>
+                                            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('breeding_page.modal.bio_dam_label')}</label>
                                             <input
-                                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', color: '#333', backgroundColor: '#fff' }}
+                                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50"
                                                 value={newMare.geneticDam || ''}
                                                 onChange={e => setNewMare({ ...newMare, geneticDam: e.target.value })}
                                                 placeholder="Ex: Gatoucha"
@@ -589,10 +590,10 @@ const Breeding = () => {
 
                                     {newMare.status !== 'Vide' && (
                                         <div>
-                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('breeding_page.modal.term_date_label')}</label>
+                                            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('breeding_page.modal.term_date_label')}</label>
                                             <input
                                                 type="date"
-                                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', color: '#333', backgroundColor: '#fff' }}
+                                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50"
                                                 value={newMare.termDate}
                                                 onChange={e => setNewMare({ ...newMare, termDate: e.target.value })}
                                             />

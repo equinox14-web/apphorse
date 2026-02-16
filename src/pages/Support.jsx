@@ -87,23 +87,6 @@ const Support = () => {
                     justify-content: space-between;
                     align-items: center;
                 }
-                .support-chat-area {
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 1.5rem;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1rem;
-                    background: rgba(255,255,255,0.5);
-                }
-                .support-input-area {
-                    padding: 1rem;
-                    background: white;
-                    border-top: 1px solid #e5e7eb;
-                    display: flex;
-                    gap: 1rem;
-                }
-                
                 @media (max-width: 768px) {
                     .support-container {
                         height: calc(100dvh - 84px);
@@ -113,13 +96,6 @@ const Support = () => {
                     .support-header {
                         padding: 0 1rem;
                         margin-bottom: 0.5rem;
-                    }
-                    .support-chat-area {
-                        padding: 1rem;
-                    }
-                    .support-input-area {
-                        padding: 0.75rem;
-                        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
                     }
                 }
             `}</style>
@@ -131,48 +107,30 @@ const Support = () => {
                 </Button>
             </div>
 
-            <Card style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
+            <Card className="flex-1 flex flex-col overflow-hidden p-0 bg-white dark:bg-slate-800 border-gray-100 dark:border-gray-700">
                 {/* Chat Area */}
-                <div className="support-chat-area">
+                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4 bg-gray-50/50 dark:bg-slate-900/50">
                     {messages.map((msg) => (
                         <div
                             key={msg.id}
-                            style={{
-                                alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                                maxWidth: '85%',
-                                display: 'flex',
-                                gap: '0.5rem',
-                                flexDirection: msg.sender === 'user' ? 'row-reverse' : 'row'
-                            }}
+                            className={`flex gap-3 max-w-[85%] ${msg.sender === 'user' ? 'self-end flex-row-reverse' : 'self-start'}`}
                         >
-                            <div style={{
-                                width: '32px', height: '32px', borderRadius: '50%',
-                                background: msg.sender === 'user' ? 'var(--color-primary)' : '#e5e7eb',
-                                color: msg.sender === 'user' ? 'white' : '#4b5563',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                flexShrink: 0,
-                                fontSize: '0.8rem'
-                            }}>
+                            <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${msg.sender === 'user'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                                }`}>
                                 {msg.sender === 'user' ? <User size={16} /> : <Bot size={16} />}
                             </div>
-                            <div style={{
-                                background: msg.sender === 'user' ? 'var(--color-primary)' : 'white',
-                                color: msg.sender === 'user' ? 'white' : '#1f2937',
-                                padding: '0.75rem 1rem',
-                                borderRadius: '12px',
-                                borderTopLeftRadius: msg.sender === 'bot' ? '2px' : '12px',
-                                borderTopRightRadius: msg.sender === 'user' ? '2px' : '12px',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                whiteSpace: 'pre-wrap',
-                                fontSize: '0.95rem',
-                                wordBreak: 'break-word'
-                            }}>
+                            <div className={`py-3 px-4 rounded-xl shadow-sm whitespace-pre-wrap text-sm break-words ${msg.sender === 'user'
+                                    ? 'bg-indigo-600 text-white rounded-tr-sm'
+                                    : 'bg-white dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded-tl-sm border border-gray-100 dark:border-gray-600'
+                                }`}>
                                 {msg.text}
                             </div>
                         </div>
                     ))}
                     {isTyping && (
-                        <div style={{ alignSelf: 'flex-start', marginLeft: '3rem', color: '#9ca3af', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                        <div className="self-start ml-12 text-gray-400 dark:text-gray-500 text-sm italic animate-pulse">
                             {t('support_page.typing')}
                         </div>
                     )}
@@ -180,25 +138,15 @@ const Support = () => {
                 </div>
 
                 {/* Input Area */}
-                <form onSubmit={handleSendMessage} className="support-input-area">
+                <form onSubmit={handleSendMessage} className="p-4 bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-gray-700 flex gap-3">
                     <input
                         type="text"
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
                         placeholder={t('support_page.input_placeholder')}
-                        style={{
-                            flex: 1,
-                            padding: '0.75rem 1rem',
-                            border: '1px solid #e5e7eb',
-                            borderRadius: 'var(--radius-md)',
-                            fontSize: '1rem',
-                            outline: 'none',
-                            color: '#333',
-                            backgroundColor: '#fff',
-                            minWidth: 0
-                        }}
+                        className="flex-1 p-3 border border-gray-200 dark:border-gray-600 rounded-lg text-base outline-none text-gray-900 dark:text-white bg-white dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500/50 block w-full min-w-0"
                     />
-                    <Button type="submit" disabled={!inputText.trim()} style={{ aspectRatio: '1/1', padding: 0, width: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Button type="submit" disabled={!inputText.trim()} className="aspect-square p-0 w-[48px] flex items-center justify-center flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-500/30">
                         <Send size={20} />
                     </Button>
                 </form>

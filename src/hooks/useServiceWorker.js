@@ -61,13 +61,31 @@ export function useServiceWorker() {
         if (updateSW) {
             try {
                 console.log('🔄 Activation de la nouvelle version...');
-                await updateSW(true); // Active le nouveau SW
 
-                // Petit délai pour laisser le temps au SW de s'activer
+                // Mécanisme robuste : on attend que le nouveau SW prenne le contrôle
+                let refreshing = false;
+
+                if (navigator.serviceWorker) {
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        if (!refreshing) {
+                            refreshing = true;
+                            console.log('✅ Nouveau SW actif -> Rechargement immédiat');
+                            window.location.reload();
+                        }
+                    });
+                }
+
+                await updateSW(true); // Active le nouveau SW (skipWaiting)
+
+                // Fallback de sécurité : si l'événement ne se déclenche pas après 2s, on force le reload
                 setTimeout(() => {
-                    console.log('✅ Rechargement pour appliquer la mise à jour...');
-                    window.location.reload();
-                }, 500);
+                    if (!refreshing) {
+                        refreshing = true;
+                        console.log('⚠️ Délai dépassé -> Rechargement forcé');
+                        window.location.reload();
+                    }
+                }, 2000);
+
             } catch (error) {
                 console.error('❌ Erreur lors de la mise à jour:', error);
                 window.location.reload();

@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, MapPin, Activity
 import { canAccess, isExternalUser } from '../utils/permissions';
 import { useAuth } from '../context/AuthContext';
 import { syncCalendarToFirestore, fetchCalendarFromFirestore } from '../services/dataSyncService';
+import { scheduleSyncToFirestore } from '../services/firestoreSync';
 
 
 const Calendar = () => {
@@ -44,17 +45,79 @@ const Calendar = () => {
     const [deleteId, setDeleteId] = useState(null); // Custom Confirm Modal State
     const [validateId, setValidateId] = useState(null); // Custom Validate Modal State
 
+    // Feedback Modal States (Adaptive Feedback Loop)
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+    const [feedbackData, setFeedbackData] = useState({
+        rpe: 5,
+        recoveryStatus: 'Normal',
+        comments: '',
+        plannedIntensity: 5
+    });
+    const [eventToValidate, setEventToValidate] = useState(null);
+
+    // --- DELETE LOGIC START ---
+    // --- DELETE LOGIC END ---
+
     const [horsesList, setHorsesList] = useState([]);
     const [teamList, setTeamList] = useState([]);
 
     useEffect(() => {
         const savedHorses = JSON.parse(localStorage.getItem('my_horses_v4') || '[]');
         const savedMares = JSON.parse(localStorage.getItem('appHorse_breeding_v2') || '[]');
-        setHorsesList([...savedHorses, ...savedMares]);
+        const allHorses = [...savedHorses, ...savedMares];
+        setHorsesList(allHorses);
 
         const savedTeam = JSON.parse(localStorage.getItem('appHorse_team_v2') || '[]');
         setTeamList(savedTeam);
-    }, []);
+
+        // CLEANUP: Remove orphan events (linked to deleted horses)
+        const savedCustom = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
+
+        // Filter out events where horseId is present but not found in current horse list
+        const validCustom = savedCustom.filter(evt => {
+            if (!evt.horseId) return true; // Keep generic events
+            // Use loose comparison for ID match
+            const found = allHorses.find(h => String(h.id) === String(evt.horseId));
+            return !!found;
+        });
+
+        if (validCustom.length !== savedCustom.length) {
+            console.log(`🧹 Calendar: Removed ${savedCustom.length - validCustom.length} orphan events.`);
+            localStorage.setItem('appHorse_customEvents', JSON.stringify(validCustom));
+
+            // Trigger Sync
+            if (currentUser) {
+                const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                syncCalendarToFirestore(currentUser.uid, validCustom, localCare);
+            }
+
+            // Force reload events to reflect cleanup immediately
+            // But loadAllEvents is called in another useEffect or we can trigger it here?
+            // loadAllEvents depends on state. It's safe to call it if defined, 
+            // but it's defined later in the component. 
+            // Since this useEffect runs on mount, and loadAllEvents runs on mount in another useEffect,
+            // we might have a race condition. 
+            // However, loadAllEvents reads from localStorage, so updating LS here affects it.
+        }
+
+        // CLEANUP: Remove orphan AI training plans (for deleted horses)
+        const savedAIPlans = JSON.parse(localStorage.getItem('ai_training_plans') || '[]');
+        const validAIPlans = savedAIPlans.filter(plan => {
+            // Check if horse exists by name
+            const found = allHorses.find(h => h.name === plan.horseName);
+            return !!found;
+        });
+
+        if (validAIPlans.length !== savedAIPlans.length) {
+            console.log(`🧹 Calendar: Removed ${savedAIPlans.length - validAIPlans.length} orphan AI training plans.`);
+            localStorage.setItem('ai_training_plans', JSON.stringify(validAIPlans));
+
+            // Trigger Sync
+            if (currentUser) {
+                scheduleSyncToFirestore(currentUser.uid);
+            }
+        }
+    }, [currentUser]);
     // Modal State
     const [showModal, setShowModal] = useState(false);
     const [newEvent, setNewEvent] = useState({
@@ -289,6 +352,8 @@ const Calendar = () => {
         try {
             // 3. Get AI Training Plans
             const savedAIPlans = localStorage.getItem('ai_training_plans');
+            const hiddenAiEvents = JSON.parse(localStorage.getItem('appHorse_hidden_ai_events') || '[]');
+
             if (savedAIPlans) {
                 const plans = JSON.parse(savedAIPlans);
 
@@ -297,21 +362,45 @@ const Calendar = () => {
                     if (plan && plan.weeklySchedule) {
                         // Convertir chaque session du planning en événement
                         plan.weeklySchedule.forEach((session, sessionIndex) => {
-                            if (session.day && session.sessionName) {
-                                // Calculer la date basée sur le jour de la semaine
-                                const today = new Date();
-                                const dayOfWeek = getDayOfWeekNumber(session.day);
-                                const targetDate = getNextDateForDay(today, dayOfWeek);
+                            if ((session.day && session.sessionName) || session.date) {
+                                let targetDate;
+                                let dateStr;
+
+                                if (session.date) {
+                                    // Si une date spécifique est fournie par l'IA (cas du nouveau format)
+                                    targetDate = new Date(session.date);
+                                    dateStr = session.date;
+                                } else {
+                                    // Fallback ancien format (semaine type)
+                                    const today = new Date();
+                                    let dayOfWeek = getDayOfWeekNumber(session.day);
+
+                                    if (dayOfWeek === -1) {
+                                        dayOfWeek = (sessionIndex + 1) % 7;
+                                    }
+
+                                    targetDate = getNextDateForDay(today, dayOfWeek);
+                                    dateStr = targetDate.toISOString().split('T')[0];
+                                }
+
+                                // ID unique incluant la date pour distinguer les occurrences
+                                const uniqueId = `ai-plan-${planIndex}-${sessionIndex}-${dateStr}`;
+
+                                // Skip si marqué comme fait/masqué
+                                if (hiddenAiEvents.includes(uniqueId)) return;
 
                                 aiPlanningEvents.push({
-                                    id: `ai-plan-${planIndex}-${sessionIndex}`,
+                                    id: uniqueId,
                                     title: `🤖 ${session.sessionName}`,
                                     date: targetDate,
                                     type: 'training',
                                     color: '#8b5cf6', // Violet pour l'IA
                                     details: `${session.intensity} • ${session.duration}`,
                                     description: session.tips || '',
-                                    horseName: planData.horseName || 'Planning IA'
+                                    horseName: planData.horseName || 'Planning IA',
+                                    horseId: planData.horseId, // Important pour l'historique
+                                    isAiEvent: true, // Flag pour le traitement
+                                    originalData: { ...session, horseId: planData.horseId, horseName: planData.horseName }
                                 });
                             }
                         });
@@ -351,22 +440,46 @@ const Calendar = () => {
 
     // Helper functions for AI planning dates
     const getDayOfWeekNumber = (dayName) => {
+        if (!dayName) return -1;
+
+        // Normalisation: minuscules, sans accents, trim
+        const normalized = String(dayName).toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .trim();
+
         const days = {
-            'lundi': 1, 'monday': 1,
-            'mardi': 2, 'tuesday': 2,
-            'mercredi': 3, 'wednesday': 3,
-            'jeudi': 4, 'thursday': 4,
-            'vendredi': 5, 'friday': 5,
-            'samedi': 6, 'saturday': 6,
-            'dimanche': 0, 'sunday': 0
+            'lundi': 1, 'monday': 1, 'mon': 1, 'lun': 1,
+            'mardi': 2, 'tuesday': 2, 'tue': 2, 'mar': 2,
+            'mercredi': 3, 'wednesday': 3, 'wed': 3, 'mer': 3,
+            'jeudi': 4, 'thursday': 4, 'thu': 4, 'jeu': 4,
+            'vendredi': 5, 'friday': 5, 'fri': 5, 'ven': 5,
+            'samedi': 6, 'saturday': 6, 'sat': 6, 'sam': 6,
+            'dimanche': 0, 'sunday': 0, 'sun': 0, 'dim': 0
         };
-        return days[dayName.toLowerCase()] || 0;
+
+        if (Object.prototype.hasOwnProperty.call(days, normalized)) return days[normalized];
+
+        // Fallback: Si c'est juste un numéro ou "Jour X"
+        const numMatch = normalized.match(/\d+/);
+        if (numMatch) {
+            const num = parseInt(numMatch[0]);
+            // Convert Day 1 (Monday) -> 1, Day 7 -> 0
+            if (num === 7) return 0;
+            return num % 7;
+        }
+
+        return -1;
     };
 
     const getNextDateForDay = (startDate, targetDay) => {
         const date = new Date(startDate);
         const currentDay = date.getDay();
         let daysToAdd = targetDay - currentDay;
+        // Si c'est aujourd'hui, on garde aujourd'hui.
+        // Si c'est passé dans la semaine (ex: on est jeudi, on veut lundi),
+        // est-ce qu'on veut le lundi passé ou le prochain ? 
+        // Pour un planning hebdo, on veut généralement voir la semaine courante ou à venir.
+        // Ici logique "prochain jour X" (donc semaine prochaine si passé)
         if (daysToAdd < 0) daysToAdd += 7;
         date.setDate(date.getDate() + daysToAdd);
         return date;
@@ -378,29 +491,238 @@ const Calendar = () => {
 
     // Event Validation (Complete)
     const handleValidateEvent = (id) => {
-        setValidateId(id);
+        // Find the event to validate
+        const event = events.find(e => e.id === id);
+        if (!event) return;
+
+        // Check if it's a training event (AI or custom training)
+        const isTrainingEvent = event.isAiEvent || event.type === 'training';
+
+        if (isTrainingEvent) {
+            // Open feedback modal for training events
+            setEventToValidate(event);
+
+            // Extract planned intensity from event data
+            let plannedIntensity = 5; // Default
+            if (event.originalData?.intensity) {
+                const intensityMap = { 'LOW': 3, 'MEDIUM': 5, 'HIGH': 8 };
+                plannedIntensity = intensityMap[event.originalData.intensity] || 5;
+            }
+
+            setFeedbackData({
+                rpe: plannedIntensity,
+                recoveryStatus: 'Normal',
+                comments: '',
+                plannedIntensity: plannedIntensity
+            });
+            setShowFeedbackModal(true);
+        } else {
+            // For non-training events (care, rest, etc.), validate directly
+            setValidateId(id);
+        }
     };
 
     const performValidate = () => {
         if (!validateId) return;
 
         try {
-            const existing = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
-            const updated = existing.map(e => String(e.id) === String(validateId) ? { ...e, completed: true } : e);
-            localStorage.setItem('appHorse_customEvents', JSON.stringify(updated));
+            // Check if it's an AI event
+            const isAiEvent = String(validateId).startsWith('ai-plan-');
 
-            // Sync Cloud
-            if (currentUser) {
-                const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
-                syncCalendarToFirestore(currentUser.uid, updated, localCare);
+            if (isAiEvent) {
+                // 1. Retrieve info from the current events list state
+                const eventToValidate = events.find(e => e.id === validateId);
+                if (!eventToValidate) throw new Error("Événement non trouvé");
+
+                // 2. Add to Custom Events as completed
+                const newHistoryEvent = {
+                    id: Date.now(),
+                    title: eventToValidate.title,
+                    dateStr: eventToValidate.date.toISOString(),
+                    type: 'training',
+                    // Use horseId if available, otherwise just keep name in title or rely on generic id
+                    horseId: eventToValidate.horseId || '',
+                    rider: 'Moi', // Default rider
+                    details: eventToValidate.details || 'Entraînement IA validé',
+                    completed: true,
+                    isAiGenerated: true
+                };
+
+                const existingCustom = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
+                const updatedCustom = [...existingCustom, newHistoryEvent];
+                localStorage.setItem('appHorse_customEvents', JSON.stringify(updatedCustom));
+
+                // 3. Mark original AI ID as hidden/done
+                const hiddenAi = JSON.parse(localStorage.getItem('appHorse_hidden_ai_events') || '[]');
+                hiddenAi.push(validateId);
+                localStorage.setItem('appHorse_hidden_ai_events', JSON.stringify(hiddenAi));
+
+                // Sync Cloud (optional but recommended)
+                if (currentUser) {
+                    const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                    syncCalendarToFirestore(currentUser.uid, updatedCustom, localCare);
+                }
+
+            } else {
+                // Normal Custom Event Logic
+                const existing = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
+                const updated = existing.map(e => String(e.id) === String(validateId) ? { ...e, completed: true } : e);
+                localStorage.setItem('appHorse_customEvents', JSON.stringify(updated));
+
+                // Sync Cloud
+                if (currentUser) {
+                    const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                    syncCalendarToFirestore(currentUser.uid, updated, localCare);
+                }
             }
 
             // UI Refresh
             loadAllEvents();
             setValidateId(null);
             setSelectedEvent(null);
+
+            // Feedback
+            // alert("Activité validée et ajoutée à l'historique !"); // Optional
         } catch (e) {
             console.error(e);
+            alert("Erreur: " + e.message);
+        }
+    };
+
+    // Validate with Feedback (Adaptive Feedback Loop)
+    const performValidateWithFeedback = async () => {
+        if (!eventToValidate) return;
+
+        try {
+            setIsSaving(true);
+
+            // 1. Call AI Adaptation if it's a training event with future sessions
+            let aiMessage = null;
+            const horseId = eventToValidate.horseId;
+            const horse = horsesList.find(h => String(h.id) === String(horseId));
+
+            // Get next 3 sessions for this horse from AI planning
+            const savedAIPlans = localStorage.getItem('ai_training_plans');
+            let nextSessions = [];
+
+            if (savedAIPlans && horse) {
+                const plans = JSON.parse(savedAIPlans);
+                const horsePlan = plans.find(p => String(p.horseId) === String(horseId));
+
+                if (horsePlan?.plan?.events) {
+                    const today = new Date();
+                    const futureEvents = horsePlan.plan.events
+                        .filter(evt => new Date(evt.date) > today)
+                        .slice(0, 3);
+                    nextSessions = futureEvents;
+                }
+            }
+
+            // Call adaptation API if we have future sessions
+            if (nextSessions.length > 0) {
+                const { adaptTrainingPlan } = await import('../services/geminiService');
+
+                const adaptResult = await adaptTrainingPlan({
+                    prev_session_intensity: feedbackData.plannedIntensity,
+                    actual_user_rpe: feedbackData.rpe,
+                    horse_recovery_status: feedbackData.recoveryStatus,
+                    next_sessions_queue: nextSessions,
+                    horse: {
+                        name: horse?.name || 'Cheval',
+                        age: horse?.age,
+                        breed: horse?.breed,
+                        discipline: horse?.discipline
+                    }
+                });
+
+                if (adaptResult.success) {
+                    aiMessage = adaptResult.data.reasoning;
+
+                    // Update the planning if modifications were applied
+                    if (adaptResult.data.modifications_applied && adaptResult.data.updated_next_sessions) {
+                        const plans = JSON.parse(savedAIPlans);
+                        const planIndex = plans.findIndex(p => String(p.horseId) === String(horseId));
+
+                        if (planIndex !== -1 && plans[planIndex].plan?.events) {
+                            // Replace the next sessions with updated ones
+                            const updatedEvents = plans[planIndex].plan.events.map(evt => {
+                                const updated = adaptResult.data.updated_next_sessions.find(
+                                    u => u.date === evt.date
+                                );
+                                return updated || evt;
+                            });
+
+                            plans[planIndex].plan.events = updatedEvents;
+                            localStorage.setItem('ai_training_plans', JSON.stringify(plans));
+                        }
+                    }
+                } else {
+                    console.warn('Adaptation failed:', adaptResult.error);
+                }
+            }
+
+            // 2. Validate the session (same logic as performValidate)
+            const isAiEvent = String(eventToValidate.id).startsWith('ai-plan-');
+
+            if (isAiEvent) {
+                const newHistoryEvent = {
+                    id: Date.now(),
+                    title: eventToValidate.title,
+                    dateStr: eventToValidate.date.toISOString(),
+                    type: 'training',
+                    horseId: eventToValidate.horseId || '',
+                    rider: 'Moi',
+                    details: `${eventToValidate.details || 'Entraînement IA validé'} | RPE: ${feedbackData.rpe}/10 | État: ${feedbackData.recoveryStatus}`,
+                    completed: true,
+                    isAiGenerated: true,
+                    feedback: {
+                        rpe: feedbackData.rpe,
+                        recoveryStatus: feedbackData.recoveryStatus,
+                        comments: feedbackData.comments,
+                        plannedIntensity: feedbackData.plannedIntensity
+                    }
+                };
+
+                const existingCustom = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
+                const updatedCustom = [...existingCustom, newHistoryEvent];
+                localStorage.setItem('appHorse_customEvents', JSON.stringify(updatedCustom));
+
+                const hiddenAi = JSON.parse(localStorage.getItem('appHorse_hidden_ai_events') || '[]');
+                hiddenAi.push(eventToValidate.id);
+                localStorage.setItem('appHorse_hidden_ai_events', JSON.stringify(hiddenAi));
+
+                if (currentUser) {
+                    const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                    syncCalendarToFirestore(currentUser.uid, updatedCustom, localCare);
+                }
+            } else {
+                const existing = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
+                const updated = existing.map(e =>
+                    String(e.id) === String(eventToValidate.id)
+                        ? { ...e, completed: true, feedback: feedbackData }
+                        : e
+                );
+                localStorage.setItem('appHorse_customEvents', JSON.stringify(updated));
+
+                if (currentUser) {
+                    const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                    syncCalendarToFirestore(currentUser.uid, updated, localCare);
+                }
+            }
+
+            // 3. UI Refresh
+            loadAllEvents();
+            setShowFeedbackModal(false);
+            setEventToValidate(null);
+            setSelectedEvent(null);
+            setIsSaving(false);
+
+            // 4. Success - No alert needed (silent confirmation)
+            // Session is now recorded in horse history
+
+        } catch (e) {
+            console.error(e);
+            setIsSaving(false);
             alert("Erreur: " + e.message);
         }
     };
@@ -510,14 +832,50 @@ const Calendar = () => {
         if (!deleteId) return;
 
         try {
-            const existing = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
-            const updated = existing.filter(e => String(e.id) !== String(deleteId));
-            localStorage.setItem('appHorse_customEvents', JSON.stringify(updated));
+            // Check if AI Event
+            if (String(deleteId).startsWith('ai-plan-')) {
+                // Determine format based on ID generation
+                // Standard format we expect: ai-plan-{planIndex}-{sessionIndex}
+                const parts = String(deleteId).split('-');
 
-            // Sync Cloud
-            if (currentUser) {
-                const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
-                syncCalendarToFirestore(currentUser.uid, updated, localCare);
+                if (parts.length >= 4) {
+                    const planIndex = parseInt(parts[2]);
+                    const sessionIndex = parseInt(parts[3]);
+
+                    const savedPlans = JSON.parse(localStorage.getItem('ai_training_plans') || '[]');
+
+                    if (savedPlans[planIndex] && savedPlans[planIndex].plan && savedPlans[planIndex].plan.weeklySchedule) {
+                        // Remove the specific session
+                        console.log(`🗑️ Deleting AI Session: Plan ${planIndex}, Session ${sessionIndex}`);
+
+                        // We must be careful because if we remove by index, subsequent IDs will shift.
+                        // But since we reload immediately, IDs will be regenerated correctly.
+                        savedPlans[planIndex].plan.weeklySchedule.splice(sessionIndex, 1);
+
+                        // If plan is empty, remove it?
+                        if (savedPlans[planIndex].plan.weeklySchedule.length === 0) {
+                            savedPlans.splice(planIndex, 1);
+                        }
+
+                        localStorage.setItem('ai_training_plans', JSON.stringify(savedPlans));
+
+                        // Also clear from hidden list just in case needed for cleanup
+                        const hiddenAi = JSON.parse(localStorage.getItem('appHorse_hidden_ai_events') || '[]');
+                        const newHidden = hiddenAi.filter(id => id !== deleteId);
+                        localStorage.setItem('appHorse_hidden_ai_events', JSON.stringify(newHidden));
+                    }
+                }
+            } else {
+                // Standard Custom Event Deletion
+                const existing = JSON.parse(localStorage.getItem('appHorse_customEvents') || '[]');
+                const updated = existing.filter(e => String(e.id) !== String(deleteId));
+                localStorage.setItem('appHorse_customEvents', JSON.stringify(updated));
+
+                // Sync Cloud
+                if (currentUser) {
+                    const localCare = JSON.parse(localStorage.getItem('appHorse_careItems_v3') || '[]');
+                    syncCalendarToFirestore(currentUser.uid, updated, localCare);
+                }
             }
 
             // Update UI without reload
@@ -620,8 +978,7 @@ const Calendar = () => {
                     );
 
                     return (
-                        <div key={idx} style={{
-                            background: 'rgba(255,255,255,0.5)',
+                        <div key={idx} className="bg-white/50 dark:bg-white/5 transition-colors duration-200" style={{
                             borderRadius: '8px',
                             minHeight: 'clamp(60px, 15vw, 100px)',
                             padding: 'clamp(0.25rem, 1vw, 0.5rem)',
@@ -634,10 +991,7 @@ const Calendar = () => {
                         }}
                             onClick={() => { setCurrentDate(dayDate); setView('day'); }}
                         >
-                            <div style={{
-                                fontWeight: 600,
-                                color: '#333',
-                                marginBottom: '2px',
+                            <div className="text-gray-800 dark:text-gray-100 font-semibold mb-0.5" style={{
                                 fontSize: 'clamp(0.7rem, 2.5vw, 1rem)'
                             }}>{day}</div>
                             {dayEvents.slice(0, 2).map((e, i) => (
@@ -683,8 +1037,7 @@ const Calendar = () => {
                     );
 
                     return (
-                        <div key={i} style={{
-                            background: 'rgba(255,255,255,0.5)',
+                        <div key={i} className="bg-white/50 dark:bg-white/5 transition-colors duration-200" style={{
                             borderRadius: '12px',
                             padding: '0.5rem',
                             minHeight: '400px',
@@ -742,26 +1095,36 @@ const Calendar = () => {
                     {dayEvents.length > 0 ? dayEvents.map((e, i) => (
                         <div key={i}
                             onClick={() => setSelectedEvent(e)}
+                            className="bg-white/50 dark:bg-white/5 transition-colors duration-200"
                             style={{
                                 display: 'flex',
                                 gap: '1rem',
                                 marginBottom: '1rem',
                                 padding: '1rem',
-                                background: 'white',
                                 borderRadius: '12px',
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                                 borderLeft: `5px solid ${e.color}`,
                                 position: 'relative',
                                 cursor: 'pointer'
                             }}>
-                            <div style={{ fontWeight: 700, minWidth: '60px', color: '#888' }}>
+                            <div className="font-bold text-gray-500 dark:text-gray-400" style={{ minWidth: '60px' }}>
                                 {e.date.getHours() !== 0 ? `${e.date.getHours()}h${String(e.date.getMinutes()).padStart(2, '0')}` : 'Journée'}
                             </div>
                             <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{e.title}</div>
-                                <div style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <div className="font-semibold text-lg text-gray-900 dark:text-white">{e.title}</div>
+                                <div className="text-gray-600 dark:text-gray-300 mt-1 flex items-center gap-1.5 text-sm">
                                     {e.type === 'care' ? <Activity size={14} /> : (e.type === 'stable' ? <Box size={14} /> : <User size={14} />)}
                                     {getTypeName(e.type, e.types)} {e.details && `- ${e.details}`}
+                                </div>
+                                <div className="text-gray-500 text-sm mt-1 flex items-center gap-2">
+                                    <User size={14} />
+                                    <span>{e.rider || 'Moi'}</span>
+                                    {(e.horseName || (e.horseId && horsesList.find(h => String(h.id) === String(e.horseId)))) && (
+                                        <>
+                                            <span>•</span>
+                                            <span>{e.horseName || horsesList.find(h => String(h.id) === String(e.horseId))?.name}</span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                             {!String(e.id).startsWith('care-') && (
@@ -1136,6 +1499,52 @@ const Calendar = () => {
                                 </div>
                             )}
 
+                            {/* DÉTAILS IA (Phases et Objectif) */}
+                            {selectedEvent.originalData && (
+                                <div style={{ marginBottom: '1rem' }}>
+                                    {/* Objectif */}
+                                    {selectedEvent.originalData.coachObjective && (
+                                        <div style={{
+                                            marginBottom: '1rem',
+                                            padding: '0.75rem',
+                                            background: '#fff7ed',
+                                            borderRadius: '8px',
+                                            borderLeft: '4px solid #f97316',
+                                            fontSize: '0.9rem'
+                                        }}>
+                                            <strong style={{ color: '#c2410c', display: 'block', marginBottom: '0.25rem' }}>🎯 Objectif Coach</strong>
+                                            {selectedEvent.originalData.coachObjective}
+                                        </div>
+                                    )}
+
+                                    {/* Phases d'entraînement */}
+                                    {selectedEvent.originalData.phases && selectedEvent.originalData.phases.length > 0 && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            {selectedEvent.originalData.phases.map((phase, i) => (
+                                                <div key={i}>
+                                                    <div style={{ fontWeight: 600, color: '#1f2937', fontSize: '0.95rem' }}>
+                                                        • {phase.name} <span style={{ color: '#6b7280', fontWeight: 400 }}>({phase.duration})</span>
+                                                    </div>
+                                                    {phase.exercises && (
+                                                        <div style={{
+                                                            marginTop: '0.25rem',
+                                                            paddingLeft: '1rem',
+                                                            color: '#4b5563',
+                                                            fontSize: '0.9rem',
+                                                            lineHeight: '1.5'
+                                                        }}>
+                                                            {phase.exercises.map((ex, j) => (
+                                                                <div key={j}>- {ex}</div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Conseils IA */}
                             {selectedEvent.description && (
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
@@ -1163,7 +1572,7 @@ const Calendar = () => {
                         </div>
 
                         {/* Actions */}
-                        <div style={{
+                        < div style={{
                             display: 'flex',
                             gap: '0.75rem',
                             paddingTop: '1rem',
@@ -1207,55 +1616,255 @@ const Calendar = () => {
                                 {t('common.close')}
                             </Button>
                         </div>
-                    </Card>
-                </div>,
-                document.body
-            )}
-
-            {/* Validate Modal */}
-            {validateId && createPortal(
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.5)', zIndex: 9999,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                    <Card style={{ padding: '2rem', maxWidth: '400px', textAlign: 'center' }}>
-                        <CheckCircle size={48} className="text-primary mb-4" style={{ margin: '0 auto 1rem auto' }} />
-                        <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>{t('calendar_page.event_details.validate_confirm')}</h3>
-                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                            <Button variant="secondary" onClick={() => setValidateId(null)}>{t('calendar_page.form.cancel')}</Button>
-                            <Button onClick={performValidate}>{t('calendar_page.form.save')}</Button>
-                        </div>
-                    </Card>
-                </div>,
-                document.body
-            )}
-
-            {/* Delete Modal */}
-            {deleteId && createPortal(
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.5)', zIndex: 9999,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                    <Card style={{ padding: '2rem', maxWidth: '400px', textAlign: 'center' }}>
-                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
-                            <Trash2 size={32} />
-                        </div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem', color: '#1f2937' }}>{t('calendar_page.delete_confirm_title')}</h3>
-                        <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
-                            {t('calendar_page.delete_confirm_desc')}
-                        </p>
-                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                            <Button variant="secondary" onClick={() => setDeleteId(null)}>{t('calendar_page.form.cancel')}</Button>
-                            <Button onClick={performDelete} style={{ background: '#ef4444', color: 'white', border: 'none' }}>
-                                {t('calendar_page.delete_button')}
-                            </Button>
-                        </div>
-                    </Card>
+                    </Card >
                 </div >,
                 document.body
             )}
+
+            {/* Feedback Modal (Adaptive Feedback Loop) */}
+            {
+                showFeedbackModal && createPortal(
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0,0,0,0.6)', zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '1rem'
+                    }}>
+                        <Card style={{
+                            padding: '2rem',
+                            maxWidth: '500px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            overflowY: 'auto'
+                        }}>
+                            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                                <div style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 1rem auto',
+                                    fontSize: '2rem'
+                                }}>
+                                    📊
+                                </div>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: '#1f2937' }}>
+                                    Comment s'est passée la séance ?
+                                </h3>
+                                <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
+                                    Votre feedback aide l'IA à adapter le planning futur
+                                </p>
+                            </div>
+
+                            {/* RPE Slider */}
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{
+                                    display: 'block',
+                                    marginBottom: '0.75rem',
+                                    fontWeight: 600,
+                                    color: '#374151',
+                                    fontSize: '0.95rem'
+                                }}>
+                                    Intensité ressentie (RPE) : <span style={{
+                                        color: '#8b5cf6',
+                                        fontSize: '1.2rem',
+                                        fontWeight: 700
+                                    }}>{feedbackData.rpe}/10</span>
+                                </label>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="10"
+                                    value={feedbackData.rpe}
+                                    onChange={(e) => setFeedbackData({ ...feedbackData, rpe: parseInt(e.target.value) })}
+                                    style={{
+                                        width: '100%',
+                                        height: '8px',
+                                        borderRadius: '5px',
+                                        outline: 'none',
+                                        background: `linear-gradient(to right, #10b981 0%, #f59e0b 50%, #ef4444 100%)`,
+                                        cursor: 'pointer'
+                                    }}
+                                />
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    marginTop: '0.5rem',
+                                    fontSize: '0.75rem',
+                                    color: '#9ca3af'
+                                }}>
+                                    <span>1 (Très facile)</span>
+                                    <span>10 (Épuisant)</span>
+                                </div>
+                                {feedbackData.plannedIntensity && (
+                                    <div style={{
+                                        marginTop: '0.5rem',
+                                        padding: '0.5rem',
+                                        background: '#f3f4f6',
+                                        borderRadius: '6px',
+                                        fontSize: '0.85rem',
+                                        color: '#6b7280'
+                                    }}>
+                                        💡 Intensité prévue : {feedbackData.plannedIntensity}/10
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Recovery Status */}
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{
+                                    display: 'block',
+                                    marginBottom: '0.75rem',
+                                    fontWeight: 600,
+                                    color: '#374151',
+                                    fontSize: '0.95rem'
+                                }}>
+                                    État de récupération :
+                                </label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                                    {['Frais', 'Normal', 'Fatigué', 'Épuisé'].map(status => (
+                                        <button
+                                            key={status}
+                                            type="button"
+                                            onClick={() => setFeedbackData({ ...feedbackData, recoveryStatus: status })}
+                                            style={{
+                                                padding: '0.75rem',
+                                                borderRadius: '8px',
+                                                border: feedbackData.recoveryStatus === status
+                                                    ? '2px solid #8b5cf6'
+                                                    : '2px solid #e5e7eb',
+                                                background: feedbackData.recoveryStatus === status
+                                                    ? '#f3e8ff'
+                                                    : 'white',
+                                                color: feedbackData.recoveryStatus === status
+                                                    ? '#8b5cf6'
+                                                    : '#6b7280',
+                                                fontWeight: feedbackData.recoveryStatus === status ? 600 : 400,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                fontSize: '0.9rem'
+                                            }}
+                                        >
+                                            {status === 'Frais' && '😊 '}
+                                            {status === 'Normal' && '😐 '}
+                                            {status === 'Fatigué' && '😓 '}
+                                            {status === 'Épuisé' && '😰 '}
+                                            {status}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Comments */}
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{
+                                    display: 'block',
+                                    marginBottom: '0.75rem',
+                                    fontWeight: 600,
+                                    color: '#374151',
+                                    fontSize: '0.95rem'
+                                }}>
+                                    Commentaires (optionnel) :
+                                </label>
+                                <textarea
+                                    value={feedbackData.comments}
+                                    onChange={(e) => setFeedbackData({ ...feedbackData, comments: e.target.value })}
+                                    placeholder="Ex: Le cheval était un peu chaud au début..."
+                                    style={{
+                                        width: '100%',
+                                        minHeight: '80px',
+                                        padding: '0.75rem',
+                                        borderRadius: '8px',
+                                        border: '2px solid #e5e7eb',
+                                        fontSize: '0.9rem',
+                                        fontFamily: 'inherit',
+                                        resize: 'vertical'
+                                    }}
+                                />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => {
+                                        setShowFeedbackModal(false);
+                                        setEventToValidate(null);
+                                    }}
+                                    disabled={isSaving}
+                                >
+                                    Annuler
+                                </Button>
+                                <Button
+                                    onClick={performValidateWithFeedback}
+                                    disabled={isSaving}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        border: 'none',
+                                        minWidth: '150px'
+                                    }}
+                                >
+                                    {isSaving ? '⏳ Analyse...' : '✅ Valider séance'}
+                                </Button>
+                            </div>
+                        </Card>
+                    </div>,
+                    document.body
+                )
+            }
+
+            {/* Validate Modal */}
+            {
+                validateId && createPortal(
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <Card style={{ padding: '2rem', maxWidth: '400px', textAlign: 'center' }}>
+                            <CheckCircle size={48} className="text-primary mb-4" style={{ margin: '0 auto 1rem auto' }} />
+                            <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>{t('calendar_page.event_details.validate_confirm')}</h3>
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                <Button variant="secondary" onClick={() => setValidateId(null)}>{t('calendar_page.form.cancel')}</Button>
+                                <Button onClick={performValidate}>{t('calendar_page.form.save')}</Button>
+                            </div>
+                        </Card>
+                    </div>,
+                    document.body
+                )
+            }
+
+            {/* Delete Modal */}
+            {
+                deleteId && createPortal(
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <Card style={{ padding: '2rem', maxWidth: '400px', textAlign: 'center' }}>
+                            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
+                                <Trash2 size={32} />
+                            </div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem', color: '#1f2937' }}>{t('calendar_page.delete_confirm_title')}</h3>
+                            <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
+                                {t('calendar_page.delete_confirm_desc')}
+                            </p>
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                <Button variant="secondary" onClick={() => setDeleteId(null)}>{t('calendar_page.form.cancel')}</Button>
+                                <Button onClick={performDelete} style={{ background: '#ef4444', color: 'white', border: 'none' }}>
+                                    {t('calendar_page.delete_button')}
+                                </Button>
+                            </div>
+                        </Card>
+                    </div >,
+                    document.body
+                )
+            }
         </div >
     );
 };
